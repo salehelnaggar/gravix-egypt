@@ -714,7 +714,7 @@ export default function HomePage() {
             }}
           >
             <a
-              href="https://instagram.com/gravix.egypt"
+              href="https://instagram.com/gravix_eg"
               target="_blank"
               rel="noreferrer"
               style={{ textDecoration: 'none' }}
@@ -763,13 +763,13 @@ export default function HomePage() {
                     margin: 0,
                   }}
                 >
-                  @gravix.egypt
+                  @gravix_eg
                 </p>
               </div>
             </a>
 
             <a
-              href="https://wa.me/201000000000"
+              href="https://wa.me/201093379437"
               target="_blank"
               rel="noreferrer"
               style={{ textDecoration: 'none' }}
@@ -818,13 +818,13 @@ export default function HomePage() {
                     margin: 0,
                   }}
                 >
-                  +20 100 000 0000
+                  +20 1093379437
                 </p>
               </div>
             </a>
 
             <a
-              href="mailto:info@gravix.com"
+              href="mailto:gravixegypt@gmail.com"
               style={{ textDecoration: 'none' }}
             >
               <div
@@ -871,7 +871,7 @@ export default function HomePage() {
                     margin: 0,
                   }}
                 >
-                  info@gravix.com
+                  gravixegypt@gmail.com
                 </p>
               </div>
             </a>
@@ -909,7 +909,7 @@ export default function HomePage() {
           }}
         >
           <a
-            href="https://instagram.com/gravix.egypt"
+            href="https://instagram.com/gravix_eg"
             target="_blank"
             rel="noreferrer"
             style={{
@@ -922,7 +922,7 @@ export default function HomePage() {
             INSTAGRAM
           </a>
           <a
-            href="https://wa.me/201000000000"
+            href="https://wa.me/201093379437"
             target="_blank"
             rel="noreferrer"
             style={{
@@ -935,7 +935,7 @@ export default function HomePage() {
             WHATSAPP
           </a>
           <a
-            href="mailto:info@gravix.com"
+            href="mailto:gravixegypt@gmail.com"
             style={{
               color: '#333',
               fontSize: '12px',
