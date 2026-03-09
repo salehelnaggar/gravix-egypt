@@ -30,14 +30,14 @@ export default function RegisterPage() {
     setLoading(true)
     setError('')
 
-    const { error } = await supabase.auth.signUp({
-      email: form.email,
-      password: form.password,
-      options: {
-        data: { full_name: form.name },
-        emailRedirectTo: 'https://gravixegypt.online/auth/email-confirmed',
-      },
-    })
+const { error } = await supabase.auth.signUp({
+  email: form.email,
+  password: form.password,
+  options: {
+    data: { full_name: form.name },
+    emailRedirectTo: 'https://gravixegypt.online/auth/email-confirmed',
+  },
+})
 
     if (error) {
       setError(error.message)
