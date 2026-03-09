@@ -35,7 +35,7 @@ export default function RegisterPage() {
       password: form.password,
       options: {
         data: { full_name: form.name },
-        emailRedirectTo: 'https://gravixegypt.online/auth/login',
+        emailRedirectTo: 'https://gravixegypt.online/auth/email-confirmed',
       },
     })
 
