@@ -307,7 +307,6 @@ export default function EventsPage() {
                       margin: '0 0 20px',
                     }}
                   >
-                    {event.description}
                   </p>
 
                   <div
