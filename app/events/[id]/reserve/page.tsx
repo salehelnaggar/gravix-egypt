@@ -279,6 +279,8 @@ export default function ReservePage({ params }: { params: Promise<{ id: string }
                   weekday: 'short',
                   month: 'short',
                   day: 'numeric',
+                    timeZone: 'UTC',
+
                 })}{' '}
                 · 📍 {event.location}
               </p>

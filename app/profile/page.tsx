@@ -78,6 +78,8 @@ function Countdown({ deadline }: { deadline: string }) {
           weekday: 'short',
           month: 'short',
           day: 'numeric',
+            timeZone: 'UTC',
+
         })}{' '}
         at{' '}
         {new Date(deadline).toLocaleTimeString('en-US', {
@@ -855,6 +857,8 @@ export default function ProfilePage() {
                         weekday: 'long',
                         month: 'long',
                         day: 'numeric',
+                          timeZone: 'UTC',
+
                       })}{' '}
                       · 📍 {r.events?.location}
                     </p>

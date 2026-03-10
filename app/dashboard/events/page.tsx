@@ -766,6 +766,8 @@ export default function DashboardEvents() {
                       month: 'short',
                       day: 'numeric',
                       year: 'numeric',
+                        timeZone: 'UTC',
+
                     })}{' '}
                     · 📍 {event.location}
                   </p>
