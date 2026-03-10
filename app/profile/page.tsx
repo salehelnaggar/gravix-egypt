@@ -103,7 +103,7 @@ function PaymentSection({
   const [preview, setPreview] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const [senderPhone, setSenderPhone] = useState('')
-  const phone = process.env.NEXT_PUBLIC_PAYMENT_PHONE || '01000000000'
+const phone = reservation.events?.transfer_number || '01000000000'
 
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = e.target.files?.[0]
@@ -507,7 +507,7 @@ export default function ProfilePage() {
     setNewName(user.user_metadata?.full_name || '')
     const { data } = await supabase
       .from('reservations')
-      .select('*, events(title, date, location, image_url, price)')
+.select('*, events(title, date, location, image_url, price, transfer_number)')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
     setReservations(data || [])

@@ -563,7 +563,7 @@ export default function EventPage() {
               You need to be logged in to book a ticket.
             </p>
             <Link
-              href="/login"
+href={`/auth/login?redirect=/events/${event.id}`}
               style={{
                 backgroundColor: '#dc2626',
                 color: '#fff',

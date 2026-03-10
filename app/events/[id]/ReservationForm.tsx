@@ -102,7 +102,7 @@ export default function ReservationForm({ event }: { event: EventWithWaves }) {
     } = await supabase.auth.getUser()
     if (!user) {
       setLoading(false)
-      router.push('/auth/login')
+      router.push('/auth/login?redirect=' + encodeURIComponent(window.location.pathname))
       return
     }
 

@@ -22,7 +22,9 @@ export default function LoginPage() {
     setError('')
     const { error } = await supabase.auth.signInWithPassword({ email: form.email, password: form.password })
     if (error) { setError('Invalid email or password'); setLoading(false); return }
-    router.push('/events')
+const params = new URLSearchParams(window.location.search)
+const redirect = params.get('redirect') || '/profile'
+router.push(redirect)
   }
 
   return (
