@@ -79,7 +79,7 @@ export default function Navbar() {
             whiteSpace: 'nowrap',
           }}
         >
-          GRAVIX<span style={{ color: '#fff' }}> EGYPT</span>
+GRAVIX<span style={{ color: '#fff' }}>EGYPT</span>
         </Link>
 
         {/* desktop links */}
