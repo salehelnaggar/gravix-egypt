@@ -447,6 +447,8 @@ export default function HomePage() {
                           month: 'short',
                           day: 'numeric',
                           year: 'numeric',
+                           timeZone: 'UTC',
+
                         })
                         .toUpperCase()}
                     </div>
