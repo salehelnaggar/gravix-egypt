@@ -766,7 +766,8 @@ export default function DashboardEvents() {
                       month: 'short',
                       day: 'numeric',
                       year: 'numeric',
-                      timeZone: 'UTC',
+                        timeZone: 'UTC',
+
                     })}{' '}
                     · 📍 {event.location}
                   </p>
@@ -1058,27 +1059,6 @@ export default function DashboardEvents() {
                         {event.is_active ? 'HIDE' : 'SHOW'}
                       </button>
                     )}
-
-                    {/* SUMMARY button */}
-                    <button
-                      onClick={() =>
-                        router.push(`/dashboard/events/${event.id}/summary`)
-                      }
-                      style={{
-                        backgroundColor: 'rgba(234,179,8,0.1)',
-                        border: '1px solid rgba(234,179,8,0.4)',
-                        color: '#eab308',
-                        padding: '8px 16px',
-                        borderRadius: '8px',
-                        fontSize: '11px',
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                        fontFamily: 'Inter, sans-serif',
-                        letterSpacing: '1px',
-                      }}
-                    >
-                      SUMMARY
-                    </button>
 
                     <button
                       onClick={() => handleEdit(event)}
