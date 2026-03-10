@@ -1,4 +1,5 @@
 'use client'
+
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
@@ -34,9 +35,7 @@ export default function HomePage() {
       .then(({ data }) => setEvents((data as EventWithWaves[]) || []))
   }, [])
 
-  // === WAVE LOGIC (1 → 2 → 3) + finished ===
   const getCurrentPriceAndWave = (event: EventWithWaves) => {
-    // لو الإيفنت متعلّم Finished من الداشبورد
     if (event.is_finished) {
       return {
         price: null,
@@ -47,7 +46,6 @@ export default function HomePage() {
       }
     }
 
-    // Wave 1 متاحة لو مش sold_out وفيه سعر
     if (!event.wave_1_sold_out && event.wave_1_price != null) {
       return {
         price: event.wave_1_price as number,
@@ -58,7 +56,6 @@ export default function HomePage() {
       }
     }
 
-    // Wave 2 بعد ما Wave 1 تخلص
     if (
       event.wave_1_sold_out &&
       !event.wave_2_sold_out &&
@@ -73,7 +70,6 @@ export default function HomePage() {
       }
     }
 
-    // Wave 3 بعد ما Wave 2 كمان تخلص
     if (
       event.wave_1_sold_out &&
       event.wave_2_sold_out &&
@@ -89,7 +85,6 @@ export default function HomePage() {
       }
     }
 
-    // لو مفيش ولا Wave متاحة
     return {
       price: null,
       label: 'SOLD OUT',
@@ -98,6 +93,9 @@ export default function HomePage() {
       soldOut: true,
     }
   }
+
+  const isMobile =
+    typeof window !== 'undefined' && window.innerWidth <= 640
 
   return (
     <main
@@ -118,7 +116,7 @@ export default function HomePage() {
           alignItems: 'center',
           justifyContent: 'center',
           textAlign: 'center',
-          padding: '40px 24px',
+          padding: '40px 16px',
           position: 'relative',
           overflow: 'hidden',
         }}
@@ -126,8 +124,8 @@ export default function HomePage() {
         <div
           style={{
             position: 'absolute',
-            width: '700px',
-            height: '700px',
+            width: isMobile ? '420px' : '700px',
+            height: isMobile ? '420px' : '700px',
             background:
               'radial-gradient(circle, rgba(220,38,38,0.12) 0%, transparent 70%)',
             top: '50%',
@@ -141,12 +139,12 @@ export default function HomePage() {
           style={{
             border: '1px solid rgba(220,38,38,0.4)',
             color: '#dc2626',
-            fontSize: '11px',
+            fontSize: '10px',
             fontWeight: 700,
-            padding: '6px 20px',
+            padding: '6px 16px',
             borderRadius: '999px',
-            marginBottom: '32px',
-            letterSpacing: '4px',
+            marginBottom: '24px',
+            letterSpacing: '3px',
             backgroundColor: 'rgba(220,38,38,0.05)',
           }}
         >
@@ -155,11 +153,11 @@ export default function HomePage() {
 
         <h1
           style={{
-            fontSize: 'clamp(64px, 13vw, 130px)',
+            fontSize: 'clamp(40px, 14vw, 96px)',
             fontWeight: 900,
             lineHeight: 1,
             margin: '0 0 8px',
-            letterSpacing: '-4px',
+            letterSpacing: '-3px',
             color: '#fff',
           }}
         >
@@ -168,33 +166,37 @@ export default function HomePage() {
 
         <div
           style={{
-            width: '80px',
-            height: '4px',
+            width: '70px',
+            height: '3px',
             background: 'linear-gradient(90deg, #dc2626, #ff6b6b)',
             borderRadius: '2px',
-            margin: '0 auto 24px',
+            margin: '0 auto 20px',
           }}
         />
 
         <p
           style={{
             color: '#666',
-            fontSize: '18px',
-            maxWidth: '480px',
-            lineHeight: 1.8,
-            marginBottom: '48px',
+            fontSize: '15px',
+            maxWidth: '420px',
+            lineHeight: 1.7,
+            marginBottom: '32px',
             fontWeight: 400,
           }}
         >
-          Egypt&apos;s #1 platform for booking the hottest live events & concerts
+          Egypt&apos;s #1 platform for booking the hottest live events &
+          concerts
         </p>
 
         <div
           style={{
             display: 'flex',
-            gap: '16px',
+            flexDirection: isMobile ? 'column' : 'row',
+            gap: '12px',
             flexWrap: 'wrap',
             justifyContent: 'center',
+            width: '100%',
+            maxWidth: '420px',
           }}
         >
           <a
@@ -202,14 +204,16 @@ export default function HomePage() {
             style={{
               background: 'linear-gradient(135deg, #dc2626, #b91c1c)',
               color: '#fff',
-              padding: '16px 40px',
+              padding: '14px 24px',
               borderRadius: '12px',
               fontWeight: 700,
-              fontSize: '15px',
+              fontSize: '14px',
               textDecoration: 'none',
               letterSpacing: '1px',
-              boxShadow: '0 0 40px rgba(220,38,38,0.25)',
+              boxShadow: '0 0 30px rgba(220,38,38,0.25)',
               fontFamily: 'Inter, sans-serif',
+              width: isMobile ? '100%' : 'auto',
+              textAlign: 'center',
             }}
           >
             EXPLORE EVENTS →
@@ -219,13 +223,15 @@ export default function HomePage() {
             style={{
               background: 'transparent',
               color: '#fff',
-              padding: '16px 40px',
+              padding: '14px 24px',
               borderRadius: '12px',
               fontWeight: 700,
-              fontSize: '15px',
+              fontSize: '14px',
               textDecoration: 'none',
-              border: '1px solid rgba(255,255,255,0.1)',
+              border: '1px solid rgba(255,255,255,0.12)',
               fontFamily: 'Inter, sans-serif',
+              width: isMobile ? '100%' : 'auto',
+              textAlign: 'center',
             }}
           >
             SIGN UP FREE
@@ -239,7 +245,7 @@ export default function HomePage() {
           backgroundColor: '#0a0a0a',
           borderTop: '1px solid #111',
           borderBottom: '1px solid #111',
-          padding: '60px 24px',
+          padding: '40px 16px',
         }}
       >
         <div
@@ -247,7 +253,7 @@ export default function HomePage() {
             maxWidth: '900px',
             margin: '0 auto',
             display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
+            gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
             gap: '16px',
           }}
         >
@@ -255,25 +261,25 @@ export default function HomePage() {
             { icon: '🎉', title: 'EXCLUSIVE EVENTS', sub: 'Every month' },
             { icon: '⚡', title: 'INSTANT BOOKING', sub: 'No hassle' },
             { icon: '🔐', title: 'SECURE PAYMENT', sub: '100% guaranteed' },
-          ].map(s => (
+          ].map((s) => (
             <div
               key={s.title}
               style={{
-                padding: '32px 16px',
+                padding: '24px 16px',
                 textAlign: 'center',
                 border: '1px solid #1a1a1a',
                 borderRadius: '16px',
                 backgroundColor: '#0d0d0d',
               }}
             >
-              <div style={{ fontSize: '36px', marginBottom: '12px' }}>
+              <div style={{ fontSize: '32px', marginBottom: '10px' }}>
                 {s.icon}
               </div>
               <div
                 style={{
                   color: '#fff',
                   fontWeight: 700,
-                  fontSize: '13px',
+                  fontSize: '12px',
                   letterSpacing: '1px',
                 }}
               >
@@ -296,32 +302,26 @@ export default function HomePage() {
       {/* EVENTS SECTION */}
       <section
         id="events"
-        style={{ padding: '80px 24px', backgroundColor: '#050505' }}
+        style={{
+          padding: '56px 16px',
+          backgroundColor: '#050505',
+        }}
       >
         <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
           <div
             style={{
               display: 'flex',
+              flexDirection: isMobile ? 'column' : 'row',
+              gap: isMobile ? '12px' : 0,
               justifyContent: 'space-between',
-              alignItems: 'flex-end',
-              marginBottom: '48px',
+              alignItems: isMobile ? 'flex-start' : 'flex-end',
+              marginBottom: '32px',
             }}
           >
             <div>
-              <p
-                style={{
-                  color: '#dc2626',
-                  fontSize: '11px',
-                  letterSpacing: '4px',
-                  marginBottom: '8px',
-                  fontWeight: 700,
-                }}
-              >
-                {/* ممكن تسيبها فاضية أو تكتب UPCOMING */}
-              </p>
               <h2
                 style={{
-                  fontSize: '36px',
+                  fontSize: isMobile ? '26px' : '36px',
                   fontWeight: 900,
                   color: '#fff',
                   margin: 0,
@@ -336,12 +336,14 @@ export default function HomePage() {
               style={{
                 color: '#dc2626',
                 textDecoration: 'none',
-                fontSize: '13px',
+                fontSize: '12px',
                 fontWeight: 700,
                 letterSpacing: '2px',
                 border: '1px solid rgba(220,38,38,0.3)',
-                padding: '10px 20px',
+                padding: '8px 16px',
                 borderRadius: '10px',
+                alignSelf: isMobile ? 'stretch' : 'auto',
+                textAlign: 'center',
               }}
             >
               VIEW ALL →
@@ -352,11 +354,11 @@ export default function HomePage() {
             <div
               style={{
                 textAlign: 'center',
-                padding: '80px',
+                padding: isMobile ? '40px 16px' : '80px',
                 color: '#333',
               }}
             >
-              <div style={{ fontSize: '60px', marginBottom: '16px' }}>🎭</div>
+              <div style={{ fontSize: '48px', marginBottom: '12px' }}>🎭</div>
               <p
                 style={{
                   letterSpacing: '2px',
@@ -371,11 +373,11 @@ export default function HomePage() {
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-              gap: '24px',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
+              gap: '20px',
             }}
           >
-            {events.map(event => {
+            {events.map((event) => {
               const { price, label, subtitle, color, soldOut } =
                 getCurrentPriceAndWave(event)
 
@@ -390,14 +392,14 @@ export default function HomePage() {
                     transition: 'all 0.3s',
                     cursor: 'pointer',
                   }}
-                  onMouseEnter={e => {
+                  onMouseEnter={(e) => {
                     const el = e.currentTarget as HTMLDivElement
                     el.style.borderColor = '#dc2626'
                     el.style.transform = 'translateY(-6px)'
                     el.style.boxShadow =
                       '0 24px 48px rgba(220,38,38,0.1)'
                   }}
-                  onMouseLeave={e => {
+                  onMouseLeave={(e) => {
                     const el = e.currentTarget as HTMLDivElement
                     el.style.borderColor = '#1a1a1a'
                     el.style.transform = 'translateY(0)'
@@ -410,7 +412,7 @@ export default function HomePage() {
                       alt={event.title}
                       style={{
                         width: '100%',
-                        height: '220px',
+                        height: '200px',
                         objectFit: 'cover',
                       }}
                     />
@@ -418,19 +420,19 @@ export default function HomePage() {
                     <div
                       style={{
                         width: '100%',
-                        height: '220px',
+                        height: '200px',
                         background:
                           'linear-gradient(135deg, #1a0000, #0d0d0d)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        fontSize: '60px',
+                        fontSize: '48px',
                       }}
                     >
                       🎶
                     </div>
                   )}
-                  <div style={{ padding: '24px' }}>
+                  <div style={{ padding: '20px' }}>
                     <div
                       style={{
                         color: '#dc2626',
@@ -450,10 +452,10 @@ export default function HomePage() {
                     </div>
                     <h3
                       style={{
-                        fontSize: '20px',
+                        fontSize: '18px',
                         fontWeight: 900,
                         color: '#fff',
-                        marginBottom: '8px',
+                        marginBottom: '6px',
                         letterSpacing: '-0.5px',
                       }}
                     >
@@ -463,8 +465,8 @@ export default function HomePage() {
                       style={{
                         color: '#444',
                         fontSize: '13px',
-                        marginBottom: '16px',
-                        lineHeight: 1.8,
+                        marginBottom: '14px',
+                        lineHeight: 1.6,
                       }}
                     >
                       {event.description}
@@ -472,9 +474,11 @@ export default function HomePage() {
                     <div
                       style={{
                         display: 'flex',
+                        flexDirection: isMobile ? 'column' : 'row',
+                        gap: isMobile ? '8px' : 0,
                         justifyContent: 'space-between',
-                        alignItems: 'center',
-                        marginBottom: '20px',
+                        alignItems: isMobile ? 'flex-start' : 'center',
+                        marginBottom: '16px',
                       }}
                     >
                       <span
@@ -492,7 +496,7 @@ export default function HomePage() {
                             style={{
                               color: '#ef4444',
                               fontWeight: 800,
-                              fontSize: '16px',
+                              fontSize: '15px',
                               margin: 0,
                             }}
                           >
@@ -505,7 +509,7 @@ export default function HomePage() {
                             style={{
                               color: '#fff',
                               fontWeight: 900,
-                              fontSize: '18px',
+                              fontSize: '17px',
                               margin: 0,
                             }}
                           >
@@ -545,7 +549,7 @@ export default function HomePage() {
                           border: '1px solid #1a1a1a',
                           color: '#ef4444',
                           textAlign: 'center',
-                          padding: '14px',
+                          padding: '12px',
                           borderRadius: '12px',
                           fontSize: '13px',
                           letterSpacing: '2px',
@@ -565,7 +569,7 @@ export default function HomePage() {
                             'linear-gradient(135deg, #dc2626, #b91c1c)',
                           color: '#fff',
                           textAlign: 'center',
-                          padding: '14px',
+                          padding: '12px',
                           borderRadius: '12px',
                           fontWeight: 700,
                           textDecoration: 'none',
@@ -588,7 +592,7 @@ export default function HomePage() {
       <section
         id="about"
         style={{
-          padding: '100px 24px',
+          padding: '72px 16px',
           backgroundColor: '#0a0a0a',
           borderTop: '1px solid #111',
         }}
@@ -606,17 +610,17 @@ export default function HomePage() {
               fontSize: '11px',
               letterSpacing: '4px',
               fontWeight: 700,
-              margin: '0 0 16px',
+              margin: '0 0 12px',
             }}
           >
             ● ABOUT US
           </p>
           <h2
             style={{
-              fontSize: '40px',
+              fontSize: '32px',
               fontWeight: 900,
               color: '#fff',
-              margin: '0 0 24px',
+              margin: '0 0 20px',
               letterSpacing: '-1px',
             }}
           >
@@ -628,26 +632,26 @@ export default function HomePage() {
               height: '3px',
               background: 'linear-gradient(90deg, #dc2626, transparent)',
               borderRadius: '2px',
-              margin: '0 auto 40px',
+              margin: '0 auto 28px',
             }}
           />
           <p
             style={{
               color: '#555',
-              fontSize: '16px',
-              lineHeight: 2,
-              margin: '0 0 24px',
+              fontSize: '15px',
+              lineHeight: 1.9,
+              margin: '0 0 16px',
             }}
           >
-            GRAVIX is Egypt&apos;s premier live events platform. We connect
-            music lovers, culture seekers, and night-life enthusiasts with the
-            most exclusive events across the country.
+            GRAVIX is Egypt&apos;s premier live events platform. We connect music
+            lovers, culture seekers, and night-life enthusiasts with the most
+            exclusive events across the country.
           </p>
           <p
             style={{
               color: '#444',
-              fontSize: '15px',
-              lineHeight: 2,
+              fontSize: '14px',
+              lineHeight: 1.9,
               margin: 0,
             }}
           >
@@ -662,7 +666,7 @@ export default function HomePage() {
       <section
         id="contact"
         style={{
-          padding: '100px 24px',
+          padding: '72px 16px',
           backgroundColor: '#050505',
           borderTop: '1px solid #111',
         }}
@@ -680,14 +684,14 @@ export default function HomePage() {
               fontSize: '11px',
               letterSpacing: '4px',
               fontWeight: 700,
-              margin: '0 0 16px',
+              margin: '0 0 14px',
             }}
           >
             ● GET IN TOUCH
           </p>
           <h2
             style={{
-              fontSize: '40px',
+              fontSize: '32px',
               fontWeight: 900,
               color: '#fff',
               margin: '0 0 16px',
@@ -702,19 +706,19 @@ export default function HomePage() {
               height: '3px',
               background: 'linear-gradient(90deg, #dc2626, transparent)',
               borderRadius: '2px',
-              margin: '0 auto 56px',
+              margin: '0 auto 40px',
             }}
           />
 
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(3, 1fr)',
+              gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
               gap: '16px',
             }}
           >
             <a
-              href="https://instagram.com/gravix_eg"
+              href="https://instagram.com/gravixeg"
               target="_blank"
               rel="noreferrer"
               style={{ textDecoration: 'none' }}
@@ -729,10 +733,10 @@ export default function HomePage() {
                   transition: 'border-color 0.2s',
                   cursor: 'pointer',
                 }}
-                onMouseEnter={e =>
+                onMouseEnter={(e) =>
                   (e.currentTarget.style.borderColor = '#dc2626')
                 }
-                onMouseLeave={e =>
+                onMouseLeave={(e) =>
                   (e.currentTarget.style.borderColor = '#1a1a1a')
                 }
               >
@@ -784,10 +788,10 @@ export default function HomePage() {
                   transition: 'border-color 0.2s',
                   cursor: 'pointer',
                 }}
-                onMouseEnter={e =>
+                onMouseEnter={(e) =>
                   (e.currentTarget.style.borderColor = '#10b981')
                 }
-                onMouseLeave={e =>
+                onMouseLeave={(e) =>
                   (e.currentTarget.style.borderColor = '#1a1a1a')
                 }
               >
@@ -837,10 +841,10 @@ export default function HomePage() {
                   transition: 'border-color 0.2s',
                   cursor: 'pointer',
                 }}
-                onMouseEnter={e =>
+                onMouseEnter={(e) =>
                   (e.currentTarget.style.borderColor = '#3b82f6')
                 }
-                onMouseLeave={e =>
+                onMouseLeave={(e) =>
                   (e.currentTarget.style.borderColor = '#1a1a1a')
                 }
               >
@@ -883,7 +887,7 @@ export default function HomePage() {
       <footer
         style={{
           borderTop: '1px solid #111',
-          padding: '48px 24px',
+          padding: '32px 16px',
           textAlign: 'center',
           backgroundColor: '#050505',
         }}
@@ -892,9 +896,9 @@ export default function HomePage() {
           style={{
             color: '#dc2626',
             fontWeight: 900,
-            fontSize: '24px',
+            fontSize: '22px',
             letterSpacing: '2px',
-            marginBottom: '16px',
+            marginBottom: '12px',
           }}
         >
           GRAVIX
@@ -903,8 +907,8 @@ export default function HomePage() {
           style={{
             display: 'flex',
             justifyContent: 'center',
-            gap: '24px',
-            marginBottom: '20px',
+            gap: '16px',
+            marginBottom: '16px',
             flexWrap: 'wrap',
           }}
         >
@@ -960,13 +964,12 @@ export default function HomePage() {
         <p
           style={{
             color: '#222',
-            fontSize: '11px',
-            letterSpacing: '2px',
+            fontSize: '10px',
+            letterSpacing: '1.6px',
             margin: 0,
           }}
         >
-          © 2026 GRAVIX EGYPT. ALL RIGHTS RESERVED.
-          DESIGNED BY SALEH ELNAGGAR.
+          © 2026 GRAVIX EGYPT. ALL RIGHTS RESERVED. DESIGNED BY SALEH ELNAGGAR.
         </p>
       </footer>
     </main>
