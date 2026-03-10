@@ -1077,6 +1077,23 @@ export default function DashboardEvents() {
                     >
                       EDIT
                     </button>
+<button
+  onClick={() => router.push(`/dashboard/events/${event.id}/summary`)}
+  style={{
+    backgroundColor: 'rgba(234,179,8,0.1)',
+    border: '1px solid rgba(234,179,8,0.4)',
+    color: '#eab308',
+    padding: '8px 16px',
+    borderRadius: '8px',
+    fontSize: '11px',
+    fontWeight: 700,
+    cursor: 'pointer',
+    fontFamily: 'Inter, sans-serif',
+    letterSpacing: '1px',
+  }}
+>
+  SUMMARY
+</button>
 
                     <button
                       onClick={() => handleDelete(event.id)}
