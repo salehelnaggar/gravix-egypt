@@ -461,16 +461,7 @@ export default function HomePage() {
                     >
                       {event.title}
                     </h3>
-                    <p
-                      style={{
-                        color: '#444',
-                        fontSize: '13px',
-                        marginBottom: '14px',
-                        lineHeight: 1.6,
-                      }}
-                    >
-                      {event.description}
-                    </p>
+                    
                     <div
                       style={{
                         display: 'flex',
@@ -718,7 +709,7 @@ export default function HomePage() {
             }}
           >
             <a
-              href="https://instagram.com/gravixeg"
+              href="https://instagram.com/gravix_eg"
               target="_blank"
               rel="noreferrer"
               style={{ textDecoration: 'none' }}
