@@ -8,7 +8,8 @@ export default function DashboardPage() {
   const router = useRouter()
   const [stats, setStats] = useState({
     total: 0, pending: 0, confirmed: 0, rejected: 0,
-    awaiting: 0, review: 0, tickets: 0, revenue: 0, tax: 0
+    awaiting: 0, review: 0, tickets: 0, revenue: 0, tax: 0,
+    totalDjs: 0,
   })
 
   useEffect(() => {
@@ -20,13 +21,18 @@ export default function DashboardPage() {
   }, [])
 
   const loadStats = async () => {
-    const { data } = await supabase.from('reservations').select('*, events(price)')
+    const [{ data }, { count: djCount }] = await Promise.all([
+      supabase.from('reservations').select('*, events(price)'),
+      supabase.from('djs').select('*', { count: 'exact', head: true }),
+    ])
+
     if (!data) return
     const confirmed = data.filter(r => r.status === 'confirmed')
     const totalRevenue = confirmed.reduce((sum, r) => sum + (r.total_price || 0), 0)
     const TAX_RATE = 0.14
     const revenueBeforeTax = Math.round(totalRevenue / (1 + TAX_RATE))
     const taxAmount = totalRevenue - revenueBeforeTax
+
     setStats({
       total: data.length,
       pending: data.filter(r => r.status === 'pending').length,
@@ -37,6 +43,7 @@ export default function DashboardPage() {
       tickets: confirmed.reduce((sum, r) => sum + (r.num_people || 0), 0),
       revenue: revenueBeforeTax,
       tax: taxAmount,
+      totalDjs: djCount || 0,
     })
   }
 
@@ -49,12 +56,15 @@ export default function DashboardPage() {
     <main style={{ minHeight: '100vh', backgroundColor: '#050505', padding: '60px 24px', fontFamily: 'Inter, sans-serif' }}>
       <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
 
+        {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '48px', flexWrap: 'wrap', gap: '16px' }}>
           <div>
             <p style={{ color: '#dc2626', fontSize: '11px', letterSpacing: '4px', fontWeight: 700, margin: '0 0 8px' }}>● ADMIN</p>
             <h1 style={{ fontSize: '40px', fontWeight: 900, color: '#fff', letterSpacing: '-1px', margin: 0 }}>DASHBOARD</h1>
           </div>
-          <button onClick={logout} style={{ background: 'none', border: '1px solid #1a1a1a', color: '#444', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', letterSpacing: '2px', fontFamily: 'Inter, sans-serif' }}>LOG OUT</button>
+          <button onClick={logout} style={{ background: 'none', border: '1px solid #1a1a1a', color: '#444', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', letterSpacing: '2px', fontFamily: 'Inter, sans-serif' }}>
+            LOG OUT
+          </button>
         </div>
 
         {/* Booking Stats */}
@@ -76,7 +86,9 @@ export default function DashboardPage() {
 
         {/* Revenue Summary */}
         <div style={{ backgroundColor: '#0d0d0d', border: '1px solid #1a1a1a', borderRadius: '20px', padding: '32px', marginBottom: '32px' }}>
-          <p style={{ color: '#555', fontSize: '11px', letterSpacing: '3px', fontWeight: 700, margin: '0 0 24px' }}>REVENUE SUMMARY — CONFIRMED BOOKINGS ONLY</p>
+          <p style={{ color: '#555', fontSize: '11px', letterSpacing: '3px', fontWeight: 700, margin: '0 0 24px' }}>
+            REVENUE SUMMARY — CONFIRMED BOOKINGS ONLY
+          </p>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
             <div style={{ backgroundColor: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '24px' }}>
               <p style={{ color: '#444', fontSize: '10px', letterSpacing: '2px', fontWeight: 700, margin: '0 0 8px' }}>🎟️ TICKETS SOLD</p>
@@ -98,18 +110,33 @@ export default function DashboardPage() {
         </div>
 
         {/* Navigation Cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px' }}>
           {[
             { href: '/dashboard/events', icon: '🎉', title: 'MANAGE EVENTS', sub: 'Add, edit & delete events' },
             { href: '/dashboard/reservations', icon: '📋', title: 'RESERVATIONS', sub: 'View & manage all bookings' },
             { href: '/dashboard/verify', icon: '🔍', title: 'VERIFY ENTRY', sub: 'Scan entry codes at the door' },
+            {
+              href: '/dashboard/djs',
+              icon: '🎧',
+              title: 'MANAGE DJs',
+              sub: `${stats.totalDjs} DJ${stats.totalDjs !== 1 ? 's' : ''} on the roster`,
+              highlight: true,
+            },
           ].map(item => (
-            <Link key={item.href} href={item.href} style={{
-              backgroundColor: '#0d0d0d', border: '1px solid #1a1a1a',
-              borderRadius: '20px', padding: '40px 32px',
-              textDecoration: 'none', display: 'block',
-              transition: 'border-color 0.2s, transform 0.2s'
-            }}
+            <Link
+              key={item.href}
+              href={item.href}
+              style={{
+                backgroundColor: '#0d0d0d',
+                border: `1px solid ${'highlight' in item && item.highlight ? 'rgba(220,38,38,0.25)' : '#1a1a1a'}`,
+                borderRadius: '20px',
+                padding: '40px 32px',
+                textDecoration: 'none',
+                display: 'block',
+                transition: 'border-color 0.2s, transform 0.2s',
+                position: 'relative',
+                overflow: 'hidden',
+              }}
               onMouseEnter={e => {
                 const el = e.currentTarget as HTMLAnchorElement
                 el.style.borderColor = '#dc2626'
@@ -117,16 +144,36 @@ export default function DashboardPage() {
               }}
               onMouseLeave={e => {
                 const el = e.currentTarget as HTMLAnchorElement
-                el.style.borderColor = '#1a1a1a'
+                el.style.borderColor = 'highlight' in item && item.highlight ? 'rgba(220,38,38,0.25)' : '#1a1a1a'
                 el.style.transform = 'translateY(0)'
               }}
             >
+              {'highlight' in item && item.highlight && (
+                <span
+                  style={{
+                    position: 'absolute',
+                    top: '16px',
+                    right: '16px',
+                    backgroundColor: 'rgba(220,38,38,0.1)',
+                    border: '1px solid rgba(220,38,38,0.3)',
+                    color: '#dc2626',
+                    fontSize: '9px',
+                    fontWeight: 700,
+                    letterSpacing: '2px',
+                    padding: '4px 10px',
+                    borderRadius: '999px',
+                  }}
+                >
+                  NEW
+                </span>
+              )}
               <div style={{ fontSize: '40px', marginBottom: '16px' }}>{item.icon}</div>
               <h2 style={{ color: '#fff', fontSize: '16px', fontWeight: 900, letterSpacing: '2px', margin: '0 0 8px' }}>{item.title}</h2>
               <p style={{ color: '#444', fontSize: '13px', margin: 0 }}>{item.sub}</p>
             </Link>
           ))}
         </div>
+
       </div>
     </main>
   )
