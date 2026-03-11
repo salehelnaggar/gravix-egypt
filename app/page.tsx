@@ -493,7 +493,6 @@ export default function HomePage() {
                               margin: 0,
                             }}
                           >
-                            {event.is_finished ? 'EVENT ENDED' : 'SOLD OUT'}
                           </p>
                         </div>
                       ) : (
