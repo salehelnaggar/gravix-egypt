@@ -179,25 +179,6 @@ export default function DJProfilePage() {
                 💬 BOOK VIA WHATSAPP
               </a>
             )}
-            <Link
-              href="/events"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '8px',
-                background: 'transparent',
-                color: '#fff',
-                padding: '12px 24px',
-                borderRadius: '12px',
-                fontWeight: 700,
-                textDecoration: 'none',
-                fontSize: '13px',
-                letterSpacing: '1px',
-                border: '1px solid rgba(255,255,255,0.15)',
-              }}
-            >
-              🎟 SEE EVENTS
-            </Link>
           </div>
         </div>
       </section>
