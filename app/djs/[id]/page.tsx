@@ -352,21 +352,7 @@ export default function DJProfilePage() {
                 }}
               >
               </p>
-           <h2
-  style={{
-    color: '#fff',
-    fontSize: isMobile ? '20px' : '24px',
-    margin: 0,
-    fontWeight: 800,
-    letterSpacing: '-0.5px',
-    display: 'flex',
-    alignItems: 'center',
-  }}
->
-  <span style={{ color: '#dc2626', marginRight: '6px' }}>DJ</span>
-  <span style={{ color: '#fff' }}>{dj.name}</span>
-</h2>
-
+           
             </div>
           </div>
         </section>
