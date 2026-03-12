@@ -353,23 +353,16 @@ export default function HomePage() {
                       el.style.boxShadow = 'none'
                     }}
                   >
-                    {event.image_url ? (
-                      <img src={event.image_url} alt={event.title} style={{ width: '100%', height: '200px', objectFit: 'cover' }} />
-                    ) : (
-                      <div
-                        style={{
-                          width: '100%',
-                          height: '200px',
-                          background: 'linear-gradient(135deg, #1a0000, #0d0d0d)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: '48px',
-                        }}
-                      >
-                        🎶
-                      </div>
-                    )}
+                   {event.image_url ? (
+  <div style={{ width: '100%', aspectRatio: '4/3', backgroundColor: '#111' }}>
+    <img src={event.image_url} alt={event.title} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+  </div>
+) : (
+  <div style={{ width: '100%', aspectRatio: '4/3', background: 'linear-gradient(135deg, #1a0000, #0d0d0d)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '48px' }}>
+    🎶
+  </div>
+)}
+
                     <div style={{ padding: '20px' }}>
                       <div style={{ color: '#dc2626', fontSize: '11px', letterSpacing: '2px', marginBottom: '8px', fontWeight: 700 }}>
                         {new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }).toUpperCase()}
@@ -549,22 +542,15 @@ export default function HomePage() {
                     }}
                   >
                     {dj.image_url ? (
-                      <img src={dj.image_url} alt={dj.name} style={{ width: '100%', height: '220px', objectFit: 'cover' }} />
-                    ) : (
-                      <div
-                        style={{
-                          width: '100%',
-                          height: '220px',
-                          background: 'linear-gradient(135deg, #1a0000, #0d0d0d)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: '64px',
-                        }}
-                      >
-                        🎧
-                      </div>
-                    )}
+  <div style={{ width: '100%', aspectRatio: '1/1', backgroundColor: '#111' }}>
+    <img src={dj.image_url} alt={dj.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+  </div>
+) : (
+  <div style={{ width: '100%', aspectRatio: '1/1', background: 'linear-gradient(135deg, #1a0000, #0d0d0d)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '64px' }}>
+    🎧
+  </div>
+)}
+
                     <div style={{ padding: '20px' }}>
                       <p style={{ color: '#dc2626', fontSize: '10px', letterSpacing: '2px', fontWeight: 700, margin: '0 0 6px' }}>● DJ</p>
                       <h3 style={{ fontSize: '20px', fontWeight: 900, color: '#fff', margin: '0 0 8px', letterSpacing: '-0.5px' }}>
