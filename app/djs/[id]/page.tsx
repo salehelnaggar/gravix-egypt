@@ -358,40 +358,41 @@ export default function DJProfilePage() {
         </section>
       )}
 
-      {/* BIO */}
-      {dj.bio && (
-        <section
-          style={{
-            padding: isMobile ? '40px 16px' : '56px 48px',
-            maxWidth: '900px',
-            margin: '0 auto',
-            borderBottom: '1px solid #111',
-          }}
-        >
-          <p
-            style={{
-              color: '#dc2626',
-              fontSize: '11px',
-              letterSpacing: '4px',
-              fontWeight: 700,
-              margin: '0 0 16px',
-            }}
-          >
-            ● ABOUT
-          </p>
-          <p
-            style={{
-              color: '#888',
-              fontSize: isMobile ? '15px' : '17px',
-              lineHeight: 1.9,
-              margin: 0,
-              fontWeight: 400,
-            }}
-          >
-            {dj.bio}
-          </p>
-        </section>
-      )}
+{/* BIO */}
+{dj.bio && (
+  <section
+    style={{
+      padding: isMobile ? '40px 16px' : '56px 48px',
+      maxWidth: '900px',
+      margin: '0 auto',
+      borderBottom: '1px solid #111',
+    }}
+  >
+    <p
+      style={{
+        color: '#dc2626',
+        fontSize: '11px',
+        letterSpacing: '4px',
+        fontWeight: 700,
+        margin: '0 0 16px',
+      }}
+    >
+      ● ABOUT
+    </p>
+    <p
+      style={{
+        color: '#888',
+        fontSize: isMobile ? '15px' : '17px',
+        lineHeight: 1.9,
+        margin: 0,
+        fontWeight: 400,
+        whiteSpace: 'pre-line',   // ده السطر المهم
+      }}
+    >
+      {dj.bio}
+    </p>
+  </section>
+)}
 
       {/* CONTACT & LINKS */}
       <section
