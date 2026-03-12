@@ -353,12 +353,37 @@ export default function HomePage() {
                       el.style.boxShadow = 'none'
                     }}
                   >
-                   {event.image_url ? (
-  <div style={{ width: '100%', aspectRatio: '4/3', backgroundColor: '#111' }}>
-    <img src={event.image_url} alt={event.title} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+{event.image_url ? (
+  <div
+    style={{
+      width: '100%',
+      aspectRatio: '3/4',       // نفس نسبة بوستر الـ DJ
+      overflow: 'hidden',
+      backgroundColor: '#000',
+    }}
+  >
+    <img
+      src={event.image_url}
+      alt={event.title}
+      style={{
+        width: '100%',
+        height: '100%',
+        objectFit: 'cover',     // تغطي الكارد زي البوستر
+      }}
+    />
   </div>
 ) : (
-  <div style={{ width: '100%', aspectRatio: '4/3', background: 'linear-gradient(135deg, #1a0000, #0d0d0d)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '48px' }}>
+  <div
+    style={{
+      width: '100%',
+      aspectRatio: '3/4',
+      background: 'linear-gradient(135deg, #1a0000, #0d0d0d)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: '48px',
+    }}
+  >
     🎶
   </div>
 )}
