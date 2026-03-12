@@ -74,15 +74,30 @@ export default function DJProfilePage() {
           overflow: 'hidden',
         }}
       >
-        {dj.image_url ? (
-          <img
-            src={dj.image_url}
-            alt={dj.name}
-            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.35)' }}
-          />
-        ) : (
-          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, #1a0000, #0d0d0d)' }} />
-        )}
+     {dj.image_url ? (
+  <img
+    src={dj.image_url}
+    alt={dj.name}
+    style={{
+      position: 'absolute',
+      inset: 0,
+      width: '100%',
+      height: '100%',
+      objectFit: 'cover',
+      objectPosition: 'top center', // نخلي التركيز فوق عشان الوش يبان
+      filter: 'brightness(0.35)',
+    }}
+  />
+) : (
+  <div
+    style={{
+      position: 'absolute',
+      inset: 0,
+      background: 'linear-gradient(135deg, #1a0000, #0d0d0d)',
+    }}
+  />
+)}
+
 
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, #050505 0%, transparent 60%)' }} />
 
