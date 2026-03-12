@@ -11,6 +11,9 @@ type DJ = {
   bio?: string
   image_url?: string
   whatsapp_number?: string
+  instagram_url?: string
+  spotify_url?: string
+  soundcloud_url?: string
   created_at?: string
 }
 
@@ -24,7 +27,10 @@ export default function ManageDJsPage() {
   const [selected, setSelected] = useState<DJ | null>(null)
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState<string | null>(null)
-  const [form, setForm] = useState({ name: '', bio: '', image_url: '', whatsapp_number: '' })
+  const [form, setForm] = useState({
+    name: '', bio: '', image_url: '', whatsapp_number: '',
+    instagram_url: '', spotify_url: '', soundcloud_url: '',
+  })
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string>('')
   const [successMsg, setSuccessMsg] = useState('')
@@ -45,7 +51,7 @@ export default function ManageDJsPage() {
   }
 
   const openAdd = () => {
-    setForm({ name: '', bio: '', image_url: '', whatsapp_number: '' })
+    setForm({ name: '', bio: '', image_url: '', whatsapp_number: '', instagram_url: '', spotify_url: '', soundcloud_url: '' })
     setImageFile(null)
     setImagePreview('')
     setSelected(null)
@@ -58,6 +64,9 @@ export default function ManageDJsPage() {
       bio: dj.bio || '',
       image_url: dj.image_url || '',
       whatsapp_number: dj.whatsapp_number || '',
+      instagram_url: dj.instagram_url || '',
+      spotify_url: dj.spotify_url || '',
+      soundcloud_url: dj.soundcloud_url || '',
     })
     setImageFile(null)
     setImagePreview(dj.image_url || '')
@@ -87,20 +96,20 @@ export default function ManageDJsPage() {
     setSaving(true)
     const imageUrl = await uploadImage()
 
+    const payload = {
+      name: form.name.trim(),
+      bio: form.bio.trim() || null,
+      image_url: imageUrl,
+      whatsapp_number: form.whatsapp_number.trim() || null,
+      instagram_url: form.instagram_url.trim() || null,
+      spotify_url: form.spotify_url.trim() || null,
+      soundcloud_url: form.soundcloud_url.trim() || null,
+    }
+
     if (mode === 'add') {
-      await supabase.from('djs').insert({
-        name: form.name.trim(),
-        bio: form.bio.trim() || null,
-        image_url: imageUrl,
-        whatsapp_number: form.whatsapp_number.trim() || null,
-      })
+      await supabase.from('djs').insert(payload)
     } else if (mode === 'edit' && selected) {
-      await supabase.from('djs').update({
-        name: form.name.trim(),
-        bio: form.bio.trim() || null,
-        image_url: imageUrl,
-        whatsapp_number: form.whatsapp_number.trim() || null,
-      }).eq('id', selected.id)
+      await supabase.from('djs').update(payload).eq('id', selected.id)
     }
 
     setSaving(false)
@@ -153,7 +162,9 @@ export default function ManageDJsPage() {
             ← BACK
           </button>
 
-          <p style={{ color: '#dc2626', fontSize: '11px', letterSpacing: '4px', fontWeight: 700, margin: '0 0 8px' }}>● {mode === 'add' ? 'NEW DJ' : 'EDIT DJ'}</p>
+          <p style={{ color: '#dc2626', fontSize: '11px', letterSpacing: '4px', fontWeight: 700, margin: '0 0 8px' }}>
+            ● {mode === 'add' ? 'NEW DJ' : 'EDIT DJ'}
+          </p>
           <h1 style={{ fontSize: '32px', fontWeight: 900, color: '#fff', letterSpacing: '-1px', margin: '0 0 40px' }}>
             {mode === 'add' ? 'ADD DJ' : `EDIT — ${selected?.name}`}
           </h1>
@@ -221,6 +232,55 @@ export default function ManageDJsPage() {
               <p style={{ color: '#333', fontSize: '11px', marginTop: '6px' }}>بدون + أو مسافات — مثال: 201093379437</p>
             </div>
 
+            {/* Divider */}
+            <div style={{ borderTop: '1px solid #1a1a1a', paddingTop: '8px' }}>
+              <p style={{ color: '#333', fontSize: '10px', letterSpacing: '3px', fontWeight: 700, margin: '0 0 20px' }}>
+                ● SOCIAL & MUSIC LINKS — OPTIONAL
+              </p>
+
+              {/* Instagram */}
+              <div style={{ marginBottom: '20px' }}>
+                <label style={labelStyle}>📸 INSTAGRAM URL</label>
+                <input
+                  type="text"
+                  placeholder="https://instagram.com/djname"
+                  value={form.instagram_url}
+                  onChange={e => setForm(f => ({ ...f, instagram_url: e.target.value }))}
+                  style={inputStyle}
+                  onFocus={e => (e.currentTarget.style.borderColor = '#dc2626')}
+                  onBlur={e => (e.currentTarget.style.borderColor = '#1a1a1a')}
+                />
+              </div>
+
+              {/* Spotify */}
+              <div style={{ marginBottom: '20px' }}>
+                <label style={labelStyle}>🎵 SPOTIFY PLAYLIST URL</label>
+                <input
+                  type="text"
+                  placeholder="https://open.spotify.com/playlist/..."
+                  value={form.spotify_url}
+                  onChange={e => setForm(f => ({ ...f, spotify_url: e.target.value }))}
+                  style={inputStyle}
+                  onFocus={e => (e.currentTarget.style.borderColor = '#1db954')}
+                  onBlur={e => (e.currentTarget.style.borderColor = '#1a1a1a')}
+                />
+              </div>
+
+              {/* SoundCloud */}
+              <div>
+                <label style={labelStyle}>☁️ SOUNDCLOUD PLAYLIST URL</label>
+                <input
+                  type="text"
+                  placeholder="https://soundcloud.com/djname/sets/..."
+                  value={form.soundcloud_url}
+                  onChange={e => setForm(f => ({ ...f, soundcloud_url: e.target.value }))}
+                  style={inputStyle}
+                  onFocus={e => (e.currentTarget.style.borderColor = '#ff5500')}
+                  onBlur={e => (e.currentTarget.style.borderColor = '#1a1a1a')}
+                />
+              </div>
+            </div>
+
             {/* Save Button */}
             <button
               onClick={handleSave}
@@ -268,15 +328,9 @@ export default function ManageDJsPage() {
             onClick={openAdd}
             style={{
               background: 'linear-gradient(135deg, #dc2626, #b91c1c)',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '12px',
-              padding: '12px 24px',
-              fontSize: '13px',
-              fontWeight: 700,
-              letterSpacing: '2px',
-              cursor: 'pointer',
-              fontFamily: 'Inter, sans-serif',
+              color: '#fff', border: 'none', borderRadius: '12px',
+              padding: '12px 24px', fontSize: '13px', fontWeight: 700,
+              letterSpacing: '2px', cursor: 'pointer', fontFamily: 'Inter, sans-serif',
               boxShadow: '0 0 24px rgba(220,38,38,0.2)',
             }}
           >
@@ -318,43 +372,29 @@ export default function ManageDJsPage() {
           {djs.map(dj => (
             <div
               key={dj.id}
-              style={{
-                backgroundColor: '#0d0d0d',
-                border: '1px solid #1a1a1a',
-                borderRadius: '16px',
-                padding: '20px 24px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '20px',
-                flexWrap: 'wrap',
-              }}
+              style={{ backgroundColor: '#0d0d0d', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '20px 24px', display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}
             >
               {/* Avatar */}
               {dj.image_url ? (
-                <img
-                  src={dj.image_url}
-                  alt={dj.name}
-                  style={{ width: '60px', height: '60px', borderRadius: '12px', objectFit: 'cover', flexShrink: 0 }}
-                />
+                <img src={dj.image_url} alt={dj.name} style={{ width: '60px', height: '60px', borderRadius: '12px', objectFit: 'cover', flexShrink: 0 }} />
               ) : (
-                <div style={{ width: '60px', height: '60px', borderRadius: '12px', backgroundColor: '#1a0000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', flexShrink: 0 }}>
-                  🎧
-                </div>
+                <div style={{ width: '60px', height: '60px', borderRadius: '12px', backgroundColor: '#1a0000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', flexShrink: 0 }}>🎧</div>
               )}
 
               {/* Info */}
               <div style={{ flex: 1, minWidth: '180px' }}>
                 <h3 style={{ color: '#fff', fontSize: '16px', fontWeight: 900, margin: '0 0 4px', letterSpacing: '-0.5px' }}>{dj.name}</h3>
                 {dj.bio && (
-                  <p style={{ color: '#444', fontSize: '12px', margin: '0 0 4px', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', maxWidth: '400px' }}>
+                  <p style={{ color: '#444', fontSize: '12px', margin: '0 0 6px', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', maxWidth: '400px' }}>
                     {dj.bio}
                   </p>
                 )}
-                {dj.whatsapp_number && (
-                  <p style={{ color: '#10b981', fontSize: '11px', margin: 0, letterSpacing: '1px' }}>
-                    💬 +{dj.whatsapp_number}
-                  </p>
-                )}
+                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                  {dj.whatsapp_number && <span style={{ color: '#10b981', fontSize: '11px' }}>💬 WhatsApp</span>}
+                  {dj.instagram_url && <span style={{ color: '#dc2626', fontSize: '11px' }}>📸 Instagram</span>}
+                  {dj.spotify_url && <span style={{ color: '#1db954', fontSize: '11px' }}>🎵 Spotify</span>}
+                  {dj.soundcloud_url && <span style={{ color: '#ff5500', fontSize: '11px' }}>☁️ SoundCloud</span>}
+                </div>
               </div>
 
               {/* Actions */}
@@ -362,52 +402,20 @@ export default function ManageDJsPage() {
                 <Link
                   href={`/djs/${dj.id}`}
                   target="_blank"
-                  style={{
-                    backgroundColor: '#111',
-                    border: '1px solid #1a1a1a',
-                    color: '#888',
-                    padding: '8px 14px',
-                    borderRadius: '8px',
-                    fontSize: '11px',
-                    fontWeight: 700,
-                    letterSpacing: '1px',
-                    textDecoration: 'none',
-                  }}
+                  style={{ backgroundColor: '#111', border: '1px solid #1a1a1a', color: '#888', padding: '8px 14px', borderRadius: '8px', fontSize: '11px', fontWeight: 700, letterSpacing: '1px', textDecoration: 'none' }}
                 >
                   👁 VIEW
                 </Link>
                 <button
                   onClick={() => openEdit(dj)}
-                  style={{
-                    backgroundColor: '#111',
-                    border: '1px solid rgba(59,130,246,0.3)',
-                    color: '#3b82f6',
-                    padding: '8px 14px',
-                    borderRadius: '8px',
-                    fontSize: '11px',
-                    fontWeight: 700,
-                    letterSpacing: '1px',
-                    cursor: 'pointer',
-                    fontFamily: 'Inter, sans-serif',
-                  }}
+                  style={{ backgroundColor: '#111', border: '1px solid rgba(59,130,246,0.3)', color: '#3b82f6', padding: '8px 14px', borderRadius: '8px', fontSize: '11px', fontWeight: 700, letterSpacing: '1px', cursor: 'pointer', fontFamily: 'Inter, sans-serif' }}
                 >
                   ✏️ EDIT
                 </button>
                 <button
                   onClick={() => handleDelete(dj.id)}
                   disabled={deleting === dj.id}
-                  style={{
-                    backgroundColor: '#111',
-                    border: '1px solid rgba(220,38,38,0.3)',
-                    color: '#dc2626',
-                    padding: '8px 14px',
-                    borderRadius: '8px',
-                    fontSize: '11px',
-                    fontWeight: 700,
-                    letterSpacing: '1px',
-                    cursor: deleting === dj.id ? 'not-allowed' : 'pointer',
-                    fontFamily: 'Inter, sans-serif',
-                  }}
+                  style={{ backgroundColor: '#111', border: '1px solid rgba(220,38,38,0.3)', color: '#dc2626', padding: '8px 14px', borderRadius: '8px', fontSize: '11px', fontWeight: 700, letterSpacing: '1px', cursor: deleting === dj.id ? 'not-allowed' : 'pointer', fontFamily: 'Inter, sans-serif' }}
                 >
                   {deleting === dj.id ? '...' : '🗑 DELETE'}
                 </button>
