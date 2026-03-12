@@ -203,9 +203,9 @@ export default function DJsPage() {
   <div
     style={{
       width: '100%',
-      aspectRatio: '1/1',
-      backgroundColor: '#111',
+      aspectRatio: '3/4',
       overflow: 'hidden',
+      backgroundColor: '#000',
     }}
   >
     <img
@@ -214,7 +214,7 @@ export default function DJsPage() {
       style={{
         width: '100%',
         height: '100%',
-        objectFit: 'contain',
+        objectFit: 'cover',
       }}
     />
   </div>
@@ -222,7 +222,7 @@ export default function DJsPage() {
   <div
     style={{
       width: '100%',
-      aspectRatio: '1/1',
+      aspectRatio: '3/4',
       background: 'linear-gradient(135deg, #1a0000, #0d0d0d)',
       display: 'flex',
       alignItems: 'center',

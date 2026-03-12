@@ -541,12 +541,37 @@ export default function HomePage() {
                       el.style.boxShadow = 'none'
                     }}
                   >
-                    {dj.image_url ? (
-  <div style={{ width: '100%', aspectRatio: '1/1', backgroundColor: '#111' }}>
-    <img src={dj.image_url} alt={dj.name} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                 {dj.image_url ? (
+  <div
+    style={{
+      width: '100%',
+      aspectRatio: '3/4',          // بوستر طولي مش مربع
+      overflow: 'hidden',
+      backgroundColor: '#000',
+    }}
+  >
+    <img
+      src={dj.image_url}
+      alt={dj.name}
+      style={{
+        width: '100%',
+        height: '100%',
+        objectFit: 'cover',        // ترجع cover تاني
+      }}
+    />
   </div>
 ) : (
-  <div style={{ width: '100%', aspectRatio: '1/1', background: 'linear-gradient(135deg, #1a0000, #0d0d0d)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '64px' }}>
+  <div
+    style={{
+      width: '100%',
+      aspectRatio: '3/4',
+      background: 'linear-gradient(135deg, #1a0000, #0d0d0d)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: '64px',
+    }}
+  >
     🎧
   </div>
 )}
