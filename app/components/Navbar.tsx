@@ -79,7 +79,7 @@ export default function Navbar() {
             whiteSpace: 'nowrap',
           }}
         >
-GRAVIX<span style={{ color: '#fff' }}> EGYPT</span>
+          GRAVIX<span style={{ color: '#fff' }}> EGYPT</span>
         </Link>
 
         {/* desktop links */}
@@ -98,6 +98,16 @@ GRAVIX<span style={{ color: '#fff' }}> EGYPT</span>
               onMouseLeave={(e) => (e.currentTarget.style.color = '#555')}
             >
               EVENTS
+            </button>
+
+            {/* NEW: DJS scroll link */}
+            <button
+              onClick={() => scrollTo('djs')}
+              style={linkStyle}
+              onMouseEnter={(e) => (e.currentTarget.style.color = '#fff')}
+              onMouseLeave={(e) => (e.currentTarget.style.color = '#555')}
+            >
+              DJS
             </button>
 
             <button
@@ -264,6 +274,15 @@ GRAVIX<span style={{ color: '#fff' }}> EGYPT</span>
           >
             EVENTS
           </button>
+
+          {/* NEW: DJS in mobile menu */}
+          <button
+            onClick={() => scrollTo('djs')}
+            style={{ ...linkStyle, textAlign: 'left' }}
+          >
+            DJS
+          </button>
+
           <button
             onClick={() => scrollTo('about')}
             style={{ ...linkStyle, textAlign: 'left' }}
