@@ -10,11 +10,18 @@ const empty = {
   location: '',
   location_url: '',
   transfer_number: '',
-  wave_1_price: '',
   image_url: '',
   is_active: true,
-  wave_2_price: '',
-  wave_3_price: '',
+
+  // Standing
+  standing_wave_1_price: '',
+  standing_wave_2_price: '',
+  standing_wave_3_price: '',
+
+  // Backstage
+  backstage_wave_1_price: '',
+  backstage_wave_2_price: '',
+  backstage_wave_3_price: '',
 }
 
 export default function DashboardEvents() {
@@ -29,11 +36,11 @@ export default function DashboardEvents() {
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
-  const [wave2Inputs, setWave2Inputs] = useState<Record<string, string>>({})
-  const [wave3Inputs, setWave3Inputs] = useState<Record<string, string>>({})
-
   useEffect(() => {
-    if (typeof window !== 'undefined' && localStorage.getItem('admin_auth') !== 'true') {
+    if (
+      typeof window !== 'undefined' &&
+      localStorage.getItem('admin_auth') !== 'true'
+    ) {
       router.push('/dashboard/login')
       return
     }
@@ -84,20 +91,47 @@ export default function DashboardEvents() {
       is_active: !!form.is_active,
       transfer_number: form.transfer_number || null,
 
-      wave_1_price: Number(form.wave_1_price),
-      wave_1_sold_out: form.wave_1_sold_out ?? false,
+      // STANDING
+      standing_wave_1_price: Number(form.standing_wave_1_price),
+      standing_wave_1_sold_out: form.standing_wave_1_sold_out ?? false,
 
-      wave_2_price: form.wave_2_price ? Number(form.wave_2_price) : null,
-      wave_2_sold_out: form.wave_2_sold_out ?? false,
+      standing_wave_2_price: form.standing_wave_2_price
+        ? Number(form.standing_wave_2_price)
+        : null,
+      standing_wave_2_sold_out: form.standing_wave_2_sold_out ?? false,
 
-      wave_3_price: form.wave_3_price ? Number(form.wave_3_price) : null,
-      wave_3_sold_out: form.wave_3_sold_out ?? false,
+      standing_wave_3_price: form.standing_wave_3_price
+        ? Number(form.standing_wave_3_price)
+        : null,
+      standing_wave_3_sold_out: form.standing_wave_3_sold_out ?? false,
 
-      price: Number(form.wave_1_price),
+      // BACKSTAGE
+      backstage_wave_1_price: form.backstage_wave_1_price
+        ? Number(form.backstage_wave_1_price)
+        : null,
+      backstage_wave_1_sold_out: form.backstage_wave_1_sold_out ?? false,
+
+      backstage_wave_2_price: form.backstage_wave_2_price
+        ? Number(form.backstage_wave_2_price)
+        : null,
+      backstage_wave_2_sold_out: form.backstage_wave_2_sold_out ?? false,
+
+      backstage_wave_3_price: form.backstage_wave_3_price
+        ? Number(form.backstage_wave_3_price)
+        : null,
+      backstage_wave_3_sold_out: form.backstage_wave_3_sold_out ?? false,
+
+      // reference price
+      price: form.standing_wave_1_price
+        ? Number(form.standing_wave_1_price)
+        : null,
     }
 
-    if (!payload.wave_1_price || isNaN(payload.wave_1_price)) {
-      alert('Wave 1 price is required and must be a number.')
+    if (
+      !payload.standing_wave_1_price ||
+      isNaN(payload.standing_wave_1_price)
+    ) {
+      alert('Standing Wave 1 price is required and must be a number.')
       setLoading(false)
       return
     }
@@ -134,11 +168,15 @@ export default function DashboardEvents() {
 
   const handleEdit = (event: any) => {
     setForm({
+      ...empty,
       ...event,
       date: event.date?.slice(0, 16),
-      wave_1_price: event.wave_1_price ?? '',
-      wave_2_price: event.wave_2_price ?? '',
-      wave_3_price: event.wave_3_price ?? '',
+      standing_wave_1_price: event.standing_wave_1_price ?? '',
+      standing_wave_2_price: event.standing_wave_2_price ?? '',
+      standing_wave_3_price: event.standing_wave_3_price ?? '',
+      backstage_wave_1_price: event.backstage_wave_1_price ?? '',
+      backstage_wave_2_price: event.backstage_wave_2_price ?? '',
+      backstage_wave_3_price: event.backstage_wave_3_price ?? '',
       transfer_number: event.transfer_number ?? '',
     })
     setEditing(event.id)
@@ -184,60 +222,211 @@ export default function DashboardEvents() {
     await load()
   }
 
-  const markWave1SoldOut = async (event: any) => {
-    if (!confirm('Mark WAVE 1 as SOLD OUT for this event?')) return
-    const { error } = await supabase
-      .from('events')
-      .update({ wave_1_sold_out: true })
-      .eq('id', event.id)
-    if (error) { alert('Error: ' + error.message); return }
-    await load()
+  // STANDING WAVES CONTROL
+  const handleStandingWaveAction = async (event: any) => {
+    // W1 مفتوحة
+    if (!event.standing_wave_1_sold_out && event.standing_wave_1_price != null) {
+      if (!confirm('Mark STANDING WAVE 1 as SOLD OUT and open WAVE 2?')) return
+      const priceStr = prompt(
+        'Enter STANDING WAVE 2 price (EGP):',
+        event.standing_wave_2_price ? String(event.standing_wave_2_price) : ''
+      )
+      const price = priceStr ? Number(priceStr) : NaN
+      if (!price || isNaN(price)) {
+        alert('Invalid price. Action cancelled.')
+        return
+      }
+      const { error } = await supabase
+        .from('events')
+        .update({
+          standing_wave_1_sold_out: true,
+          standing_wave_2_price: price,
+          standing_wave_2_sold_out: false,
+        })
+        .eq('id', event.id)
+      if (error) {
+        alert('Error: ' + error.message)
+        return
+      }
+      await load()
+      return
+    }
+
+    // W2 مفتوحة
+    if (
+      event.standing_wave_1_sold_out &&
+      !event.standing_wave_2_sold_out &&
+      event.standing_wave_2_price != null
+    ) {
+      if (!confirm('Mark STANDING WAVE 2 as SOLD OUT and open WAVE 3?')) return
+      const priceStr = prompt(
+        'Enter STANDING WAVE 3 price (EGP):',
+        event.standing_wave_3_price ? String(event.standing_wave_3_price) : ''
+      )
+      const price = priceStr ? Number(priceStr) : NaN
+      if (!price || isNaN(price)) {
+        alert('Invalid price. Action cancelled.')
+        return
+      }
+      const { error } = await supabase
+        .from('events')
+        .update({
+          standing_wave_2_sold_out: true,
+          standing_wave_3_price: price,
+          standing_wave_3_sold_out: false,
+        })
+        .eq('id', event.id)
+      if (error) {
+        alert('Error: ' + error.message)
+        return
+      }
+      await load()
+      return
+    }
+
+    // W3 مفتوحة
+    if (
+      event.standing_wave_1_sold_out &&
+      event.standing_wave_2_sold_out &&
+      !event.standing_wave_3_sold_out &&
+      event.standing_wave_3_price != null
+    ) {
+      if (!confirm('Mark STANDING WAVE 3 as SOLD OUT (no more standing)?'))
+        return
+      const { error } = await supabase
+        .from('events')
+        .update({
+          standing_wave_3_sold_out: true,
+        })
+        .eq('id', event.id)
+      if (error) {
+        alert('Error: ' + error.message)
+        return
+      }
+      await load()
+      return
+    }
+
+    alert('All STANDING waves are already SOLD OUT for this event, or missing base price.')
   }
 
-  const saveWave2Price = async (event: any) => {
-    const value = wave2Inputs[event.id]
-    const price = Number(value)
-    if (!price || isNaN(price)) { alert('Enter a valid Wave 2 price.'); return }
-    const { error } = await supabase
-      .from('events')
-      .update({ wave_2_price: price, wave_2_sold_out: false })
-      .eq('id', event.id)
-    if (error) { alert('Error: ' + error.message); return }
-    await load()
-    setWave2Inputs(prev => { const copy = { ...prev }; delete copy[event.id]; return copy })
-  }
+  // BACKSTAGE WAVES CONTROL
+  const handleBackstageWaveAction = async (event: any) => {
+    // لو مفيش أي سعر Backstage متسجل
+    if (
+      event.backstage_wave_1_price == null &&
+      event.backstage_wave_2_price == null &&
+      event.backstage_wave_3_price == null
+    ) {
+      if (!confirm('Set BACKSTAGE WAVE 1 price and open it?')) return
+      const priceStr = prompt('Enter BACKSTAGE WAVE 1 price (EGP):', '')
+      const price = priceStr ? Number(priceStr) : NaN
+      if (!price || isNaN(price)) {
+        alert('Invalid price. Action cancelled.')
+        return
+      }
+      const { error } = await supabase
+        .from('events')
+        .update({
+          backstage_wave_1_price: price,
+          backstage_wave_1_sold_out: false,
+        })
+        .eq('id', event.id)
+      if (error) {
+        alert('Error: ' + error.message)
+        return
+      }
+      await load()
+      return
+    }
 
-  const markWave2SoldOut = async (event: any) => {
-    if (!confirm('Mark WAVE 2 as SOLD OUT for this event?')) return
-    const { error } = await supabase
-      .from('events')
-      .update({ wave_2_sold_out: true })
-      .eq('id', event.id)
-    if (error) { alert('Error: ' + error.message); return }
-    await load()
-  }
+    // W1 مفتوحة
+    if (
+      !event.backstage_wave_1_sold_out &&
+      event.backstage_wave_1_price != null
+    ) {
+      if (!confirm('Mark BACKSTAGE WAVE 1 as SOLD OUT and open WAVE 2?')) return
+      const priceStr = prompt(
+        'Enter BACKSTAGE WAVE 2 price (EGP):',
+        event.backstage_wave_2_price ? String(event.backstage_wave_2_price) : ''
+      )
+      const price = priceStr ? Number(priceStr) : NaN
+      if (!price || isNaN(price)) {
+        alert('Invalid price. Action cancelled.')
+        return
+      }
+      const { error } = await supabase
+        .from('events')
+        .update({
+          backstage_wave_1_sold_out: true,
+          backstage_wave_2_price: price,
+          backstage_wave_2_sold_out: false,
+        })
+        .eq('id', event.id)
+      if (error) {
+        alert('Error: ' + error.message)
+        return
+      }
+      await load()
+      return
+    }
 
-  const saveWave3Price = async (event: any) => {
-    const value = wave3Inputs[event.id]
-    const price = Number(value)
-    if (!price || isNaN(price)) { alert('Enter a valid Wave 3 price.'); return }
-    const { error } = await supabase
-      .from('events')
-      .update({ wave_3_price: price, wave_3_sold_out: false })
-      .eq('id', event.id)
-    if (error) { alert('Error: ' + error.message); return }
-    await load()
-    setWave3Inputs(prev => { const copy = { ...prev }; delete copy[event.id]; return copy })
-  }
+    // W2 مفتوحة
+    if (
+      event.backstage_wave_1_sold_out &&
+      !event.backstage_wave_2_sold_out &&
+      event.backstage_wave_2_price != null
+    ) {
+      if (!confirm('Mark BACKSTAGE WAVE 2 as SOLD OUT and open WAVE 3?')) return
+      const priceStr = prompt(
+        'Enter BACKSTAGE WAVE 3 price (EGP):',
+        event.backstage_wave_3_price ? String(event.backstage_wave_3_price) : ''
+      )
+      const price = priceStr ? Number(priceStr) : NaN
+      if (!price || isNaN(price)) {
+        alert('Invalid price. Action cancelled.')
+        return
+      }
+      const { error } = await supabase
+        .from('events')
+        .update({
+          backstage_wave_2_sold_out: true,
+          backstage_wave_3_price: price,
+          backstage_wave_3_sold_out: false,
+        })
+        .eq('id', event.id)
+      if (error) {
+        alert('Error: ' + error.message)
+        return
+      }
+      await load()
+      return
+    }
 
-  const markWave3SoldOut = async (event: any) => {
-    if (!confirm('Mark WAVE 3 as SOLD OUT for this event?')) return
-    const { error } = await supabase
-      .from('events')
-      .update({ wave_3_sold_out: true })
-      .eq('id', event.id)
-    if (error) { alert('Error: ' + error.message); return }
-    await load()
+    // W3 مفتوحة
+    if (
+      event.backstage_wave_1_sold_out &&
+      event.backstage_wave_2_sold_out &&
+      !event.backstage_wave_3_sold_out &&
+      event.backstage_wave_3_price != null
+    ) {
+      if (!confirm('Mark BACKSTAGE WAVE 3 as SOLD OUT (no more backstage)?'))
+        return
+      const { error } = await supabase
+        .from('events')
+        .update({
+          backstage_wave_3_sold_out: true,
+        })
+        .eq('id', event.id)
+      if (error) {
+        alert('Error: ' + error.message)
+        return
+      }
+      await load()
+      return
+    }
+
+    alert('All BACKSTAGE waves are already SOLD OUT for this event.')
   }
 
   const inputStyle: React.CSSProperties = {
@@ -263,12 +452,40 @@ export default function DashboardEvents() {
       }}
     >
       <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
-
         {/* Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px', flexWrap: 'wrap', gap: '16px' }}>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            marginBottom: '40px',
+            flexWrap: 'wrap',
+            gap: '16px',
+          }}
+        >
           <div>
-            <p style={{ color: '#dc2626', fontSize: '11px', letterSpacing: '4px', fontWeight: 700, margin: '0 0 8px' }}>● ADMIN</p>
-            <h1 style={{ fontSize: '36px', fontWeight: 900, color: '#fff', margin: 0, letterSpacing: '-1px' }}>EVENTS</h1>
+            <p
+              style={{
+                color: '#dc2626',
+                fontSize: '11px',
+                letterSpacing: '4px',
+                fontWeight: 700,
+                margin: '0 0 8px',
+              }}
+            >
+              ● ADMIN
+            </p>
+            <h1
+              style={{
+                fontSize: '36px',
+                fontWeight: 900,
+                color: '#fff',
+                margin: 0,
+                letterSpacing: '-1px',
+              }}
+            >
+              EVENTS
+            </h1>
           </div>
           <button
             onClick={() => {
@@ -296,26 +513,63 @@ export default function DashboardEvents() {
 
         {/* Message */}
         {msg && (
-          <div style={{ backgroundColor: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)', borderRadius: '10px', padding: '12px 20px', color: '#10b981', fontSize: '14px', marginBottom: '24px' }}>
+          <div
+            style={{
+              backgroundColor: 'rgba(16,185,129,0.1)',
+              border: '1px solid rgba(16,185,129,0.3)',
+              borderRadius: '10px',
+              padding: '12px 20px',
+              color: '#10b981',
+              fontSize: '14px',
+              marginBottom: '24px',
+            }}
+          >
             {msg}
           </div>
         )}
 
         {/* Form */}
         {showForm && (
-          <div style={{ backgroundColor: '#0d0d0d', border: '1px solid #dc2626', borderRadius: '20px', padding: '32px', marginBottom: '32px' }}>
-            <p style={{ color: '#dc2626', fontSize: '11px', letterSpacing: '3px', fontWeight: 700, margin: '0 0 24px' }}>
+          <div
+            style={{
+              backgroundColor: '#0d0d0d',
+              border: '1px solid #dc2626',
+              borderRadius: '20px',
+              padding: '32px',
+              marginBottom: '32px',
+            }}
+          >
+            <p
+              style={{
+                color: '#dc2626',
+                fontSize: '11px',
+                letterSpacing: '3px',
+                fontWeight: 700,
+                margin: '0 0 24px',
+              }}
+            >
               {editing ? '✏️ EDIT EVENT' : '➕ NEW EVENT'}
             </p>
             <form onSubmit={handleSubmit}>
-
               {/* Image Upload */}
               <div style={{ marginBottom: '20px' }}>
-                <p style={{ color: '#444', fontSize: '10px', letterSpacing: '2px', fontWeight: 700, margin: '0 0 12px' }}>EVENT IMAGE</p>
+                <p
+                  style={{
+                    color: '#444',
+                    fontSize: '10px',
+                    letterSpacing: '2px',
+                    fontWeight: 700,
+                    margin: '0 0 12px',
+                  }}
+                >
+                  EVENT IMAGE
+                </p>
                 <div
                   onClick={() => fileRef.current?.click()}
                   style={{
-                    border: `2px dashed ${imagePreview ? '#dc2626' : '#1a1a1a'}`,
+                    border: `2px dashed ${
+                      imagePreview ? '#dc2626' : '#1a1a1a'
+                    }`,
                     borderRadius: '14px',
                     overflow: 'hidden',
                     cursor: 'pointer',
@@ -329,60 +583,214 @@ export default function DashboardEvents() {
                 >
                   {imagePreview ? (
                     <div style={{ position: 'relative', width: '100%' }}>
-                      <img src={imagePreview} alt="preview" style={{ width: '100%', maxHeight: '260px', objectFit: 'cover', display: 'block' }} />
+                      <img
+                        src={imagePreview}
+                        alt="preview"
+                        style={{
+                          width: '100%',
+                          maxHeight: '260px',
+                          objectFit: 'cover',
+                          display: 'block',
+                        }}
+                      />
                     </div>
                   ) : (
                     <div style={{ textAlign: 'center', padding: '32px' }}>
                       {uploading ? (
-                        <p style={{ color: '#f59e0b', fontSize: '13px', letterSpacing: '2px', margin: 0 }}>⏳ UPLOADING...</p>
+                        <p
+                          style={{
+                            color: '#f59e0b',
+                            fontSize: '13px',
+                            letterSpacing: '2px',
+                            margin: 0,
+                          }}
+                        >
+                          ⏳ UPLOADING...
+                        </p>
                       ) : (
                         <>
-                          <p style={{ fontSize: '32px', margin: '0 0 8px' }}>🖼️</p>
-                          <p style={{ color: '#444', fontSize: '13px', margin: '0 0 4px' }}>Click to upload image</p>
-                          <p style={{ color: '#333', fontSize: '11px', margin: 0 }}>JPG, PNG, WEBP</p>
+                          <p
+                            style={{
+                              fontSize: '32px',
+                              margin: '0 0 8px',
+                            }}
+                          >
+                            🖼️
+                          </p>
+                          <p
+                            style={{
+                              color: '#444',
+                              fontSize: '13px',
+                              margin: '0 0 4px',
+                            }}
+                          >
+                            Click to upload image
+                          </p>
+                          <p
+                            style={{
+                              color: '#333',
+                              fontSize: '11px',
+                              margin: 0,
+                            }}
+                          >
+                            JPG, PNG, WEBP
+                          </p>
                         </>
                       )}
                     </div>
                   )}
                 </div>
-                <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImageUpload} />
+                <input
+                  ref={fileRef}
+                  type="file"
+                  accept="image/*"
+                  style={{ display: 'none' }}
+                  onChange={handleImageUpload}
+                />
                 {uploading && (
-                  <p style={{ color: '#f59e0b', fontSize: '11px', marginTop: '8px', letterSpacing: '1px' }}>
+                  <p
+                    style={{
+                      color: '#f59e0b',
+                      fontSize: '11px',
+                      marginTop: '8px',
+                      letterSpacing: '1px',
+                    }}
+                  >
                     ⏳ Please wait for image to finish uploading...
                   </p>
                 )}
               </div>
 
-              {/* Fields */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+              {/* Basic + Standing W1 */}
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: '16px',
+                  marginBottom: '16px',
+                }}
+              >
                 <input
                   style={inputStyle}
                   placeholder="Event title *"
                   required
                   value={form.title}
-                  onChange={e => setForm({ ...form, title: e.target.value })}
+                  onChange={e =>
+                    setForm({ ...form, title: e.target.value })
+                  }
                 />
                 <input
                   style={inputStyle}
                   placeholder="Location (text) *"
                   required
                   value={form.location}
-                  onChange={e => setForm({ ...form, location: e.target.value })}
+                  onChange={e =>
+                    setForm({ ...form, location: e.target.value })
+                  }
                 />
                 <input
                   style={inputStyle}
                   type="datetime-local"
                   required
                   value={form.date}
-                  onChange={e => setForm({ ...form, date: e.target.value })}
+                  onChange={e =>
+                    setForm({ ...form, date: e.target.value })
+                  }
                 />
                 <input
                   style={inputStyle}
                   type="number"
-                  placeholder="Wave 1 Price (EGP) *"
+                  placeholder="Standing — Wave 1 Price (EGP) *"
                   required
-                  value={form.wave_1_price}
-                  onChange={e => setForm({ ...form, wave_1_price: e.target.value })}
+                  value={form.standing_wave_1_price}
+                  onChange={e =>
+                    setForm({
+                      ...form,
+                      standing_wave_1_price: e.target.value,
+                    })
+                  }
+                />
+              </div>
+
+              {/* Standing W2/W3 + Backstage W1 */}
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+                  gap: '16px',
+                  marginBottom: '16px',
+                }}
+              >
+                <input
+                  style={inputStyle}
+                  type="number"
+                  placeholder="Standing — Wave 2 (optional)"
+                  value={form.standing_wave_2_price}
+                  onChange={e =>
+                    setForm({
+                      ...form,
+                      standing_wave_2_price: e.target.value,
+                    })
+                  }
+                />
+                <input
+                  style={inputStyle}
+                  type="number"
+                  placeholder="Standing — Wave 3 (optional)"
+                  value={form.standing_wave_3_price}
+                  onChange={e =>
+                    setForm({
+                      ...form,
+                      standing_wave_3_price: e.target.value,
+                    })
+                  }
+                />
+                <input
+                  style={inputStyle}
+                  type="number"
+                  placeholder="Backstage — Wave 1 (optional)"
+                  value={form.backstage_wave_1_price}
+                  onChange={e =>
+                    setForm({
+                      ...form,
+                      backstage_wave_1_price: e.target.value,
+                    })
+                  }
+                />
+              </div>
+
+              {/* Backstage W2/W3 */}
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+                  gap: '16px',
+                  marginBottom: '16px',
+                }}
+              >
+                <input
+                  style={inputStyle}
+                  type="number"
+                  placeholder="Backstage — Wave 2 (optional)"
+                  value={form.backstage_wave_2_price}
+                  onChange={e =>
+                    setForm({
+                      ...form,
+                      backstage_wave_2_price: e.target.value,
+                    })
+                  }
+                />
+                <input
+                  style={inputStyle}
+                  type="number"
+                  placeholder="Backstage — Wave 3 (optional)"
+                  value={form.backstage_wave_3_price}
+                  onChange={e =>
+                    setForm({
+                      ...form,
+                      backstage_wave_3_price: e.target.value,
+                    })
+                  }
                 />
               </div>
 
@@ -390,33 +798,62 @@ export default function DashboardEvents() {
                 style={{ ...inputStyle, marginBottom: '16px' }}
                 placeholder="📍 Google Maps link (optional)"
                 value={form.location_url}
-                onChange={e => setForm({ ...form, location_url: e.target.value })}
+                onChange={e =>
+                  setForm({ ...form, location_url: e.target.value })
+                }
               />
 
-              {/* ✅ Transfer Number */}
               <input
                 style={{ ...inputStyle, marginBottom: '16px' }}
                 placeholder="💳 Transfer Number — رقم التحويل لهذا الإيفنت"
                 value={form.transfer_number}
-                onChange={e => setForm({ ...form, transfer_number: e.target.value })}
+                onChange={e =>
+                  setForm({
+                    ...form,
+                    transfer_number: e.target.value,
+                  })
+                }
               />
 
               <textarea
-                style={{ ...inputStyle, minHeight: '100px', resize: 'vertical', marginBottom: '16px' }}
+                style={{
+                  ...inputStyle,
+                  minHeight: '100px',
+                  resize: 'vertical',
+                  marginBottom: '16px',
+                }}
                 placeholder="Description *"
                 required
                 value={form.description}
-                onChange={e => setForm({ ...form, description: e.target.value })}
+                onChange={e =>
+                  setForm({ ...form, description: e.target.value })
+                }
               />
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  marginBottom: '24px',
+                }}
+              >
                 <input
                   type="checkbox"
                   id="active"
                   checked={form.is_active}
-                  onChange={e => setForm({ ...form, is_active: e.target.checked })}
+                  onChange={e =>
+                    setForm({ ...form, is_active: e.target.checked })
+                  }
                 />
-                <label htmlFor="active" style={{ color: '#555', fontSize: '13px', cursor: 'pointer' }}>
+                <label
+                  htmlFor="active"
+                  style={{
+                    color: '#555',
+                    fontSize: '13px',
+                    cursor: 'pointer',
+                  }}
+                >
                   Visible to public
                 </label>
               </div>
@@ -425,30 +862,41 @@ export default function DashboardEvents() {
                 type="submit"
                 disabled={loading || uploading}
                 style={{
-                  backgroundColor: loading || uploading ? '#1a1a1a' : '#dc2626',
+                  backgroundColor:
+                    loading || uploading ? '#1a1a1a' : '#dc2626',
                   color: loading || uploading ? '#333' : '#fff',
                   border: 'none',
                   padding: '14px 32px',
                   borderRadius: '10px',
                   fontWeight: 700,
                   fontSize: '14px',
-                  cursor: loading || uploading ? 'not-allowed' : 'pointer',
+                  cursor:
+                    loading || uploading ? 'not-allowed' : 'pointer',
                   letterSpacing: '1px',
                   fontFamily: 'Inter, sans-serif',
                 }}
               >
-                {loading ? 'SAVING...' : uploading ? 'WAIT — IMAGE UPLOADING...' : editing ? 'SAVE CHANGES →' : 'CREATE EVENT →'}
+                {loading
+                  ? 'SAVING...'
+                  : uploading
+                  ? 'WAIT — IMAGE UPLOADING...'
+                  : editing
+                  ? 'SAVE CHANGES →'
+                  : 'CREATE EVENT →'}
               </button>
             </form>
           </div>
         )}
 
         {/* Events List */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px',
+          }}
+        >
           {events.map(event => {
-            const wave1Price = event.wave_1_price
-            const wave2Price = event.wave_2_price
-            const wave3Price = event.wave_3_price
             return (
               <div
                 key={event.id}
@@ -468,40 +916,115 @@ export default function DashboardEvents() {
                   <img
                     src={event.image_url}
                     alt={event.title}
-                    style={{ width: '80px', height: '80px', borderRadius: '12px', objectFit: 'cover', flexShrink: 0, filter: event.is_finished ? 'grayscale(80%)' : 'none' }}
+                    style={{
+                      width: '80px',
+                      height: '80px',
+                      borderRadius: '12px',
+                      objectFit: 'cover',
+                      flexShrink: 0,
+                      filter: event.is_finished
+                        ? 'grayscale(80%)'
+                        : 'none',
+                    }}
                   />
                 ) : (
-                  <div style={{ width: '80px', height: '80px', borderRadius: '12px', background: '#111', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px', flexShrink: 0 }}>
+                  <div
+                    style={{
+                      width: '80px',
+                      height: '80px',
+                      borderRadius: '12px',
+                      background: '#111',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '32px',
+                      flexShrink: 0,
+                    }}
+                  >
                     🎶
                   </div>
                 )}
 
                 <div style={{ flex: 1, minWidth: '220px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px', flexWrap: 'wrap' }}>
-                    <h3 style={{ color: event.is_finished ? '#444' : '#fff', fontSize: '16px', fontWeight: 900, margin: 0 }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      marginBottom: '6px',
+                      flexWrap: 'wrap',
+                    }}
+                  >
+                    <h3
+                      style={{
+                        color: event.is_finished ? '#444' : '#fff',
+                        fontSize: '16px',
+                        fontWeight: 900,
+                        margin: 0,
+                      }}
+                    >
                       {event.title}
                     </h3>
-                    <span style={{
-                      backgroundColor: event.is_finished ? 'rgba(100,100,100,0.15)' : event.is_active ? 'rgba(16,185,129,0.1)' : 'rgba(100,100,100,0.1)',
-                      border: `1px solid ${event.is_finished ? '#222' : event.is_active ? 'rgba(16,185,129,0.3)' : '#222'}`,
-                      color: event.is_finished ? '#444' : event.is_active ? '#10b981' : '#444',
-                      padding: '2px 10px', borderRadius: '999px', fontSize: '10px', fontWeight: 700,
-                    }}>
-                      {event.is_finished ? '🏁 FINISHED' : event.is_active ? 'LIVE' : 'HIDDEN'}
+                    <span
+                      style={{
+                        backgroundColor: event.is_finished
+                          ? 'rgba(100,100,100,0.15)'
+                          : event.is_active
+                          ? 'rgba(16,185,129,0.1)'
+                          : 'rgba(100,100,100,0.1)',
+                        border: `1px solid ${
+                          event.is_finished
+                            ? '#222'
+                            : event.is_active
+                            ? 'rgba(16,185,129,0.3)'
+                            : '#222'
+                        }`,
+                        color: event.is_finished
+                          ? '#444'
+                          : event.is_active
+                          ? '#10b981'
+                          : '#444',
+                        padding: '2px 10px',
+                        borderRadius: '999px',
+                        fontSize: '10px',
+                        fontWeight: 700,
+                      }}
+                    >
+                      {event.is_finished
+                        ? '🏁 FINISHED'
+                        : event.is_active
+                        ? 'LIVE'
+                        : 'HIDDEN'}
                     </span>
                   </div>
 
-                  <p style={{ color: '#444', fontSize: '13px', margin: '0 0 4px' }}>
+                  <p
+                    style={{
+                      color: '#444',
+                      fontSize: '13px',
+                      margin: '0 0 4px',
+                    }}
+                  >
                     📅{' '}
                     {new Date(event.date).toLocaleDateString('en-US', {
-                      weekday: 'short', month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC',
+                      weekday: 'short',
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric',
+                      timeZone: 'UTC',
                     })}{' '}
                     · 📍 {event.location}
                   </p>
 
-                  {/* ✅ Transfer Number badge */}
                   {event.transfer_number && (
-                    <p style={{ color: '#f59e0b', fontSize: '12px', fontWeight: 600, margin: '2px 0 4px' }}>
+                    <p
+                      style={{
+                        color: '#f59e0b',
+                        fontSize: '12px',
+                        fontWeight: 600,
+                        margin: '2px 0 4px',
+                      }}
+                    >
                       💳 Transfer: {event.transfer_number}
                     </p>
                   )}
@@ -511,85 +1034,176 @@ export default function DashboardEvents() {
                       href={event.location_url}
                       target="_blank"
                       rel="noreferrer"
-                      style={{ color: '#3b82f6', fontSize: '11px', textDecoration: 'none', letterSpacing: '1px', fontWeight: 600 }}
+                      style={{
+                        color: '#3b82f6',
+                        fontSize: '11px',
+                        textDecoration: 'none',
+                        letterSpacing: '1px',
+                        fontWeight: 600,
+                      }}
                     >
                       📍 View on Maps →
                     </a>
                   )}
 
+                  {/* Prices display */}
                   <div style={{ marginTop: '6px' }}>
-                    <p style={{ color: '#dc2626', fontSize: '13px', fontWeight: 700, margin: 0 }}>Wave 1: {wave1Price ?? '-'} EGP</p>
-                    <p style={{ color: wave2Price ? '#f59e0b' : '#444', fontSize: '12px', fontWeight: 600, margin: '2px 0 0' }}>
-                      Wave 2: {wave2Price != null ? `${wave2Price} EGP` : 'Not set'}
+                    <p
+                      style={{
+                        color: '#dc2626',
+                        fontSize: '13px',
+                        fontWeight: 700,
+                        margin: 0,
+                      }}
+                    >
+                      Standing W1:{' '}
+                      {event.standing_wave_1_price ?? '-'} EGP
                     </p>
-                    <p style={{ color: wave3Price ? '#22c55e' : '#444', fontSize: '12px', fontWeight: 600, margin: '2px 0 0' }}>
-                      Wave 3: {wave3Price != null ? `${wave3Price} EGP` : 'Not set'}
+                    <p
+                      style={{
+                        color: '#f59e0b',
+                        fontSize: '12px',
+                        fontWeight: 600,
+                        margin: '2px 0 0',
+                      }}
+                    >
+                      Standing W2:{' '}
+                      {event.standing_wave_2_price ?? 'Not set'}
+                    </p>
+                    <p
+                      style={{
+                        color: '#22c55e',
+                        fontSize: '12px',
+                        fontWeight: 600,
+                        margin: '2px 0 0',
+                      }}
+                    >
+                      Standing W3:{' '}
+                      {event.standing_wave_3_price ?? 'Not set'}
+                    </p>
+
+                    <p
+                      style={{
+                        color: '#3b82f6',
+                        fontSize: '12px',
+                        fontWeight: 700,
+                        margin: '6px 0 0',
+                      }}
+                    >
+                      Backstage W1:{' '}
+                      {event.backstage_wave_1_price ?? 'Not set'}
+                    </p>
+                    <p
+                      style={{
+                        color: '#60a5fa',
+                        fontSize: '12px',
+                        fontWeight: 600,
+                        margin: '2px 0 0',
+                      }}
+                    >
+                      Backstage W2:{' '}
+                      {event.backstage_wave_2_price ?? 'Not set'}
+                    </p>
+                    <p
+                      style={{
+                        color: '#93c5fd',
+                        fontSize: '12px',
+                        fontWeight: 600,
+                        margin: '2px 0 0',
+                      }}
+                    >
+                      Backstage W3:{' '}
+                      {event.backstage_wave_3_price ?? 'Not set'}
                     </p>
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', flexWrap: 'wrap', minWidth: '220px' }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '8px',
+                    flexWrap: 'wrap',
+                    minWidth: '220px',
+                  }}
+                >
+                  {/* Wave buttons (Standing / Backstage) */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: '6px',
+                      marginBottom: '4px',
+                    }}
+                  >
+                    <button
+                      onClick={() => handleStandingWaveAction(event)}
+                      style={{
+                        backgroundColor: 'rgba(239,68,68,0.1)',
+                        border: '1px solid rgba(239,68,68,0.4)',
+                        color: '#ef4444',
+                        padding: '8px 12px',
+                        borderRadius: '8px',
+                        fontSize: '10px',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        fontFamily: 'Inter, sans-serif',
+                        letterSpacing: '1px',
+                      }}
+                    >
+                      STANDING — NEXT WAVE / SOLD OUT
+                    </button>
 
-                  {/* Wave buttons */}
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '4px' }}>
-                    {!event.wave_1_sold_out && !event.is_finished && (
-                      <button onClick={() => markWave1SoldOut(event)} style={{ backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.4)', color: '#ef4444', padding: '6px 10px', borderRadius: '8px', fontSize: '10px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', letterSpacing: '1px' }}>
-                        MARK WAVE 1 SOLD OUT
-                      </button>
-                    )}
-
-                    {event.wave_1_sold_out && !event.wave_2_price && !event.is_finished && (
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', alignItems: 'center' }}>
-                        <input
-                          type="number"
-                          placeholder="Wave 2 price"
-                          value={wave2Inputs[event.id] ?? ''}
-                          onChange={e => setWave2Inputs(prev => ({ ...prev, [event.id]: e.target.value }))}
-                          style={{ ...inputStyle, padding: '8px 10px', fontSize: '12px', width: '110px' }}
-                        />
-                        <button onClick={() => saveWave2Price(event)} style={{ backgroundColor: 'rgba(234,179,8,0.15)', border: '1px solid rgba(234,179,8,0.5)', color: '#eab308', padding: '6px 10px', borderRadius: '8px', fontSize: '10px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', letterSpacing: '1px' }}>
-                          SAVE WAVE 2
-                        </button>
-                      </div>
-                    )}
-
-                    {event.wave_2_price && !event.wave_2_sold_out && !event.is_finished && (
-                      <button onClick={() => markWave2SoldOut(event)} style={{ backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.4)', color: '#ef4444', padding: '6px 10px', borderRadius: '8px', fontSize: '10px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', letterSpacing: '1px' }}>
-                        MARK WAVE 2 SOLD OUT
-                      </button>
-                    )}
-
-                    {event.wave_2_sold_out && !event.wave_3_price && !event.is_finished && (
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', alignItems: 'center' }}>
-                        <input
-                          type="number"
-                          placeholder="Wave 3 price"
-                          value={wave3Inputs[event.id] ?? ''}
-                          onChange={e => setWave3Inputs(prev => ({ ...prev, [event.id]: e.target.value }))}
-                          style={{ ...inputStyle, padding: '8px 10px', fontSize: '12px', width: '110px' }}
-                        />
-                        <button onClick={() => saveWave3Price(event)} style={{ backgroundColor: 'rgba(34,197,94,0.15)', border: '1px solid rgba(34,197,94,0.5)', color: '#22c55e', padding: '6px 10px', borderRadius: '8px', fontSize: '10px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', letterSpacing: '1px' }}>
-                          SAVE WAVE 3
-                        </button>
-                      </div>
-                    )}
-
-                    {event.wave_3_price && !event.wave_3_sold_out && !event.is_finished && (
-                      <button onClick={() => markWave3SoldOut(event)} style={{ backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.4)', color: '#ef4444', padding: '6px 10px', borderRadius: '8px', fontSize: '10px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', letterSpacing: '1px' }}>
-                        MARK WAVE 3 SOLD OUT
-                      </button>
-                    )}
+                    <button
+                      onClick={() => handleBackstageWaveAction(event)}
+                      style={{
+                        backgroundColor: 'rgba(147,51,234,0.12)',
+                        border: '1px solid rgba(147,51,234,0.5)',
+                        color: '#a855f7',
+                        padding: '8px 12px',
+                        borderRadius: '8px',
+                        fontSize: '10px',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        fontFamily: 'Inter, sans-serif',
+                        letterSpacing: '1px',
+                      }}
+                    >
+                      BACKSTAGE — NEXT WAVE / SOLD OUT
+                    </button>
                   </div>
 
                   {/* Base actions */}
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: '6px',
+                    }}
+                  >
                     <button
-                      onClick={() => handleFinish(event.id, event.is_finished)}
+                      onClick={() =>
+                        handleFinish(event.id, event.is_finished)
+                      }
                       style={{
-                        backgroundColor: event.is_finished ? 'rgba(100,100,100,0.1)' : 'rgba(16,185,129,0.1)',
-                        border: `1px solid ${event.is_finished ? '#333' : 'rgba(16,185,129,0.3)'}`,
-                        color: event.is_finished ? '#555' : '#10b981',
-                        padding: '8px 16px', borderRadius: '8px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', letterSpacing: '1px',
+                        backgroundColor: event.is_finished
+                          ? 'rgba(100,100,100,0.1)'
+                          : 'rgba(16,185,129,0.1)',
+                        border: `1px solid ${
+                          event.is_finished
+                            ? '#333'
+                            : 'rgba(16,185,129,0.3)'
+                        }`,
+                        color: event.is_finished
+                          ? '#555'
+                          : '#10b981',
+                        padding: '8px 16px',
+                        borderRadius: '8px',
+                        fontSize: '11px',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        fontFamily: 'Inter, sans-serif',
+                        letterSpacing: '1px',
                       }}
                     >
                       {event.is_finished ? 'UNFINISH' : '🏁 FINISH'}
@@ -597,31 +1211,83 @@ export default function DashboardEvents() {
 
                     {!event.is_finished && (
                       <button
-                        onClick={() => toggleActive(event.id, event.is_active)}
-                        style={{ backgroundColor: '#111', border: '1px solid #222', color: '#555', padding: '8px 16px', borderRadius: '8px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', letterSpacing: '1px' }}
+                        onClick={() =>
+                          toggleActive(event.id, event.is_active)
+                        }
+                        style={{
+                          backgroundColor: '#111',
+                          border: '1px solid #222',
+                          color: '#555',
+                          padding: '8px 16px',
+                          borderRadius: '8px',
+                          fontSize: '11px',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          fontFamily: 'Inter, sans-serif',
+                          letterSpacing: '1px',
+                        }}
                       >
                         {event.is_active ? 'HIDE' : 'SHOW'}
                       </button>
                     )}
 
-                    {/* ✅ زرار SUMMARY */}
                     <button
-                      onClick={() => router.push(`/dashboard/events/${event.id}/summary`)}
-                      style={{ backgroundColor: 'rgba(234,179,8,0.1)', border: '1px solid rgba(234,179,8,0.4)', color: '#eab308', padding: '8px 16px', borderRadius: '8px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', letterSpacing: '1px' }}
+                      onClick={() =>
+                        router.push(
+                          `/dashboard/events/${event.id}/summary`,
+                        )
+                      }
+                      style={{
+                        backgroundColor: 'rgba(234,179,8,0.1)',
+                        border:
+                          '1px solid rgba(234,179,8,0.4)',
+                        color: '#eab308',
+                        padding: '8px 16px',
+                        borderRadius: '8px',
+                        fontSize: '11px',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        fontFamily: 'Inter, sans-serif',
+                        letterSpacing: '1px',
+                      }}
                     >
                       SUMMARY
                     </button>
 
                     <button
                       onClick={() => handleEdit(event)}
-                      style={{ backgroundColor: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.3)', color: '#3b82f6', padding: '8px 16px', borderRadius: '8px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', letterSpacing: '1px' }}
+                      style={{
+                        backgroundColor: 'rgba(59,130,246,0.1)',
+                        border:
+                          '1px solid rgba(59,130,246,0.3)',
+                        color: '#3b82f6',
+                        padding: '8px 16px',
+                        borderRadius: '8px',
+                        fontSize: '11px',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        fontFamily: 'Inter, sans-serif',
+                        letterSpacing: '1px',
+                      }}
                     >
                       EDIT
                     </button>
 
                     <button
                       onClick={() => handleDelete(event.id)}
-                      style={{ backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', padding: '8px 16px', borderRadius: '8px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', fontFamily: 'Inter, sans-serif', letterSpacing: '1px' }}
+                      style={{
+                        backgroundColor: 'rgba(239,68,68,0.1)',
+                        border:
+                          '1px solid rgba(239,68,68,0.3)',
+                        color: '#ef4444',
+                        padding: '8px 16px',
+                        borderRadius: '8px',
+                        fontSize: '11px',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        fontFamily: 'Inter, sans-serif',
+                        letterSpacing: '1px',
+                      }}
                     >
                       DELETE
                     </button>
@@ -632,8 +1298,21 @@ export default function DashboardEvents() {
           })}
 
           {events.length === 0 && (
-            <div style={{ textAlign: 'center', padding: '80px', color: '#333', border: '1px dashed #1a1a1a', borderRadius: '16px' }}>
-              <p style={{ fontSize: '12px', letterSpacing: '3px' }}>
+            <div
+              style={{
+                textAlign: 'center',
+                padding: '80px',
+                color: '#333',
+                border: '1px dashed #1a1a1a',
+                borderRadius: '16px',
+              }}
+            >
+              <p
+                style={{
+                  fontSize: '12px',
+                  letterSpacing: '3px',
+                }}
+              >
                 NO EVENTS YET — CREATE YOUR FIRST EVENT
               </p>
             </div>

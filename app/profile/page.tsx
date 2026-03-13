@@ -449,7 +449,7 @@ const statusConfig: Record<
     color: '#8b5cf6',
     icon: '🔍',
     label: 'PAYMENT UNDER REVIEW',
-    desc: 'We received your payment proof and are reviewing it.',
+    desc: 'We received your payment proof and are reviewing it After Review the message will be updated with your entry code.',
   },
   confirmed: {
     color: '#10b981',

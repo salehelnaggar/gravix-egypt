@@ -1,4 +1,5 @@
 'use client'
+
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
@@ -12,72 +13,41 @@ type EventWithWaves = {
   image_url?: string
   is_active: boolean
   is_finished: boolean
-  price?: number | null
-  wave_1_price?: number | null
-  wave_1_sold_out?: boolean | null
-  wave_2_price?: number | null
-  wave_2_sold_out?: boolean | null
-  wave_3_price?: number | null
-  wave_3_sold_out?: boolean | null
+
+  // STANDING
+  standing_wave_1_price?: number | null
+  standing_wave_1_sold_out?: boolean | null
+  standing_wave_2_price?: number | null
+  standing_wave_2_sold_out?: boolean | null
+  standing_wave_3_price?: number | null
+  standing_wave_3_sold_out?: boolean | null
+
+  // BACKSTAGE
+  backstage_wave_1_price?: number | null
+  backstage_wave_1_sold_out?: boolean | null
+  backstage_wave_2_price?: number | null
+  backstage_wave_2_sold_out?: boolean | null
+  backstage_wave_3_price?: number | null
+  backstage_wave_3_sold_out?: boolean | null
 }
 
-function getCurrentPriceAndWave(event: EventWithWaves) {
+function getAvailability(event: EventWithWaves) {
   if (event.is_finished) {
-    return {
-      price: null,
-      label: 'FINISHED',
-      subtitle: '',
-      color: '#555',
-      soldOut: true,
-    }
+    return { soldOut: true, ended: true }
   }
 
-  if (!event.wave_1_sold_out && event.wave_1_price != null) {
-    return {
-      price: event.wave_1_price as number,
-      label: 'WAVE 1',
-      subtitle: 'EARLY BIRD',
-      color: '#22c55e',
-      soldOut: false,
-    }
-  }
+  const standingAllSold =
+    (!!event.standing_wave_1_sold_out || event.standing_wave_1_price == null) &&
+    (!!event.standing_wave_2_sold_out || event.standing_wave_2_price == null) &&
+    (!!event.standing_wave_3_sold_out || event.standing_wave_3_price == null)
 
-  if (
-    event.wave_1_sold_out &&
-    !event.wave_2_sold_out &&
-    event.wave_2_price != null
-  ) {
-    return {
-      price: event.wave_2_price as number,
-      label: 'WAVE 2',
-      subtitle: 'REGULAR PRICE',
-      color: '#eab308',
-      soldOut: false,
-    }
-  }
+  const backstageAllSold =
+    (!!event.backstage_wave_1_sold_out || event.backstage_wave_1_price == null) &&
+    (!!event.backstage_wave_2_sold_out || event.backstage_wave_2_price == null) &&
+    (!!event.backstage_wave_3_sold_out || event.backstage_wave_3_price == null)
 
-  if (
-    event.wave_1_sold_out &&
-    !!event.wave_2_sold_out &&
-    !event.wave_3_sold_out &&
-    event.wave_3_price != null
-  ) {
-    return {
-      price: event.wave_3_price as number,
-      label: 'WAVE 3',
-      subtitle: 'LAST WAVE',
-      color: '#3b82f6',
-      soldOut: false,
-    }
-  }
-
-  return {
-    price: null,
-    label: 'SOLD OUT',
-    subtitle: '',
-    color: '#ef4444',
-    soldOut: true,
-  }
+  const soldOut = standingAllSold && backstageAllSold
+  return { soldOut, ended: false }
 }
 
 export default function EventsPage() {
@@ -112,6 +82,7 @@ export default function EventsPage() {
               margin: '0 0 12px',
             }}
           >
+            ● EVENTS
           </p>
           <h1
             style={{
@@ -122,7 +93,7 @@ export default function EventsPage() {
               letterSpacing: '-2px',
             }}
           >
-            EVENTS
+            ALL EVENTS
           </h1>
           <div
             style={{
@@ -163,8 +134,7 @@ export default function EventsPage() {
           }}
         >
           {events.map(event => {
-            const { price, label, subtitle, color, soldOut } =
-              getCurrentPriceAndWave(event)
+            const { soldOut, ended } = getAvailability(event)
 
             return (
               <div
@@ -282,8 +252,7 @@ export default function EventsPage() {
                         month: 'short',
                         day: 'numeric',
                         year: 'numeric',
-                          timeZone: 'UTC',
-
+                        timeZone: 'UTC',
                       })
                       .toUpperCase()}
                   </div>
@@ -299,6 +268,7 @@ export default function EventsPage() {
                   >
                     {event.title}
                   </h2>
+
                   <p
                     style={{
                       color: '#333',
@@ -307,6 +277,7 @@ export default function EventsPage() {
                       margin: '0 0 20px',
                     }}
                   >
+                    {/* description ممكن تضيفه هنا لو حابب */}
                   </p>
 
                   <div
@@ -317,7 +288,12 @@ export default function EventsPage() {
                       marginBottom: '24px',
                     }}
                   >
-                    <span style={{ color: '#444', fontSize: '13px' }}>
+                    <span
+                      style={{
+                        color: '#444',
+                        fontSize: '13px',
+                      }}
+                    >
                       📍 {event.location}
                     </span>
                   </div>
@@ -329,67 +305,41 @@ export default function EventsPage() {
                       justifyContent: 'space-between',
                     }}
                   >
+                    {/* Left side: status text */}
                     <div>
                       <p
                         style={{
                           color: '#333',
                           fontSize: '10px',
                           letterSpacing: '2px',
-                          margin: '0 0 2px',
+                          margin: '0 0 4px',
                         }}
                       >
-                        PRICE / PERSON
+                        STATUS
                       </p>
-                      {price === null ? (
-                        <p
-                          style={{
-                            color: event.is_finished ? '#444' : '#ef4444',
-                            fontSize: '18px',
-                            fontWeight: 800,
-                            margin: 0,
-                          }}
-                        >
-                          {event.is_finished ? 'EVENT ENDED' : 'SOLD OUT'}
-                        </p>
-                      ) : (
-                        <>
-                          <p
-                            style={{
-                              color: event.is_finished ? '#444' : '#fff',
-                              fontSize: '22px',
-                              fontWeight: 900,
-                              margin: 0,
-                            }}
-                          >
-                            {price}{' '}
-                            <span
-                              style={{
-                                color: '#333',
-                                fontSize: '12px',
-                                fontWeight: 400,
-                              }}
-                            >
-                              EGP
-                            </span>
-                          </p>
-                          <p
-                            style={{
-                              color,
-                              fontSize: '10px',
-                              fontWeight: 700,
-                              letterSpacing: '2px',
-                              marginTop: '4px',
-                            }}
-                          >
-                            {label}
-                            {subtitle && ` — ${subtitle}`}
-                          </p>
-                        </>
-                      )}
+                      <p
+                        style={{
+                          color: ended
+                            ? '#444'
+                            : soldOut
+                            ? '#ef4444'
+                            : '#22c55e',
+                          fontSize: '14px',
+                          fontWeight: 700,
+                          margin: 0,
+                          letterSpacing: '1px',
+                        }}
+                      >
+                        {ended
+                          ? 'EVENT ENDED'
+                          : soldOut
+                          ? 'SOLD OUT'
+                          : 'AVAILABLE'}
+                      </p>
                     </div>
 
                     {/* CTA Button */}
-                    {event.is_finished || soldOut ? (
+                    {ended || soldOut ? (
                       <Link
                         href={`/events/${event.id}`}
                         style={{

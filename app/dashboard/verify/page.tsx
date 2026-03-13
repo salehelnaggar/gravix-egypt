@@ -1,7 +1,10 @@
 'use client'
+
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
+
+type TicketType = 'standing' | 'backstage'
 
 export default function VerifyEntryPage() {
   const router = useRouter()
@@ -28,18 +31,15 @@ export default function VerifyEntryPage() {
       .eq('entry_code', code.trim().toUpperCase())
       .single()
 
-    // مفيش حجز بالكود ده
     if (!data) {
       setStatus('notfound')
       setLoading(false)
       return
     }
 
-    // فلتر يمنع الإيفنتات القديمة
     const eventDate = data.events?.date ? new Date(data.events.date) : null
     const now = new Date()
     if (!eventDate || eventDate < now) {
-      // تعامل معاه كأنه مش موجود / غير صالح
       setStatus('notfound')
       setLoading(false)
       return
@@ -75,7 +75,12 @@ export default function VerifyEntryPage() {
     setStatus('idle')
   }
 
-  const safeGuests = Array.isArray(result?.people_details) ? result.people_details : []
+  const guests: any[] = Array.isArray(result?.people_details) ? result.people_details : []
+  const mainGuest = guests[0]
+  const extraGuests = guests.slice(1)
+
+  const standingCount = result?.standing_count ?? 0
+  const backstageCount = result?.backstage_count ?? 0
 
   return (
     <main
@@ -277,6 +282,7 @@ export default function VerifyEntryPage() {
               </p>
             </div>
 
+            {/* Summary */}
             <div
               style={{
                 backgroundColor: '#111',
@@ -294,17 +300,16 @@ export default function VerifyEntryPage() {
                   margin: '0 0 4px',
                 }}
               >
-                GUEST
+                EVENT
               </p>
               <p
                 style={{
                   color: '#fff',
-                  fontSize: '16px',
-                  fontWeight: 700,
-                  margin: '0 0 12px',
+                  fontSize: '14px',
+                  margin: '0 0 8px',
                 }}
               >
-                {result.name}
+                {result.events?.title}
               </p>
               <p
                 style={{
@@ -315,108 +320,31 @@ export default function VerifyEntryPage() {
                   margin: '0 0 4px',
                 }}
               >
-                EVENT
+                CODE
               </p>
               <p
                 style={{
                   color: '#fff',
-                  fontSize: '14px',
+                  fontSize: '18px',
+                  fontFamily: 'monospace',
+                  letterSpacing: '4px',
                   margin: 0,
                 }}
               >
-                {result.events?.title}
+                {result.entry_code}
               </p>
             </div>
 
-            {/* Guests List */}
-            <div
-              style={{
-                backgroundColor: '#111',
-                borderRadius: '12px',
-                padding: '18px 16px',
-                marginBottom: '20px',
+            {/* Guests + ticket types */}
+            <GuestsBlock
+              mainGuest={mainGuest}
+              fallbackMain={{
+                name: result.name,
+                phone: result.phone,
+                instagram: result.instagram,
               }}
-            >
-              <p
-                style={{
-                  color: '#333',
-                  fontSize: '10px',
-                  letterSpacing: '2px',
-                  fontWeight: 700,
-                  margin: '0 0 10px',
-                }}
-              >
-                GUESTS LIST
-              </p>
-              <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '8px',
-                }}
-              >
-                <div
-                  style={{
-                    backgroundColor: '#0d0d0d',
-                    borderRadius: '8px',
-                    padding: '10px 12px',
-                    border: '1px solid rgba(245,158,11,0.4)',
-                  }}
-                >
-                  <p
-                    style={{
-                      color: '#f59e0b',
-                      fontSize: '10px',
-                      margin: '0 0 4px',
-                      letterSpacing: '1px',
-                      fontWeight: 700,
-                    }}
-                  >
-                    1) MAIN GUEST
-                  </p>
-                  <p
-                    style={{
-                      color: '#fff',
-                      fontSize: '13px',
-                      margin: 0,
-                    }}
-                  >
-                    {result.name} — {result.phone} — @{result.instagram}
-                  </p>
-                </div>
-
-                {safeGuests.map((p: any, i: number) => (
-                  <div
-                    key={i}
-                    style={{
-                      backgroundColor: '#0d0d0d',
-                      borderRadius: '8px',
-                      padding: '10px 12px',
-                      border: '1px solid #1f2933',
-                    }}
-                  >
-                    <p
-                      style={{
-                        color: '#888',
-                        fontSize: '10px',
-                        margin: '0 0 4px',
-                      }}
-                    >
-                      {i + 2}) GUEST
-                    </p>
-                    <p
-                      style={{
-                        color: '#fff',
-                        fontSize: '13px',
-                        margin: 0,
-                      }}
-                    >
-                      {p.name} — {p.phone} — @{p.instagram}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
+              extraGuests={extraGuests}
+            />
 
             <button
               onClick={handleReset}
@@ -452,7 +380,7 @@ export default function VerifyEntryPage() {
             <div
               style={{
                 textAlign: 'center',
-                marginBottom: '28px',
+                marginBottom: '24px',
               }}
             >
               <p style={{ fontSize: '48px', margin: '0 0 16px' }}>✅</p>
@@ -462,10 +390,20 @@ export default function VerifyEntryPage() {
                   fontSize: '16px',
                   fontWeight: 900,
                   letterSpacing: '2px',
-                  margin: 0,
+                  margin: '0 0 4px',
                 }}
               >
                 VALID TICKET
+              </p>
+              <p
+                style={{
+                  color: '#555',
+                  fontSize: '13px',
+                  margin: 0,
+                }}
+              >
+                {result.events?.title} ·{' '}
+                {standingCount} Standing / {backstageCount} Backstage
               </p>
             </div>
 
@@ -475,7 +413,7 @@ export default function VerifyEntryPage() {
                 display: 'grid',
                 gridTemplateColumns: '1fr 1fr',
                 gap: '10px',
-                marginBottom: '24px',
+                marginBottom: '20px',
               }}
             >
               {[
@@ -484,10 +422,18 @@ export default function VerifyEntryPage() {
                 { label: 'PHONE', value: result.phone },
                 {
                   label: 'TICKETS',
-                  value: `${result.num_people} person${result.num_people > 1 ? 's' : ''}`,
+                  value: `${result.num_people} person${
+                    result.num_people > 1 ? 's' : ''
+                  }`,
                 },
-                { label: 'EVENT', value: result.events?.title },
-                { label: 'CODE', value: result.entry_code },
+                {
+                  label: 'STANDING',
+                  value: `${standingCount}x @ ${result.standing_price_per_person} EGP`,
+                },
+                {
+                  label: 'BACKSTAGE',
+                  value: `${backstageCount}x @ ${result.backstage_price_per_person} EGP`,
+                },
               ].map(item => (
                 <div
                   key={item.label}
@@ -523,96 +469,16 @@ export default function VerifyEntryPage() {
               ))}
             </div>
 
-            {/* Guests List */}
-            <div
-              style={{
-                backgroundColor: '#111',
-                borderRadius: '12px',
-                padding: '18px 16px',
-                marginBottom: '20px',
+            {/* Guests + ticket types */}
+            <GuestsBlock
+              mainGuest={mainGuest}
+              fallbackMain={{
+                name: result.name,
+                phone: result.phone,
+                instagram: result.instagram,
               }}
-            >
-              <p
-                style={{
-                  color: '#333',
-                  fontSize: '10px',
-                  letterSpacing: '2px',
-                  fontWeight: 700,
-                  margin: '0 0 10px',
-                }}
-              >
-                GUESTS LIST
-              </p>
-
-              <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '8px',
-                }}
-              >
-                <div
-                  style={{
-                    backgroundColor: '#0d0d0d',
-                    borderRadius: '8px',
-                    padding: '10px 12px',
-                    border: '1px solid rgba(16,185,129,0.4)',
-                  }}
-                >
-                  <p
-                    style={{
-                      color: '#10b981',
-                      fontSize: '10px',
-                      margin: '0 0 4px',
-                      letterSpacing: '1px',
-                      fontWeight: 700,
-                    }}
-                  >
-                    1) MAIN GUEST
-                  </p>
-                  <p
-                    style={{
-                      color: '#fff',
-                      fontSize: '13px',
-                      margin: 0,
-                    }}
-                  >
-                    {result.name} — {result.phone} — @{result.instagram}
-                  </p>
-                </div>
-
-                {safeGuests.map((p: any, i: number) => (
-                  <div
-                    key={i}
-                    style={{
-                      backgroundColor: '#0d0d0d',
-                      borderRadius: '8px',
-                      padding: '10px 12px',
-                      border: '1px solid #1f2933',
-                    }}
-                  >
-                    <p
-                      style={{
-                        color: '#888',
-                        fontSize: '10px',
-                        margin: '0 0 4px',
-                      }}
-                    >
-                      {i + 2}) GUEST
-                    </p>
-                    <p
-                      style={{
-                        color: '#fff',
-                        fontSize: '13px',
-                        margin: 0,
-                      }}
-                    >
-                      {p.name} — {p.phone} — @{p.instagram}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
+              extraGuests={extraGuests}
+            />
 
             <button
               onClick={handleCheckIn}
@@ -657,5 +523,133 @@ export default function VerifyEntryPage() {
         )}
       </div>
     </main>
+  )
+}
+
+type GuestsBlockProps = {
+  mainGuest?: { name?: string; phone?: string; instagram?: string; ticket_type?: TicketType }
+  fallbackMain: { name: string; phone: string; instagram: string }
+  extraGuests: any[]
+}
+
+function GuestsBlock({ mainGuest, fallbackMain, extraGuests }: GuestsBlockProps) {
+  const mainName = mainGuest?.name || fallbackMain.name
+  const mainPhone = mainGuest?.phone || fallbackMain.phone
+  const mainInsta = mainGuest?.instagram || fallbackMain.instagram
+  const mainType: TicketType | undefined = mainGuest?.ticket_type
+
+  return (
+    <div
+      style={{
+        backgroundColor: '#111',
+        borderRadius: '12px',
+        padding: '18px 16px',
+        marginBottom: '20px',
+      }}
+    >
+      <p
+        style={{
+          color: '#333',
+          fontSize: '10px',
+          letterSpacing: '2px',
+          fontWeight: 700,
+          margin: '0 0 10px',
+        }}
+      >
+        GUESTS & TICKETS
+      </p>
+
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '8px',
+        }}
+      >
+        {/* Main guest */}
+        <div
+          style={{
+            backgroundColor: '#0d0d0d',
+            borderRadius: '8px',
+            padding: '10px 12px',
+            border: '1px solid rgba(16,185,129,0.4)',
+          }}
+        >
+          <p
+            style={{
+              color: '#10b981',
+              fontSize: '10px',
+              margin: '0 0 4px',
+              letterSpacing: '1px',
+              fontWeight: 700,
+            }}
+          >
+            1) MAIN GUEST{' '}
+            {mainType && (
+              <span
+                style={{
+                  color: mainType === 'backstage' ? '#a855f7' : '#22c55e',
+                  fontWeight: 700,
+                }}
+              >
+                · {mainType.toUpperCase()}
+              </span>
+            )}
+          </p>
+          <p
+            style={{
+              color: '#fff',
+              fontSize: '13px',
+              margin: 0,
+            }}
+          >
+            {mainName} — {mainPhone} — @{mainInsta}
+          </p>
+        </div>
+
+        {/* Extra guests */}
+        {extraGuests.map((p: any, i: number) => (
+          <div
+            key={i}
+            style={{
+              backgroundColor: '#0d0d0d',
+              borderRadius: '8px',
+              padding: '10px 12px',
+              border: '1px solid #1f2933',
+            }}
+          >
+            <p
+              style={{
+                color: '#888',
+                fontSize: '10px',
+                margin: '0 0 4px',
+              }}
+            >
+              {i + 2}) GUEST{' '}
+              {p.ticket_type && (
+                <span
+                  style={{
+                    color:
+                      p.ticket_type === 'backstage' ? '#a855f7' : '#22c55e',
+                    fontWeight: 700,
+                  }}
+                >
+                  · {p.ticket_type.toUpperCase()}
+                </span>
+              )}
+            </p>
+            <p
+              style={{
+                color: '#fff',
+                fontSize: '13px',
+                margin: 0,
+              }}
+            >
+              {p.name} — {p.phone} — @{p.instagram}
+            </p>
+          </div>
+        ))}
+      </div>
+    </div>
   )
 }

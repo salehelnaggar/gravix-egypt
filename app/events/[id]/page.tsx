@@ -1,6 +1,7 @@
 'use client'
+
 import { useEffect, useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
 
@@ -21,11 +22,77 @@ type EventType = {
   wave_2_sold_out?: boolean | null
   wave_3_price?: number | null
   wave_3_sold_out?: boolean | null
+
+  standing_wave_1_price?: number | null
+  standing_wave_1_sold_out?: boolean | null
+  standing_wave_2_price?: number | null
+  standing_wave_2_sold_out?: boolean | null
+  standing_wave_3_price?: number | null
+  standing_wave_3_sold_out?: boolean | null
+
+  backstage_wave_1_price?: number | null
+  backstage_wave_1_sold_out?: boolean | null
+  backstage_wave_2_price?: number | null
+  backstage_wave_2_sold_out?: boolean | null
+  backstage_wave_3_price?: number | null
+  backstage_wave_3_sold_out?: boolean | null
+}
+
+function getWaveInfo(opts: {
+  wave_1_price?: number | null
+  wave_1_sold_out?: boolean | null
+  wave_2_price?: number | null
+  wave_2_sold_out?: boolean | null
+  wave_3_price?: number | null
+  wave_3_sold_out?: boolean | null
+  is_finished: boolean
+}) {
+  const {
+    wave_1_price,
+    wave_1_sold_out,
+    wave_2_price,
+    wave_2_sold_out,
+    wave_3_price,
+    wave_3_sold_out,
+    is_finished,
+  } = opts
+
+  const wave1Available = !wave_1_sold_out && wave_1_price != null
+  const wave2Available =
+    wave_1_sold_out && !wave_2_sold_out && wave_2_price != null
+  const wave3Available =
+    wave_1_sold_out &&
+    !!wave_2_sold_out &&
+    !wave_3_sold_out &&
+    wave_3_price != null
+
+  let currentPrice: number | null = null
+  let currentWaveLabel = ''
+  let soldOut = false
+
+  if (wave1Available) {
+    currentPrice = wave_1_price as number
+    currentWaveLabel = 'WAVE 1'
+  } else if (wave2Available) {
+    currentPrice = wave_2_price as number
+    currentWaveLabel = 'WAVE 2'
+  } else if (wave3Available) {
+    currentPrice = wave_3_price as number
+    currentWaveLabel = 'WAVE 3'
+  } else {
+    currentPrice = null
+    soldOut = true
+  }
+
+  if (is_finished) {
+    soldOut = true
+  }
+
+  return { currentPrice, currentWaveLabel, soldOut }
 }
 
 export default function EventPage() {
   const { id } = useParams()
-  const router = useRouter()
   const [event, setEvent] = useState<EventType | null>(null)
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
@@ -97,42 +164,84 @@ export default function EventPage() {
     )
   }
 
-  // ---------- WAVE LOGIC (1 → 2 → 3) ----------
-  const wave1Available =
-    !event.wave_1_sold_out && event.wave_1_price != null
+  const standing = getWaveInfo({
+    wave_1_price: event.standing_wave_1_price,
+    wave_1_sold_out: event.standing_wave_1_sold_out,
+    wave_2_price: event.standing_wave_2_price,
+    wave_2_sold_out: event.standing_wave_2_sold_out,
+    wave_3_price: event.standing_wave_3_price,
+    wave_3_sold_out: event.standing_wave_3_sold_out,
+    is_finished: event.is_finished,
+  })
 
-  const wave2Available =
-    event.wave_1_sold_out &&
-    !event.wave_2_sold_out &&
-    event.wave_2_price != null
+  const backstage = getWaveInfo({
+    wave_1_price: event.backstage_wave_1_price,
+    wave_1_sold_out: event.backstage_wave_1_sold_out,
+    wave_2_price: event.backstage_wave_2_price,
+    wave_2_sold_out: event.backstage_wave_2_sold_out,
+    wave_3_price: event.backstage_wave_3_price,
+    wave_3_sold_out: event.backstage_wave_3_sold_out,
+    is_finished: event.is_finished,
+  })
 
-  const wave3Available =
-    event.wave_1_sold_out &&
-    !!event.wave_2_sold_out &&
-    !event.wave_3_sold_out &&
-    event.wave_3_price != null
+  const noStanding =
+    !event.standing_wave_1_price &&
+    !event.standing_wave_2_price &&
+    !event.standing_wave_3_price
 
-  let currentPrice: number | null = null
-  let currentWaveLabel = ''
-  let isSoldOut = false
+  const noBackstage =
+    !event.backstage_wave_1_price &&
+    !event.backstage_wave_2_price &&
+    !event.backstage_wave_3_price
 
-  if (wave1Available) {
-    currentPrice = event.wave_1_price as number
-    currentWaveLabel = 'WAVE 1'
-  } else if (wave2Available) {
-    currentPrice = event.wave_2_price as number
-    currentWaveLabel = 'WAVE 2'
-  } else if (wave3Available) {
-    currentPrice = event.wave_3_price as number
-    currentWaveLabel = 'WAVE 3'
-  } else {
-    currentPrice = null
-    isSoldOut = true
-  }
+  const allSoldOut =
+    (noStanding || standing.soldOut) && (noBackstage || backstage.soldOut)
 
-  // لو الإيفنت نفسه منتهي اعتبره Sold out حتى لو في Waves
-  if (event.is_finished) {
-    isSoldOut = true
+  const renderWaveBadge = (waveLabel: string) => {
+    if (!waveLabel) return null
+    const colorBg =
+      waveLabel === 'WAVE 1'
+        ? 'rgba(34,197,94,0.08)'
+        : waveLabel === 'WAVE 2'
+        ? 'rgba(234,179,8,0.08)'
+        : 'rgba(59,130,246,0.08)'
+    const borderColor =
+      waveLabel === 'WAVE 1'
+        ? 'rgba(34,197,94,0.4)'
+        : waveLabel === 'WAVE 2'
+        ? 'rgba(234,179,8,0.4)'
+        : 'rgba(59,130,246,0.4)'
+    const textColor =
+      waveLabel === 'WAVE 1'
+        ? '#22c55e'
+        : waveLabel === 'WAVE 2'
+        ? '#eab308'
+        : '#3b82f6'
+
+  const labelText =
+      waveLabel === 'WAVE 1'
+        ? 'EARLY BIRD'
+        : waveLabel === 'WAVE 2'
+        ? 'REGULAR PRICE'
+        : 'LAST WAVE'
+
+    return (
+      <div
+        style={{
+          backgroundColor: colorBg,
+          border: `1px solid ${borderColor}`,
+          borderRadius: '999px',
+          padding: '6px 16px',
+          fontSize: '10px',
+          fontWeight: 700,
+          letterSpacing: '2px',
+          color: textColor,
+          display: 'inline-block',
+        }}
+      >
+        {waveLabel} — {labelText}
+      </div>
+    )
   }
 
   return (
@@ -143,7 +252,6 @@ export default function EventPage() {
         fontFamily: 'Inter, sans-serif',
       }}
     >
-      {/* Hero Image */}
       {event.image_url ? (
         <div
           style={{
@@ -191,7 +299,6 @@ export default function EventPage() {
           position: 'relative',
         }}
       >
-        {/* Back */}
         <Link
           href="/events"
           style={{
@@ -206,7 +313,6 @@ export default function EventPage() {
           ← BACK TO EVENTS
         </Link>
 
-        {/* Title */}
         <div style={{ marginBottom: '32px' }}>
           {event.is_finished && (
             <span
@@ -227,7 +333,7 @@ export default function EventPage() {
             </span>
           )}
 
-          {isSoldOut && !event.is_finished && (
+          {allSoldOut && !event.is_finished && (
             <span
               style={{
                 backgroundColor: 'rgba(239,68,68,0.15)',
@@ -260,7 +366,6 @@ export default function EventPage() {
             {event.title}
           </h1>
 
-          {/* Date & Location */}
           <div
             style={{
               display: 'flex',
@@ -268,7 +373,6 @@ export default function EventPage() {
               gap: '12px',
             }}
           >
-            {/* Date */}
             <div
               style={{ display: 'flex', alignItems: 'center', gap: '10px' }}
             >
@@ -294,7 +398,6 @@ export default function EventPage() {
               </p>
             </div>
 
-            {/* Location + Get Directions */}
             <div
               style={{
                 display: 'flex',
@@ -340,106 +443,135 @@ export default function EventPage() {
           </div>
         </div>
 
-        {/* Price + Wave */}
         <div
           style={{
-            backgroundColor: '#0d0d0d',
-            border: '1px solid #1a1a1a',
-            borderRadius: '16px',
-            padding: '24px',
-            marginBottom: '24px',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
             gap: '16px',
-            flexWrap: 'wrap',
+            marginBottom: '24px',
           }}
         >
-          <div>
-            <p
-              style={{
-                color: '#333',
-                fontSize: '10px',
-                letterSpacing: '3px',
-                fontWeight: 700,
-                margin: '0 0 6px',
-              }}
-            >
-              TICKET PRICE
-            </p>
-            {currentPrice !== null ? (
-              <p
-                style={{
-                  color: '#dc2626',
-                  fontSize: '32px',
-                  fontWeight: 900,
-                  margin: 0,
-                }}
-              >
-                {currentPrice}{' '}
-                <span
-                  style={{
-                    color: '#444',
-                    fontSize: '16px',
-                    fontWeight: 400,
-                  }}
-                >
-                  EGP / person
-                </span>
-              </p>
-            ) : (
-              <p
-                style={{
-                  color: '#ef4444',
-                  fontSize: '20px',
-                  fontWeight: 800,
-                  margin: 0,
-                }}
-              >
-                SOLD OUT
-              </p>
-            )}
-          </div>
-
-          {currentPrice !== null && (
+          {!noStanding && (
             <div
               style={{
-                backgroundColor:
-                  currentWaveLabel === 'WAVE 1'
-                    ? 'rgba(34,197,94,0.08)'
-                    : currentWaveLabel === 'WAVE 2'
-                    ? 'rgba(234,179,8,0.08)'
-                    : 'rgba(59,130,246,0.08)',
-                border: `1px solid ${
-                  currentWaveLabel === 'WAVE 1'
-                    ? 'rgba(34,197,94,0.4)'
-                    : currentWaveLabel === 'WAVE 2'
-                    ? 'rgba(234,179,8,0.4)'
-                    : 'rgba(59,130,246,0.4)'
-                }`,
-                borderRadius: '999px',
-                padding: '8px 18px',
-                fontSize: '11px',
-                fontWeight: 700,
-                letterSpacing: '2px',
-                color:
-                  currentWaveLabel === 'WAVE 1'
-                    ? '#22c55e'
-                    : currentWaveLabel === 'WAVE 2'
-                    ? '#eab308'
-                    : '#3b82f6',
+                backgroundColor: '#0d0d0d',
+                border: '1px solid #1a1a1a',
+                borderRadius: '16px',
+                padding: '20px',
               }}
             >
-              {currentWaveLabel === 'WAVE 1'
-                ? 'WAVE 1 — EARLY BIRD'
-                : currentWaveLabel === 'WAVE 2'
-                ? 'WAVE 2 — REGULAR PRICE'
-                : 'WAVE 3 — LAST WAVE'}
+              <p
+                style={{
+                  color: '#444',
+                  fontSize: '11px',
+                  letterSpacing: '3px',
+                  fontWeight: 700,
+                  margin: '0 0 8px',
+                }}
+              >
+                STANDING
+              </p>
+              {standing.currentPrice != null && !standing.soldOut ? (
+                <>
+                  <p
+                    style={{
+                      color: '#dc2626',
+                      fontSize: '26px',
+                      fontWeight: 900,
+                      margin: 0,
+                    }}
+                  >
+                    {standing.currentPrice}{' '}
+                    <span
+                      style={{
+                        color: '#444',
+                        fontSize: '14px',
+                        fontWeight: 400,
+                      }}
+                    >
+                      EGP / person
+                    </span>
+                  </p>
+                  <div style={{ marginTop: '10px' }}>
+                    {renderWaveBadge(standing.currentWaveLabel)}
+                  </div>
+                </>
+              ) : (
+                <p
+                  style={{
+                    color: '#ef4444',
+                    fontSize: '16px',
+                    fontWeight: 800,
+                    margin: 0,
+                  }}
+                >
+                  SOLD OUT
+                </p>
+              )}
+            </div>
+          )}
+
+          {!noBackstage && (
+            <div
+              style={{
+                backgroundColor: '#0d0d0d',
+                border: '1px solid #1a1a1a',
+                borderRadius: '16px',
+                padding: '20px',
+              }}
+            >
+              <p
+                style={{
+                  color: '#444',
+                  fontSize: '11px',
+                  letterSpacing: '3px',
+                  fontWeight: 700,
+                  margin: '0 0 8px',
+                }}
+              >
+                BACKSTAGE
+              </p>
+              {backstage.currentPrice != null && !backstage.soldOut ? (
+                <>
+                  <p
+                    style={{
+                      color: '#dc2626',
+                      fontSize: '26px',
+                      fontWeight: 900,
+                      margin: 0,
+                    }}
+                  >
+                    {backstage.currentPrice}{' '}
+                    <span
+                      style={{
+                        color: '#444',
+                        fontSize: '14px',
+                        fontWeight: 400,
+                      }}
+                    >
+                      EGP / person
+                    </span>
+                  </p>
+                  <div style={{ marginTop: '10px' }}>
+                    {renderWaveBadge(backstage.currentWaveLabel)}
+                  </div>
+                </>
+              ) : (
+                <p
+                  style={{
+                    color: '#ef4444',
+                    fontSize: '16px',
+                    fontWeight: 800,
+                    margin: 0,
+                  }}
+                >
+                  SOLD OUT
+                </p>
+              )}
             </div>
           )}
         </div>
 
-        {/* Description */}
         {event.description && (
           <div
             style={{
@@ -475,7 +607,6 @@ export default function EventPage() {
           </div>
         )}
 
-        {/* CTA */}
         {event.is_finished ? (
           <div
             style={{
@@ -520,7 +651,7 @@ export default function EventPage() {
               BOOKINGS NOT OPEN YET
             </p>
           </div>
-        ) : isSoldOut ? (
+        ) : allSoldOut ? (
           <div
             style={{
               backgroundColor: '#0d0d0d',
@@ -540,7 +671,7 @@ export default function EventPage() {
                 margin: 0,
               }}
             >
-              ALL WAVES ARE SOLD OUT
+              ALL TICKETS ARE SOLD OUT
             </p>
           </div>
         ) : !user ? (
@@ -563,7 +694,7 @@ export default function EventPage() {
               You need to be logged in to book a ticket.
             </p>
             <Link
-href={`/auth/login?redirect=/events/${event.id}`}
+              href={`/auth/login?redirect=/events/${event.id}`}
               style={{
                 backgroundColor: '#dc2626',
                 color: '#fff',
@@ -594,9 +725,7 @@ href={`/auth/login?redirect=/events/${event.id}`}
               letterSpacing: '3px',
             }}
           >
-            {currentWaveLabel
-              ? `BOOK MY SPOT — ${currentWaveLabel} →`
-              : 'BOOK MY SPOT →'}
+            BOOK MY SPOT →
           </Link>
         )}
       </div>
