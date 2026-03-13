@@ -25,17 +25,36 @@ export default function DJProfilePage() {
 
   const isMobile = typeof window !== 'undefined' && window.innerWidth <= 640
 
+  // ✅ التعديل هنا فقط
   useEffect(() => {
     if (!username) return
-    supabase
-      .from('djs')
-      .select('*')
-      .or(`username.eq.${username},id.eq.${username}`)
-      .single()
-      .then(({ data }) => {
-        setDj(data as DJ)
+
+    const fetchDJ = async () => {
+      // أول: جرب بالـ username
+      const { data: byUsername } = await supabase
+        .from('djs')
+        .select('*')
+        .eq('username', username)
+        .maybeSingle()
+
+      if (byUsername) {
+        setDj(byUsername as DJ)
         setLoading(false)
-      })
+        return
+      }
+
+      // fallback: جرب بالـ id
+      const { data: byId } = await supabase
+        .from('djs')
+        .select('*')
+        .eq('id', username)
+        .maybeSingle()
+
+      setDj(byId as DJ)
+      setLoading(false)
+    }
+
+    fetchDJ()
   }, [username])
 
   if (loading) {
@@ -332,7 +351,7 @@ export default function DJProfilePage() {
         </section>
       )}
 
-      {/* ✅ YOUTUBE SECTION */}
+      {/* YOUTUBE SECTION */}
       {dj.youtube_url && (
         <section
           style={{
@@ -456,7 +475,6 @@ export default function DJProfilePage() {
             </a>
           )}
 
-          {/* ✅ YouTube Card في CONNECT */}
           {dj.youtube_url && (
             <a href={dj.youtube_url} target="_blank" rel="noreferrer" style={{ textDecoration: 'none' }}>
               <div

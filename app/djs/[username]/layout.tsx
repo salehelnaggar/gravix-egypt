@@ -6,11 +6,22 @@ type Props = {
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { data: dj } = await supabase
+  // ✅ أول: جرب بالـ username
+  let { data: dj } = await supabase
     .from('djs')
     .select('name, bio, image_url, username')
-    .or(`username.eq.${params.username},id.eq.${params.username}`)
-    .single()
+    .eq('username', params.username)
+    .maybeSingle()
+
+  // fallback: جرب بالـ id
+  if (!dj) {
+    const { data: djById } = await supabase
+      .from('djs')
+      .select('name, bio, image_url, username')
+      .eq('id', params.username)
+      .maybeSingle()
+    dj = djById
+  }
 
   if (!dj) {
     return {
