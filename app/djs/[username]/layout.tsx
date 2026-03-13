@@ -1,41 +1,17 @@
 import type { Metadata } from 'next'
-import { createServerSupabase } from '@/lib/supabase-server'
 
 type Props = {
   params: { username: string }
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const supabase = createServerSupabase()
+  const username = params.username
 
-  // جرّب اطبع الـ username في التايتل بس
-  const { data, error } = await supabase
-    .from('djs')
-    .select('name, bio, image_url, username')
-    .eq('username', params.username)
-    .maybeSingle()
-
-  // لو في error أو مفيش data، رجّع تايتل يوضح السبب
-  if (error) {
-    return {
-      title: `ERROR: ${error.message.slice(0, 40)}`,
-    }
-  }
-
-  if (!data) {
-    return {
-      title: `NO DJ FOR ${params.username}`,
-    }
-  }
-
-  const dj = data
-
-  const title = `${dj.name} — GRAVIX EGYPT`
-  const description = dj.bio
-    ? dj.bio.slice(0, 160)
-    : `${dj.name} is a featured DJ on GRAVIX EGYPT.`
-  const image = dj.image_url || 'https://gravixegypt.online/og-default.jpg'
-  const url = `https://gravixegypt.online/djs/${dj.username || params.username}`
+  const title = `${username?.toString().toUpperCase() || 'DJ'} — GRAVIX EGYPT`
+  const description =
+    'Discover featured DJs and artists on GRAVIX EGYPT. Book talent for your next event and explore their profiles, links, and mixes.'
+  const image = 'https://gravixegypt.online/og-default.jpg'
+  const url = `https://gravixegypt.online/djs/${username}`
 
   return {
     title,
@@ -50,7 +26,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
           url: image,
           width: 1200,
           height: 630,
-          alt: dj.name,
+          alt: title,
         },
       ],
       type: 'profile',
