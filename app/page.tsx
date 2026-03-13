@@ -28,6 +28,7 @@ type DJ = {
   bio?: string
   image_url?: string
   whatsapp_number?: string
+  username?: string
 }
 
 export default function HomePage() {
@@ -53,10 +54,11 @@ export default function HomePage() {
         setEvents(sorted as EventWithWaves[])
       })
 
+    // ✅ sort_order بدل created_at
     supabase
       .from('djs')
       .select('*')
-      .order('created_at', { ascending: false })
+      .order('sort_order', { ascending: true })
       .limit(10)
       .then(({ data }) => setDjs((data as DJ[]) || []))
   }, [])
@@ -317,7 +319,6 @@ export default function HomePage() {
             </div>
           )}
 
-          {/* Events Scroll Container */}
           <div style={{ overflowX: 'auto', paddingBottom: '8px' }}>
             <div
               style={{
@@ -328,7 +329,7 @@ export default function HomePage() {
               }}
             >
               {events.map(event => {
-                const { price, label, subtitle, color, soldOut } = getCurrentPriceAndWave(event)
+                const { price, label, color, soldOut } = getCurrentPriceAndWave(event)
                 return (
                   <div
                     key={event.id}
@@ -353,40 +354,29 @@ export default function HomePage() {
                       el.style.boxShadow = 'none'
                     }}
                   >
-{event.image_url ? (
-  <div
-    style={{
-      width: '100%',
-      aspectRatio: '3/4',       // نفس نسبة بوستر الـ DJ
-      overflow: 'hidden',
-      backgroundColor: '#000',
-    }}
-  >
-    <img
-      src={event.image_url}
-      alt={event.title}
-      style={{
-        width: '100%',
-        height: '100%',
-        objectFit: 'cover',     // تغطي الكارد زي البوستر
-      }}
-    />
-  </div>
-) : (
-  <div
-    style={{
-      width: '100%',
-      aspectRatio: '3/4',
-      background: 'linear-gradient(135deg, #1a0000, #0d0d0d)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      fontSize: '48px',
-    }}
-  >
-    🎶
-  </div>
-)}
+                    {event.image_url ? (
+                      <div style={{ width: '100%', aspectRatio: '3/4', overflow: 'hidden', backgroundColor: '#000' }}>
+                        <img
+                          src={event.image_url}
+                          alt={event.title}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
+                      </div>
+                    ) : (
+                      <div
+                        style={{
+                          width: '100%',
+                          aspectRatio: '3/4',
+                          background: 'linear-gradient(135deg, #1a0000, #0d0d0d)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '48px',
+                        }}
+                      >
+                        🎶
+                      </div>
+                    )}
 
                     <div style={{ padding: '20px' }}>
                       <div style={{ color: '#dc2626', fontSize: '11px', letterSpacing: '2px', marginBottom: '8px', fontWeight: 700 }}>
@@ -406,39 +396,31 @@ export default function HomePage() {
                         }}
                       >
                         <span style={{ color: '#555', fontSize: '13px' }}>📍 {event.location}</span>
-                     {price === null ? (
-  <div style={{ textAlign: 'right' }}>
-    <p style={{ color: '#ef4444', fontWeight: 800, fontSize: '15px', margin: 0 }} />
-  </div>
-) : (
-  <div
-    style={{
-      display: 'flex',
-      alignItems: 'center',
-      gap: '8px',
-      justifyContent: 'flex-end',
-    }}
-  >
-    <span
-      style={{
-        color,
-        fontSize: '10px',
-        fontWeight: 700,
-        letterSpacing: '2px',
-        backgroundColor: `${color}15`,
-        border: `1px solid ${color}40`,
-        padding: '3px 8px',
-        borderRadius: '6px',
-      }}
-    >
-      {label}
-    </span>
-    <p style={{ color: '#fff', fontWeight: 900, fontSize: '17px', margin: 0 }}>
-      {price} <span style={{ color: '#555', fontSize: '12px', fontWeight: 400 }}>EGP</span>
-    </p>
-  </div>
-)}
-
+                        {price === null ? (
+                          <div style={{ textAlign: 'right' }}>
+                            <p style={{ color: '#ef4444', fontWeight: 800, fontSize: '15px', margin: 0 }} />
+                          </div>
+                        ) : (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'flex-end' }}>
+                            <span
+                              style={{
+                                color,
+                                fontSize: '10px',
+                                fontWeight: 700,
+                                letterSpacing: '2px',
+                                backgroundColor: `${color}15`,
+                                border: `1px solid ${color}40`,
+                                padding: '3px 8px',
+                                borderRadius: '6px',
+                              }}
+                            >
+                              {label}
+                            </span>
+                            <p style={{ color: '#fff', fontWeight: 900, fontSize: '17px', margin: 0 }}>
+                              {price} <span style={{ color: '#555', fontSize: '12px', fontWeight: 400 }}>EGP</span>
+                            </p>
+                          </div>
+                        )}
                       </div>
 
                       {soldOut || event.is_finished ? (
@@ -533,7 +515,6 @@ export default function HomePage() {
               <p style={{ letterSpacing: '2px', fontSize: '13px' }}>NO DJs YET</p>
             </div>
           ) : (
-            /* DJs Scroll Container */
             <div style={{ overflowX: 'auto', paddingBottom: '8px' }}>
               <div
                 style={{
@@ -566,40 +547,29 @@ export default function HomePage() {
                       el.style.boxShadow = 'none'
                     }}
                   >
-                 {dj.image_url ? (
-  <div
-    style={{
-      width: '100%',
-      aspectRatio: '3/4',          // بوستر طولي مش مربع
-      overflow: 'hidden',
-      backgroundColor: '#000',
-    }}
-  >
-    <img
-      src={dj.image_url}
-      alt={dj.name}
-      style={{
-        width: '100%',
-        height: '100%',
-        objectFit: 'cover',        // ترجع cover تاني
-      }}
-    />
-  </div>
-) : (
-  <div
-    style={{
-      width: '100%',
-      aspectRatio: '3/4',
-      background: 'linear-gradient(135deg, #1a0000, #0d0d0d)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      fontSize: '64px',
-    }}
-  >
-    🎧
-  </div>
-)}
+                    {dj.image_url ? (
+                      <div style={{ width: '100%', aspectRatio: '3/4', overflow: 'hidden', backgroundColor: '#000' }}>
+                        <img
+                          src={dj.image_url}
+                          alt={dj.name}
+                          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        />
+                      </div>
+                    ) : (
+                      <div
+                        style={{
+                          width: '100%',
+                          aspectRatio: '3/4',
+                          background: 'linear-gradient(135deg, #1a0000, #0d0d0d)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '64px',
+                        }}
+                      >
+                        🎧
+                      </div>
+                    )}
 
                     <div style={{ padding: '20px' }}>
                       <p style={{ color: '#dc2626', fontSize: '10px', letterSpacing: '2px', fontWeight: 700, margin: '0 0 6px' }}>● DJ</p>
@@ -623,8 +593,9 @@ export default function HomePage() {
                         </p>
                       )}
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                        {/* ✅ username بدل id */}
                         <Link
-                          href={`/djs/${dj.id}`}
+                          href={`/djs/${dj.username || dj.id}`}
                           style={{
                             display: 'block',
                             textAlign: 'center',
@@ -738,6 +709,7 @@ export default function HomePage() {
           © 2026 GRAVIX EGYPT. ALL RIGHTS RESERVED. DESIGNED BY SALEH ELNAGGAR.
         </p>
       </footer>
+
     </main>
   )
 }

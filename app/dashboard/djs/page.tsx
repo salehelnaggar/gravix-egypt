@@ -8,14 +8,18 @@ import { supabase } from '@/lib/supabase'
 type DJ = {
   id: string
   name: string
-  bio?: string
-  image_url?: string
-  whatsapp_number?: string
-  instagram_url?: string
-  spotify_url?: string
-  soundcloud_url?: string
+  bio?: string | null
+  image_url?: string | null
+  whatsapp_number?: string | null
+  instagram_url?: string | null
+  spotify_url?: string | null
+  soundcloud_url?: string | null
+  youtube_url?: string | null
+  username?: string | null
+  sort_order?: number
   created_at?: string
 }
+
 
 type Mode = 'list' | 'add' | 'edit'
 
@@ -27,9 +31,11 @@ export default function ManageDJsPage() {
   const [selected, setSelected] = useState<DJ | null>(null)
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState<string | null>(null)
+  const [reordering, setReordering] = useState(false)
   const [form, setForm] = useState({
     name: '', bio: '', image_url: '', whatsapp_number: '',
     instagram_url: '', spotify_url: '', soundcloud_url: '',
+    youtube_url: '', username: '',
   })
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string>('')
@@ -45,13 +51,47 @@ export default function ManageDJsPage() {
 
   const fetchDJs = async () => {
     setLoading(true)
-    const { data } = await supabase.from('djs').select('*').order('created_at', { ascending: false })
+    const { data } = await supabase
+      .from('djs')
+      .select('*')
+      .order('sort_order', { ascending: true })
     setDjs((data as DJ[]) || [])
     setLoading(false)
   }
 
+  // ─── REORDER ─────────────────────────────────────────────
+  const moveUp = async (index: number) => {
+    if (index === 0) return
+    const newDjs = [...djs]
+    ;[newDjs[index - 1], newDjs[index]] = [newDjs[index], newDjs[index - 1]]
+    setDjs(newDjs)
+    await saveOrder(newDjs)
+  }
+
+  const moveDown = async (index: number) => {
+    if (index === djs.length - 1) return
+    const newDjs = [...djs]
+    ;[newDjs[index], newDjs[index + 1]] = [newDjs[index + 1], newDjs[index]]
+    setDjs(newDjs)
+    await saveOrder(newDjs)
+  }
+
+  const saveOrder = async (ordered: DJ[]) => {
+    setReordering(true)
+    const updates = ordered.map((dj, i) =>
+      supabase.from('djs').update({ sort_order: i }).eq('id', dj.id)
+    )
+    await Promise.all(updates)
+    setReordering(false)
+  }
+
+  // ─── FORM OPEN ────────────────────────────────────────────
   const openAdd = () => {
-    setForm({ name: '', bio: '', image_url: '', whatsapp_number: '', instagram_url: '', spotify_url: '', soundcloud_url: '' })
+    setForm({
+      name: '', bio: '', image_url: '', whatsapp_number: '',
+      instagram_url: '', spotify_url: '', soundcloud_url: '',
+      youtube_url: '', username: '',
+    })
     setImageFile(null)
     setImagePreview('')
     setSelected(null)
@@ -67,6 +107,8 @@ export default function ManageDJsPage() {
       instagram_url: dj.instagram_url || '',
       spotify_url: dj.spotify_url || '',
       soundcloud_url: dj.soundcloud_url || '',
+      youtube_url: dj.youtube_url || '',
+      username: dj.username || '',
     })
     setImageFile(null)
     setImagePreview(dj.image_url || '')
@@ -96,7 +138,7 @@ export default function ManageDJsPage() {
     setSaving(true)
     const imageUrl = await uploadImage()
 
-    const payload = {
+    const payload: Partial<DJ> = {
       name: form.name.trim(),
       bio: form.bio.trim() || null,
       image_url: imageUrl,
@@ -104,9 +146,12 @@ export default function ManageDJsPage() {
       instagram_url: form.instagram_url.trim() || null,
       spotify_url: form.spotify_url.trim() || null,
       soundcloud_url: form.soundcloud_url.trim() || null,
+      youtube_url: form.youtube_url.trim() || null,
+      username: form.username.trim() || null,
     }
 
     if (mode === 'add') {
+      payload.sort_order = djs.length
       await supabase.from('djs').insert(payload)
     } else if (mode === 'edit' && selected) {
       await supabase.from('djs').update(payload).eq('id', selected.id)
@@ -203,6 +248,25 @@ export default function ManageDJsPage() {
               />
             </div>
 
+            {/* ✅ Username */}
+            <div>
+              <label style={labelStyle}>USERNAME (للرابط)</label>
+              <input
+                type="text"
+                placeholder="e.g. missera  →  gravixegypt.online/djs/missera"
+                value={form.username}
+                onChange={e => setForm(f => ({ ...f, username: e.target.value.toLowerCase().replace(/\s+/g, '-') }))}
+                style={inputStyle}
+                onFocus={e => (e.currentTarget.style.borderColor = '#dc2626')}
+                onBlur={e => (e.currentTarget.style.borderColor = '#1a1a1a')}
+              />
+              {form.username && (
+                <p style={{ color: '#444', fontSize: '11px', marginTop: '6px' }}>
+                  🔗 gravixegypt.online/djs/<span style={{ color: '#dc2626' }}>{form.username}</span>
+                </p>
+              )}
+            </div>
+
             {/* Bio */}
             <div>
               <label style={labelStyle}>BIO</label>
@@ -232,7 +296,7 @@ export default function ManageDJsPage() {
               <p style={{ color: '#333', fontSize: '11px', marginTop: '6px' }}>بدون + أو مسافات — مثال: 201093379437</p>
             </div>
 
-            {/* Divider */}
+            {/* OPTIONAL LINKS */}
             <div style={{ borderTop: '1px solid #1a1a1a', paddingTop: '8px' }}>
               <p style={{ color: '#333', fontSize: '10px', letterSpacing: '3px', fontWeight: 700, margin: '0 0 20px' }}>
                 ● SOCIAL & MUSIC LINKS — OPTIONAL
@@ -267,7 +331,7 @@ export default function ManageDJsPage() {
               </div>
 
               {/* SoundCloud */}
-              <div>
+              <div style={{ marginBottom: '20px' }}>
                 <label style={labelStyle}>☁️ SOUNDCLOUD PLAYLIST URL</label>
                 <input
                   type="text"
@@ -276,6 +340,20 @@ export default function ManageDJsPage() {
                   onChange={e => setForm(f => ({ ...f, soundcloud_url: e.target.value }))}
                   style={inputStyle}
                   onFocus={e => (e.currentTarget.style.borderColor = '#ff5500')}
+                  onBlur={e => (e.currentTarget.style.borderColor = '#1a1a1a')}
+                />
+              </div>
+
+              {/* ✅ YouTube */}
+              <div>
+                <label style={labelStyle}>▶️ YOUTUBE URL</label>
+                <input
+                  type="text"
+                  placeholder="https://youtube.com/@djname"
+                  value={form.youtube_url}
+                  onChange={e => setForm(f => ({ ...f, youtube_url: e.target.value }))}
+                  style={inputStyle}
+                  onFocus={e => (e.currentTarget.style.borderColor = '#ff0000')}
                   onBlur={e => (e.currentTarget.style.borderColor = '#1a1a1a')}
                 />
               </div>
@@ -338,6 +416,17 @@ export default function ManageDJsPage() {
           </button>
         </div>
 
+        {/* Reorder hint */}
+        {djs.length > 1 && (
+          <div style={{ backgroundColor: '#0d0d0d', border: '1px solid #1a1a1a', borderRadius: '10px', padding: '12px 16px', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ fontSize: '14px' }}>↕️</span>
+            <p style={{ color: '#444', fontSize: '11px', letterSpacing: '1px', margin: 0 }}>
+              استخدم أزرار ⬆️ ⬇️ لترتيب ظهور الـ DJs في الهوم
+              {reordering && <span style={{ color: '#dc2626', marginRight: '8px' }}> — جاري الحفظ...</span>}
+            </p>
+          </div>
+        )}
+
         {/* Success Message */}
         {successMsg && (
           <div style={{ backgroundColor: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.3)', borderRadius: '12px', padding: '14px 20px', marginBottom: '24px', color: '#10b981', fontSize: '13px', fontWeight: 700, letterSpacing: '1px' }}>
@@ -369,11 +458,53 @@ export default function ManageDJsPage() {
 
         {/* DJs List */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {djs.map(dj => (
+          {djs.map((dj, index) => (
             <div
               key={dj.id}
-              style={{ backgroundColor: '#0d0d0d', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '20px 24px', display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap' }}
+              style={{ backgroundColor: '#0d0d0d', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '20px 24px', display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}
             >
+              {/* ✅ Sort Buttons */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flexShrink: 0 }}>
+                <button
+                  onClick={() => moveUp(index)}
+                  disabled={index === 0 || reordering}
+                  style={{
+                    background: 'none',
+                    border: '1px solid #222',
+                    borderRadius: '6px',
+                    color: index === 0 ? '#222' : '#555',
+                    width: '28px',
+                    height: '28px',
+                    cursor: index === 0 ? 'not-allowed' : 'pointer',
+                    fontSize: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  ▲
+                </button>
+                <button
+                  onClick={() => moveDown(index)}
+                  disabled={index === djs.length - 1 || reordering}
+                  style={{
+                    background: 'none',
+                    border: '1px solid #222',
+                    borderRadius: '6px',
+                    color: index === djs.length - 1 ? '#222' : '#555',
+                    width: '28px',
+                    height: '28px',
+                    cursor: index === djs.length - 1 ? 'not-allowed' : 'pointer',
+                    fontSize: '12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  ▼
+                </button>
+              </div>
+
               {/* Avatar */}
               {dj.image_url ? (
                 <img src={dj.image_url} alt={dj.name} style={{ width: '60px', height: '60px', borderRadius: '12px', objectFit: 'cover', flexShrink: 0 }} />
@@ -383,7 +514,12 @@ export default function ManageDJsPage() {
 
               {/* Info */}
               <div style={{ flex: 1, minWidth: '180px' }}>
-                <h3 style={{ color: '#fff', fontSize: '16px', fontWeight: 900, margin: '0 0 4px', letterSpacing: '-0.5px' }}>{dj.name}</h3>
+                <h3 style={{ color: '#fff', fontSize: '16px', fontWeight: 900, margin: '0 0 2px', letterSpacing: '-0.5px' }}>{dj.name}</h3>
+                {dj.username && (
+                  <p style={{ color: '#dc2626', fontSize: '11px', margin: '0 0 4px', letterSpacing: '0.5px' }}>
+                    @{dj.username}
+                  </p>
+                )}
                 {dj.bio && (
                   <p style={{ color: '#444', fontSize: '12px', margin: '0 0 6px', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', maxWidth: '400px' }}>
                     {dj.bio}
@@ -394,13 +530,14 @@ export default function ManageDJsPage() {
                   {dj.instagram_url && <span style={{ color: '#dc2626', fontSize: '11px' }}>📸 Instagram</span>}
                   {dj.spotify_url && <span style={{ color: '#1db954', fontSize: '11px' }}>🎵 Spotify</span>}
                   {dj.soundcloud_url && <span style={{ color: '#ff5500', fontSize: '11px' }}>☁️ SoundCloud</span>}
+                  {dj.youtube_url && <span style={{ color: '#ff4444', fontSize: '11px' }}>▶️ YouTube</span>}
                 </div>
               </div>
 
               {/* Actions */}
               <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
                 <Link
-                  href={`/djs/${dj.id}`}
+                  href={`/djs/${dj.username || dj.id}`}
                   target="_blank"
                   style={{ backgroundColor: '#111', border: '1px solid #1a1a1a', color: '#888', padding: '8px 14px', borderRadius: '8px', fontSize: '11px', fontWeight: 700, letterSpacing: '1px', textDecoration: 'none' }}
                 >
