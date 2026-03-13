@@ -39,8 +39,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const description = dj.bio
     ? dj.bio.slice(0, 160)
     : `${dj.name} is a featured DJ on GRAVIX EGYPT.`
-  const image = 'https://gravixegypt.online/og-default.jpg'
-
+  const image = dj.image_url || 'https://gravixegypt.online/og-default.jpg'
   const url = `https://gravixegypt.online/djs/${dj.username || username}`
 
   return {
