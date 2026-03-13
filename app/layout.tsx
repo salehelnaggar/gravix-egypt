@@ -3,14 +3,31 @@ import './globals.css'
 import Navbar from './components/Navbar'
 
 export const metadata: Metadata = {
-  title: 'Gravix Egypt — Live Events',
-  description: "Egypt's #1 live events platform for concerts & nightlife.",
+  title: 'GRAVIX EGYPT — Live Events & DJs',
+  description:
+    "Book Egypt's hottest live events, concerts, and DJs in one place. Standing & backstage tickets, secure payments, and instant confirmation.",
   openGraph: {
-    title: 'Gravix Egypt — Live Events',
-    description: "Egypt's #1 live events platform for concerts & nightlife.",
+    title: 'GRAVIX EGYPT — Live Events & DJs',
+    description:
+      "Book Egypt's hottest live events, concerts, and DJs in one place. Standing & backstage tickets, secure payments, and instant confirmation.",
     url: 'https://gravixegypt.online',
     siteName: 'GRAVIX EGYPT',
     type: 'website',
+    images: [
+      {
+        url: 'https://gravixegypt.online/og-home.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'GRAVIX EGYPT — Live Events',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'GRAVIX EGYPT — Live Events & DJs',
+    description:
+      "Book Egypt's hottest live events, concerts, and DJs in one place.",
+    images: ['https://gravixegypt.online/og-home.jpg'],
   },
 }
 
