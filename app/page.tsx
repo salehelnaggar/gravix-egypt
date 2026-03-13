@@ -1,35 +1,40 @@
 // app/page.tsx
 export default function Page() {
   return (
-    <main className="min-h-screen bg-black text-white flex items-center justify-center px-4">
-      <div className="max-w-xl text-center">
-        {/* Logo / Title */}
-        <h1 className="text-sm tracking-[0.35em] text-red-500 mb-3">
-          GRAVIX
-        </h1>
-
-        <h2 className="text-3xl md:text-4xl font-semibold mb-4">
-          We&apos;re upgrading your{" "}
-          <span className="text-red-500">live events</span> experience
-        </h2>
-
-        <p className="text-sm md:text-base text-zinc-300 mb-8">
-          The platform is currently undergoing a quick update.
-          We&apos;ll be back online very soon with a faster, smoother
-          booking flow and new exclusive events.
-        </p>
-
-        {/* Status pill */}
-        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-red-600/70 bg-red-600/10">
-          <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
-          <span className="text-xs uppercase tracking-[0.22em] text-red-400">
-            Updating · Back very soon
+    <main className="min-h-screen bg-[#05040A] text-zinc-100 flex items-center justify-center px-4">
+      <div className="max-w-2xl w-full text-center">
+        {/* Top label */}
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-red-500/40 bg-red-500/5 mb-6">
+          <span className="h-1.5 w-1.5 rounded-full bg-red-500 animate-ping" />
+          <span className="text-[11px] tracking-[0.22em] uppercase text-red-400">
+            GRAVIX SYSTEM UPDATE
           </span>
         </div>
 
-        {/* Footer mini text */}
-        <div className="mt-10 text-[11px] uppercase tracking-[0.2em] text-zinc-500">
-          Egypt&apos;s #1 live events platform
+        {/* Main heading */}
+        <h1 className="text-3xl md:text-5xl font-semibold tracking-tight mb-4">
+          We&apos;re tuning the{" "}
+          <span className="text-red-500">nightlife</span> experience
+        </h1>
+
+        {/* Sub text */}
+        <p className="text-sm md:text-base text-zinc-400 mb-6">
+          gravixegypt.online is currently under a fast upgrade.
+          We&apos;ll be back online shortly with smoother booking,
+          better performance, and new exclusive events.
+        </p>
+
+        {/* Arabic line */}
+        <p className="text-xs md:text-sm text-zinc-500 mb-10">
+          الموقع بيتحدّث دلوقتي وهيرجع أونلاين خلال وقت قصير جداً بتجربة حجز أهدى وأقوى.
+        </p>
+
+        {/* Bottom bar */}
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-px w-32 bg-gradient-to-r from-transparent via-red-500 to-transparent" />
+          <span className="text-[11px] uppercase tracking-[0.25em] text-zinc-600">
+            EGYPT · LIVE EVENTS · TECHNO
+          </span>
         </div>
       </div>
     </main>
