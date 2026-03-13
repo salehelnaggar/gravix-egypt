@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
-import { createServerSupabase } from '../../../lib/supabase-server'
-
+import { createServerSupabase } from '@/lib/supabase-server'
 
 type Props = {
   params: { username: string }
@@ -9,24 +8,27 @@ type Props = {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const supabase = createServerSupabase()
 
-  let { data: dj } = await supabase
+  // جرّب اطبع الـ username في التايتل بس
+  const { data, error } = await supabase
     .from('djs')
     .select('name, bio, image_url, username')
     .eq('username', params.username)
     .maybeSingle()
 
-  if (!dj) {
-    const { data: djById } = await supabase
-      .from('djs')
-      .select('name, bio, image_url, username')
-      .eq('id', params.username)
-      .maybeSingle()
-    dj = djById
+  // لو في error أو مفيش data، رجّع تايتل يوضح السبب
+  if (error) {
+    return {
+      title: `ERROR: ${error.message.slice(0, 40)}`,
+    }
   }
 
-  if (!dj) {
-    return { title: 'DJ Not Found — GRAVIX EGYPT' }
+  if (!data) {
+    return {
+      title: `NO DJ FOR ${params.username}`,
+    }
   }
+
+  const dj = data
 
   const title = `${dj.name} — GRAVIX EGYPT`
   const description = dj.bio
