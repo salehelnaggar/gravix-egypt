@@ -25,12 +25,10 @@ export default function DJProfilePage() {
 
   const isMobile = typeof window !== 'undefined' && window.innerWidth <= 640
 
-  // ✅ التعديل هنا فقط
   useEffect(() => {
     if (!username) return
 
     const fetchDJ = async () => {
-      // أول: جرب بالـ username
       const { data: byUsername } = await supabase
         .from('djs')
         .select('*')
@@ -43,7 +41,6 @@ export default function DJProfilePage() {
         return
       }
 
-      // fallback: جرب بالـ id
       const { data: byId } = await supabase
         .from('djs')
         .select('*')
@@ -59,16 +56,7 @@ export default function DJProfilePage() {
 
   if (loading) {
     return (
-      <main
-        style={{
-          backgroundColor: '#050505',
-          minHeight: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontFamily: 'Inter, sans-serif',
-        }}
-      >
+      <main style={{ backgroundColor: '#050505', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Inter, sans-serif' }}>
         <div style={{ textAlign: 'center', color: '#333' }}>
           <div style={{ fontSize: '48px', marginBottom: '12px' }}>🎧</div>
           <p style={{ letterSpacing: '2px', fontSize: '13px' }}>LOADING...</p>
@@ -79,29 +67,11 @@ export default function DJProfilePage() {
 
   if (!dj) {
     return (
-      <main
-        style={{
-          backgroundColor: '#050505',
-          minHeight: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontFamily: 'Inter, sans-serif',
-        }}
-      >
+      <main style={{ backgroundColor: '#050505', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Inter, sans-serif' }}>
         <div style={{ textAlign: 'center', color: '#333' }}>
           <div style={{ fontSize: '48px', marginBottom: '12px' }}>🎧</div>
           <p style={{ letterSpacing: '2px', fontSize: '13px' }}>DJ NOT FOUND</p>
-          <Link
-            href="/djs"
-            style={{
-              color: '#dc2626',
-              textDecoration: 'none',
-              fontSize: '12px',
-              letterSpacing: '2px',
-              fontWeight: 700,
-            }}
-          >
+          <Link href="/djs" style={{ color: '#dc2626', textDecoration: 'none', fontSize: '12px', letterSpacing: '2px', fontWeight: 700 }}>
             ← BACK TO DJs
           </Link>
         </div>
@@ -137,13 +107,7 @@ export default function DJProfilePage() {
             }}
           />
         ) : (
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              background: 'linear-gradient(135deg, #1a0000, #0d0d0d)',
-            }}
-          />
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, #1a0000, #0d0d0d)' }} />
         )}
 
         <div
@@ -200,6 +164,7 @@ export default function DJProfilePage() {
             {dj.name}
           </h1>
 
+          {/* ✅ Hero Buttons — كلهم هنا */}
           <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
             {dj.whatsapp_number && (
               <a
@@ -291,6 +256,30 @@ export default function DJProfilePage() {
                 }}
               >
                 ☁️ MIX ON SOUNDCLOUD
+              </a>
+            )}
+            {/* ✅ YouTube Button جنب الباقي */}
+            {dj.youtube_url && (
+              <a
+                href={dj.youtube_url}
+                target="_blank"
+                rel="noreferrer"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  background: 'linear-gradient(135deg, #cc0000, #990000)',
+                  color: '#fff',
+                  padding: '12px 24px',
+                  borderRadius: '12px',
+                  fontWeight: 700,
+                  textDecoration: 'none',
+                  fontSize: '13px',
+                  letterSpacing: '1px',
+                  boxShadow: '0 0 24px rgba(204,0,0,0.2)',
+                }}
+              >
+                ▶ YOUTUBE
               </a>
             )}
           </div>
@@ -500,6 +489,7 @@ export default function DJProfilePage() {
           © 2026 GRAVIX EGYPT. ALL RIGHTS RESERVED.
         </p>
       </footer>
+
     </main>
   )
 }
