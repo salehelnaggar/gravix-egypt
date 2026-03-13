@@ -340,55 +340,7 @@ export default function DJProfilePage() {
         </section>
       )}
 
-      {/* YOUTUBE SECTION */}
-      {dj.youtube_url && (
-        <section
-          style={{
-            padding: isMobile ? '40px 16px' : '56px 48px',
-            maxWidth: '900px',
-            margin: '0 auto',
-            borderBottom: '1px solid #111',
-          }}
-        >
-          <p style={{ color: '#dc2626', fontSize: '11px', letterSpacing: '4px', fontWeight: 700, margin: '0 0 20px' }}>
-            ● YOUTUBE
-          </p>
-          <a
-            href={dj.youtube_url}
-            target="_blank"
-            rel="noreferrer"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '10px',
-              backgroundColor: '#0d0d0d',
-              border: '1px solid rgba(255,0,0,0.3)',
-              color: '#ff4444',
-              padding: '16px 28px',
-              borderRadius: '14px',
-              fontWeight: 700,
-              textDecoration: 'none',
-              fontSize: '14px',
-              letterSpacing: '1px',
-              transition: 'all 0.2s',
-            }}
-            onMouseEnter={e => {
-              const el = e.currentTarget as HTMLAnchorElement
-              el.style.borderColor = '#ff0000'
-              el.style.boxShadow = '0 0 24px rgba(255,0,0,0.15)'
-              el.style.transform = 'translateY(-2px)'
-            }}
-            onMouseLeave={e => {
-              const el = e.currentTarget as HTMLAnchorElement
-              el.style.borderColor = 'rgba(255,0,0,0.3)'
-              el.style.boxShadow = 'none'
-              el.style.transform = 'translateY(0)'
-            }}
-          >
-            ▶ WATCH ON YOUTUBE
-          </a>
-        </section>
-      )}
+    
 
       {/* CONNECT */}
       <section
