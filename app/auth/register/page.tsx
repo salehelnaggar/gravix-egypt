@@ -46,7 +46,7 @@ const { error } = await supabase.auth.signUp({
     }
 
     setLoading(false)
-    router.push('/auth/check-email')
+    router.push('/auth/register-success')
   }
 
   return (
