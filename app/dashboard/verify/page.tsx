@@ -50,7 +50,7 @@ export default function VerifyPage() {
       try {
         await scanner.start(
           { facingMode: 'environment' },
-          { fps: 10, qrbox: { width: 220, height: 220 } },
+          { fps: 10, qrbox: { width: 240, height: 240 } },
           async (decodedText: string) => {
             let qrCode = decodedText.trim()
             if (qrCode.includes('/')) {
@@ -131,7 +131,10 @@ export default function VerifyPage() {
 
     const { data, error } = await supabase
       .from('tickets')
-      .update({ checked_in: true, checked_in_at: new Date().toISOString() })
+      .update({
+        checked_in: true,
+        checked_in_at: new Date().toISOString(),
+      })
       .eq('id', result.id)
       .select()
       .single()
@@ -154,101 +157,164 @@ export default function VerifyPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#050505] text-white px-4 py-6">
-      <div className="max-w-lg mx-auto space-y-4">
-        <h1 className="text-xl font-semibold tracking-[0.25em] text-center">
-          VERIFY ENTRY
-        </h1>
+    <main className="min-h-screen bg-black text-white px-4 py-6">
+      <div className="mx-auto flex max-w-3xl flex-col gap-6 md:flex-row">
+        {/* LEFT: controls */}
+        <section className="flex-1 space-y-4">
+          <header className="space-y-1">
+            <p className="text-[10px] uppercase tracking-[0.35em] text-red-500">
+              gravix · gate control
+            </p>
+            <h1 className="text-2xl font-semibold tracking-tight">VERIFY ENTRY</h1>
+            <p className="text-xs text-zinc-500">
+              Scan ticket QR or enter code to validate and confirm entry in real time.
+            </p>
+          </header>
 
-        <button
-          onClick={() => setScannerOpen(true)}
-          className="w-full rounded-xl bg-red-600 py-3 text-sm font-bold tracking-[0.2em] hover:bg-red-500"
-        >
-          SCAN QR CODE
-        </button>
+          <div className="rounded-2xl border border-red-900/70 bg-gradient-to-br from-red-950/60 via-black to-black p-4 shadow-[0_0_40px_rgba(239,68,68,0.25)]">
+            <button
+              onClick={() => setScannerOpen(true)}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3 text-xs font-semibold uppercase tracking-[0.25em] text-white transition hover:bg-red-500 active:scale-[0.98]"
+            >
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" />
+              SCAN QR CODE
+            </button>
+            <p className="mt-3 text-[11px] text-red-100/80">
+              وجّه التذكرة ناحية الكاميرا. لو الكود URL كامل، السيستم هيلقط الـ ID تلقائيًا.
+            </p>
+          </div>
 
-        {scannerOpen && (
-          <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/90">
+          <div className="rounded-2xl border border-zinc-800 bg-gradient-to-br from-zinc-950 via-black to-black p-4">
+            <div className="flex items-center justify-between text-[11px]">
+              <span className="uppercase tracking-[0.3em] text-zinc-500">manual entry</span>
+              <span className="text-zinc-600">GRV-XXXX-XXXX</span>
+            </div>
+
+            <div className="mt-3 space-y-2">
+              <input
+                type="text"
+                value={code}
+                onChange={(e) => setCode(e.target.value.toUpperCase())}
+                onKeyDown={(e) => e.key === 'Enter' && handleVerify()}
+                placeholder="GRV-2K26-0001"
+                className="w-full rounded-xl border border-zinc-800 bg-black px-3 py-2 text-sm text-white outline-none ring-red-600/40 placeholder:text-zinc-600 focus:border-red-600/70 focus:ring-1"
+              />
+              <button
+                onClick={handleVerify}
+                disabled={loading || !code.trim()}
+                className="flex w-full items-center justify-center rounded-xl bg-zinc-100 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.25em] text-black transition enabled:hover:bg-white disabled:cursor-not-allowed disabled:bg-zinc-900 disabled:text-zinc-500"
+              >
+                {loading ? 'CHECKING...' : 'VERIFY'}
+              </button>
+            </div>
+          </div>
+        </section>
+
+        {/* RIGHT: status / ticket */}
+        <section className="flex-1 space-y-3">
+          {status === 'notfound' && (
+            <div className="rounded-2xl border border-red-900 bg-gradient-to-br from-red-950 via-black to-black p-4">
+              <p className="text-xs font-semibold tracking-[0.25em] text-red-400">
+                INVALID TICKET
+              </p>
+              <p className="mt-2 text-[11px] text-red-100/80">
+                QR code غير مسجّل على أي تذكرة. تأكد إنك بتسكان كود Gravix الصحيح أو من النظام
+                الرسمي فقط.
+              </p>
+            </div>
+          )}
+
+          {status !== 'idle' && result && (
+            <div className="rounded-2xl border border-zinc-800 bg-gradient-to-br from-zinc-950 via-black to-black p-4 space-y-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="space-y-1">
+                  <p className="text-[10px] uppercase tracking-[0.3em] text-zinc-500">event</p>
+                  <p className="text-sm font-semibold tracking-tight">
+                    {result.events?.title}
+                  </p>
+                  <p className="text-[11px] text-zinc-400">
+                    Holder: {result.holder_name || result.reservations?.name}
+                  </p>
+                  <p className="text-[11px] text-zinc-500">
+                    Ticket #{result.ticket_number} · {result.ticket_type}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-zinc-800 px-3 py-2 text-right">
+                  <p className="text-[10px] uppercase tracking-[0.3em] text-zinc-500">status</p>
+                  <p
+                    className={`mt-1 text-[11px] font-semibold ${
+                      status === 'found'
+                        ? 'text-emerald-400'
+                        : status === 'already'
+                        ? 'text-amber-300'
+                        : 'text-red-400'
+                    }`}
+                  >
+                    {status === 'found'
+                      ? 'VALID'
+                      : status === 'already'
+                      ? 'CHECKED IN'
+                      : 'INVALID'}
+                  </p>
+                </div>
+              </div>
+
+              {status === 'already' && (
+                <p className="text-[11px] text-amber-300">
+                  ALREADY CHECKED IN{' '}
+                  {result.checked_in_at
+                    ? `at ${new Date(result.checked_in_at).toLocaleTimeString()}`
+                    : ''}
+                </p>
+              )}
+
+              {status === 'found' && (
+                <button
+                  onClick={handleCheckIn}
+                  disabled={loading}
+                  className="mt-1 flex w-full items-center justify-center rounded-xl bg-emerald-500 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.25em] text-black transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:bg-emerald-900 disabled:text-emerald-300"
+                >
+                  {loading ? 'CHECKING IN...' : 'CONFIRM ENTRY'}
+                </button>
+              )}
+
+              <button
+                onClick={handleReset}
+                className="w-full rounded-xl border border-zinc-800 px-4 py-2 text-[11px] uppercase tracking-[0.25em] text-zinc-400 hover:bg-zinc-950/70"
+              >
+                RESET
+              </button>
+            </div>
+          )}
+
+          {status === 'idle' && (
+            <div className="rounded-2xl border border-zinc-900 bg-gradient-to-br from-zinc-950 via-black to-black p-4 text-[11px] text-zinc-500">
+              Ready to scan. Use camera or manual code to verify tickets at the door.
+            </div>
+          )}
+        </section>
+      </div>
+
+      {/* Scanner overlay */}
+      {scannerOpen && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-black/90 px-4">
+          <div className="rounded-2xl border border-red-500/60 bg-black/70 p-3">
             <div
               id="qr-reader"
-              className="w-[280px] h-[280px] rounded-xl overflow-hidden border border-red-500"
+              className="h-[260px] w-[260px] overflow-hidden rounded-xl border border-red-500/60"
             />
-            <button
-              onClick={() => {
-                scannerInstanceRef.current?.stop().catch(() => {})
-                setScannerOpen(false)
-              }}
-              className="mt-4 px-4 py-2 text-xs rounded-lg border border-zinc-600"
-            >
-              CLOSE
-            </button>
           </div>
-        )}
-
-        <div className="rounded-xl border border-zinc-800 bg-black p-4 space-y-2">
-          <p className="text-[11px] text-zinc-500">OR ENTER QR CODE</p>
-          <input
-            type="text"
-            value={code}
-            onChange={(e) => setCode(e.target.value.toUpperCase())}
-            onKeyDown={(e) => e.key === 'Enter' && handleVerify()}
-            placeholder="GRV-XXXX-XXXX"
-            className="w-full rounded-lg bg-[#050505] border border-zinc-800 px-3 py-2 text-sm outline-none focus:border-red-600"
-          />
           <button
-            onClick={handleVerify}
-            disabled={loading || !code.trim()}
-            className="w-full rounded-lg bg-zinc-100 py-2 text-[11px] font-semibold tracking-[0.2em] text-black disabled:bg-zinc-800 disabled:text-zinc-500"
+            onClick={() => {
+              scannerInstanceRef.current?.stop().catch(() => {})
+              setScannerOpen(false)
+            }}
+            className="rounded-full border border-zinc-700 px-4 py-2 text-[11px] uppercase tracking-[0.25em] text-zinc-300 hover:bg-zinc-900"
           >
-            {loading ? 'CHECKING...' : 'VERIFY'}
+            CLOSE
           </button>
         </div>
-
-        {status === 'notfound' && (
-          <div className="rounded-xl border border-red-900 bg-red-950/60 p-3">
-            <p className="text-xs font-semibold text-red-300">INVALID TICKET</p>
-          </div>
-        )}
-
-        {status !== 'idle' && result && (
-          <div className="rounded-xl border border-zinc-800 bg-black p-4 space-y-2">
-            <p className="text-xs text-zinc-500">EVENT</p>
-            <p className="text-sm font-semibold">{result.events?.title}</p>
-            <p className="text-[11px] text-zinc-400">
-              Holder: {result.holder_name || result.reservations?.name}
-            </p>
-            <p className="text-[11px] text-zinc-500">
-              Ticket #{result.ticket_number} · {result.ticket_type}
-            </p>
-
-            {status === 'already' && (
-              <p className="mt-2 text-[11px] text-amber-300">
-                ALREADY CHECKED IN{' '}
-                {result.checked_in_at
-                  ? `at ${new Date(result.checked_in_at).toLocaleTimeString()}`
-                  : ''}
-              </p>
-            )}
-
-            {status === 'found' && (
-              <button
-                onClick={handleCheckIn}
-                disabled={loading}
-                className="mt-3 w-full rounded-lg bg-emerald-500 py-2 text-[11px] font-semibold tracking-[0.2em] text-black disabled:bg-emerald-900 disabled:text-emerald-300"
-              >
-                {loading ? 'CHECKING IN...' : 'CONFIRM ENTRY'}
-              </button>
-            )}
-
-            <button
-              onClick={handleReset}
-              className="mt-2 w-full rounded-lg border border-zinc-800 py-2 text-[11px] tracking-[0.2em] text-zinc-400"
-            >
-              RESET
-            </button>
-          </div>
-        )}
-      </div>
+      )}
     </main>
   )
 }
