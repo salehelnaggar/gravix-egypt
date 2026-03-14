@@ -26,11 +26,15 @@ export default function TicketPage({
         .eq('qr_code', qr_code)
         .single()
 
+      console.log('TICKET RESPONSE', { data, error, qr_code })
+
       if (error || !data) {
+        console.error('TICKET ERROR', error)
         setNotFound(true)
         setLoading(false)
         return
       }
+
       setTicket(data)
       setEvent(data.events)
       setLoading(false)
