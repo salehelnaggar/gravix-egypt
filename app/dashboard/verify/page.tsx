@@ -4,14 +4,16 @@ import { useEffect, useState, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 
-export default function VerifyEntryPage() {
+type Status = 'idle' | 'found' | 'notfound' | 'already'
+
+export default function VerifyPage() {
   const router = useRouter()
+
   const [code, setCode] = useState('')
   const [result, setResult] = useState<any>(null)
-  const [status, setStatus] = useState<'idle' | 'found' | 'notfound' | 'already'>('idle')
+  const [status, setStatus] = useState<Status>('idle')
   const [loading, setLoading] = useState(false)
 
-  // Scanner states
   const [scannerOpen, setScannerOpen] = useState(false)
   const scannerInstanceRef = useRef<any>(null)
 
@@ -21,6 +23,20 @@ export default function VerifyEntryPage() {
       router.push('/dashboard/login')
     }
   }, [router])
+
+  // لو فيه qr_code في ال URL نعمل verify
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    const params = new URLSearchParams(window.location.search)
+    const qr = params.get('qr_code')
+
+    if (qr) {
+      setCode(qr)
+      verifyByQR(qr)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // تشغيل الكاميرا
   useEffect(() => {
@@ -36,9 +52,6 @@ export default function VerifyEntryPage() {
           { facingMode: 'environment' },
           { fps: 10, qrbox: { width: 250, height: 250 } },
           async (decodedText: string) => {
-            // اقرأ النص اللي جوه الكود
-            console.log('SCANNED TEXT:', decodedText)
-
             let qrCode = decodedText.trim()
             if (qrCode.includes('/')) {
               const parts = qrCode.split('/')
@@ -50,8 +63,9 @@ export default function VerifyEntryPage() {
             await scanner.stop().catch(() => {})
             setScannerOpen(false)
 
-            setCode(qrCode)
-            await verifyByQR(qrCode)
+            if (typeof window !== 'undefined') {
+              window.location.href = `/dashboard/verify?qr_code=${encodeURIComponent(qrCode)}`
+            }
           },
           () => {},
         )
@@ -68,7 +82,6 @@ export default function VerifyEntryPage() {
     }
   }, [scannerOpen])
 
-  // verify من جدول tickets
   const verifyByQR = async (qrCode: string) => {
     setLoading(true)
     setResult(null)
@@ -76,11 +89,13 @@ export default function VerifyEntryPage() {
 
     const { data, error } = await supabase
       .from('tickets')
-      .select(`
+      .select(
+        `
         *,
-        events (title, date, location, image_url),
-        reservations (name, phone, instagram, num_people, total_price, standing_count, backstage_count, standing_price_per_person, backstage_price_per_person)
-      `)
+        events (title, date, location),
+        reservations (name, phone)
+      `,
+      )
       .eq('qr_code', qrCode.trim())
       .single()
 
@@ -102,13 +117,13 @@ export default function VerifyEntryPage() {
     setLoading(false)
   }
 
-  // verify يدوي
   const handleVerify = async () => {
     if (!code.trim()) return
-    await verifyByQR(code.trim())
+    if (typeof window !== 'undefined') {
+      window.location.href = `/dashboard/verify?qr_code=${encodeURIComponent(code.trim())}`
+    }
   }
 
-  // check-in
   const handleCheckIn = async () => {
     if (!result) return
     setLoading(true)
@@ -124,112 +139,101 @@ export default function VerifyEntryPage() {
   }
 
   const handleReset = () => {
-    setCode('')
-    setResult(null)
-    setStatus('idle')
-    setScannerOpen(false)
-  }
-
-  const closeScanner = () => {
-    scannerInstanceRef.current?.stop().catch(() => {})
-    setScannerOpen(false)
+    if (typeof window !== 'undefined') {
+      window.location.href = '/dashboard/verify'
+    }
   }
 
   return (
-    <main style={{ minHeight: '100vh', backgroundColor: '#050505', padding: '60px 24px', fontFamily: 'Inter, sans-serif' }}>
-      <div style={{ maxWidth: '560px', margin: '0 auto' }}>
-        {/* Header */}
-        <div style={{ marginBottom: '48px' }}>
-          <p style={{ color: '#dc2626', fontSize: '11px', letterSpacing: '4px', fontWeight: 700, margin: '0 0 8px' }}>● ADMIN</p>
-          <h1 style={{ fontSize: '36px', fontWeight: 900, color: '#fff', margin: 0, letterSpacing: '-1px' }}>VERIFY ENTRY</h1>
-        </div>
+    <main
+      style={{
+        minHeight: '100vh',
+        backgroundColor: '#050505',
+        color: '#fff',
+        padding: 24,
+        fontFamily: 'sans-serif',
+      }}
+    >
+      <div style={{ maxWidth: 500, margin: '0 auto' }}>
+        <h1 style={{ marginBottom: 16 }}>VERIFY ENTRY</h1>
 
-        {/* زرار فتح الكاميرا */}
         <button
-          onClick={() => { handleReset(); setScannerOpen(true) }}
+          onClick={() => setScannerOpen(true)}
           style={{
             width: '100%',
-            backgroundColor: 'rgba(220,38,38,0.1)',
-            border: '1px solid rgba(220,38,38,0.4)',
-            color: '#dc2626',
-            padding: '18px',
-            borderRadius: '14px',
-            fontWeight: 900,
-            fontSize: '14px',
-            letterSpacing: '3px',
+            padding: 12,
+            marginBottom: 16,
+            backgroundColor: '#dc2626',
+            border: 'none',
+            borderRadius: 8,
+            color: '#fff',
+            fontWeight: 700,
             cursor: 'pointer',
-            fontFamily: 'Inter, sans-serif',
-            marginBottom: '16px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '10px',
           }}
         >
-          <span style={{ fontSize: '20px' }}>📷</span> SCAN QR CODE
+          SCAN QR CODE
         </button>
 
-        {/* QR Scanner Modal */}
         {scannerOpen && (
-          <div style={{
-            position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.95)',
-            zIndex: 1000, display: 'flex', flexDirection: 'column',
-            alignItems: 'center', justifyContent: 'center', padding: '24px',
-          }}>
-            <p style={{ color: '#dc2626', fontSize: '11px', letterSpacing: '4px', fontWeight: 700, marginBottom: '24px' }}>● SCANNING QR CODE</p>
-
-            <div style={{ position: 'relative', width: '100%', maxWidth: '340px' }}>
-              <div
-                id="qr-reader"
-                style={{ width: '100%', borderRadius: '16px', overflow: 'hidden' }}
-              />
-
-              {[
-                { top: 0, left: 0, borderTop: '3px solid #dc2626', borderLeft: '3px solid #dc2626' },
-                { top: 0, right: 0, borderTop: '3px solid #dc2626', borderRight: '3px solid #dc2626' },
-                { bottom: 0, left: 0, borderBottom: '3px solid #dc2626', borderLeft: '3px solid #dc2626' },
-                { bottom: 0, right: 0, borderBottom: '3px solid #dc2626', borderRight: '3px solid #dc2626' },
-              ].map((corner, i) => (
-                <div key={i} style={{ position: 'absolute', width: '24px', height: '24px', borderRadius: '2px', ...corner }} />
-              ))}
-            </div>
-
-            <p style={{ color: '#444', fontSize: '12px', letterSpacing: '2px', margin: '24px 0 20px', textAlign: 'center' }}>
-              Point camera at the QR code
-            </p>
-
+          <div
+            style={{
+              position: 'fixed',
+              inset: 0,
+              backgroundColor: 'rgba(0,0,0,0.9)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexDirection: 'column',
+              gap: 12,
+              padding: 16,
+            }}
+          >
+            <div
+              id="qr-reader"
+              style={{ width: 300, maxWidth: '100%', borderRadius: 8, overflow: 'hidden' }}
+            />
             <button
-              onClick={closeScanner}
-              style={{ background: 'none', border: '1px solid #333', color: '#555', padding: '12px 32px', borderRadius: '10px', cursor: 'pointer', fontSize: '12px', letterSpacing: '2px', fontFamily: 'Inter, sans-serif', fontWeight: 700 }}
+              onClick={() => {
+                scannerInstanceRef.current?.stop().catch(() => {})
+                setScannerOpen(false)
+              }}
+              style={{
+                padding: 10,
+                borderRadius: 6,
+                border: '1px solid #555',
+                background: 'none',
+                color: '#ccc',
+                cursor: 'pointer',
+              }}
             >
-              CANCEL
+              CLOSE
             </button>
           </div>
         )}
 
-        {/* Manual Input */}
-        <div style={{ backgroundColor: '#0d0d0d', border: '1px solid #1a1a1a', borderRadius: '20px', padding: '32px', marginBottom: '24px' }}>
-          <p style={{ color: '#444', fontSize: '10px', letterSpacing: '2px', fontWeight: 700, margin: '0 0 16px' }}>OR ENTER QR CODE MANUALLY</p>
+        <div
+          style={{
+            marginTop: 16,
+            padding: 16,
+            borderRadius: 8,
+            backgroundColor: '#111',
+          }}
+        >
+          <p style={{ fontSize: 12, color: '#999', marginBottom: 8 }}>OR ENTER QR CODE</p>
           <input
             type="text"
             value={code}
-            onChange={e => setCode(e.target.value.toUpperCase())}
-            onKeyDown={e => e.key === 'Enter' && handleVerify()}
+            onChange={(e) => setCode(e.target.value.toUpperCase())}
+            onKeyDown={(e) => e.key === 'Enter' && handleVerify()}
             placeholder="GRV-XXXX-XXXX"
             style={{
               width: '100%',
-              backgroundColor: '#111',
-              border: '1px solid #222',
-              borderRadius: '12px',
-              padding: '16px 20px',
+              padding: 10,
+              borderRadius: 6,
+              border: '1px solid #333',
+              backgroundColor: '#000',
               color: '#fff',
-              fontSize: '18px',
-              fontFamily: 'monospace',
-              fontWeight: 900,
-              letterSpacing: '4px',
-              outline: 'none',
-              textAlign: 'center',
-              boxSizing: 'border-box',
+              marginBottom: 8,
             }}
           />
           <button
@@ -237,111 +241,99 @@ export default function VerifyEntryPage() {
             disabled={loading || !code.trim()}
             style={{
               width: '100%',
-              marginTop: '16px',
-              backgroundColor: code.trim() && !loading ? '#dc2626' : '#111',
-              color: code.trim() && !loading ? '#fff' : '#333',
+              padding: 10,
+              borderRadius: 6,
               border: 'none',
-              padding: '16px',
-              borderRadius: '12px',
-              fontWeight: 900,
-              fontSize: '14px',
-              letterSpacing: '3px',
-              cursor: code.trim() && !loading ? 'pointer' : 'not-allowed',
-              fontFamily: 'Inter, sans-serif',
+              backgroundColor: loading || !code.trim() ? '#333' : '#dc2626',
+              color: '#fff',
+              fontWeight: 700,
+              cursor: loading || !code.trim() ? 'default' : 'pointer',
             }}
           >
-            {loading ? 'CHECKING...' : 'VERIFY →'}
+            {loading ? 'CHECKING...' : 'VERIFY'}
           </button>
         </div>
 
-        {/* Not Found */}
         {status === 'notfound' && (
-          <div style={{ backgroundColor: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '20px', padding: '40px', textAlign: 'center' }}>
-            <p style={{ fontSize: '48px', margin: '0 0 16px' }}>❌</p>
-            <p style={{ color: '#ef4444', fontSize: '16px', fontWeight: 900, letterSpacing: '2px', margin: '0 0 8px' }}>INVALID TICKET</p>
-            <p style={{ color: '#555', fontSize: '13px', margin: '0 0 24px' }}>No ticket found with this QR code.</p>
-            <button onClick={handleReset} style={{ background: 'none', border: '1px solid #333', color: '#555', padding: '10px 24px', borderRadius: '8px', cursor: 'pointer', fontSize: '12px', letterSpacing: '2px', fontFamily: 'Inter, sans-serif' }}>
-              TRY AGAIN
-            </button>
+          <div
+            style={{
+              marginTop: 16,
+              padding: 16,
+              borderRadius: 8,
+              backgroundColor: '#180000',
+              border: '1px solid #7f1d1d',
+            }}
+          >
+            <p style={{ margin: 0, color: '#fecaca' }}>INVALID TICKET</p>
           </div>
         )}
 
-        {/* Already Checked In */}
-        {status === 'already' && result && (
-          <div style={{ backgroundColor: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: '20px', padding: '32px' }}>
-            <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-              <p style={{ fontSize: '48px', margin: '0 0 16px' }}>⚠️</p>
-              <p style={{ color: '#f59e0b', fontSize: '16px', fontWeight: 900, letterSpacing: '2px', margin: '0 0 8px' }}>ALREADY CHECKED IN</p>
-              <p style={{ color: '#555', fontSize: '13px', margin: 0 }}>
-                Entered at{' '}
+        {status !== 'idle' && result && (
+          <div
+            style={{
+              marginTop: 16,
+              padding: 16,
+              borderRadius: 8,
+              backgroundColor: '#050816',
+              border: '1px solid #1f2937',
+            }}
+          >
+            <p style={{ margin: 0, fontWeight: 700 }}>{result.events?.title}</p>
+            <p style={{ margin: '4px 0', color: '#9ca3af', fontSize: 14 }}>
+              Holder: {result.holder_name}
+            </p>
+            <p style={{ margin: '4px 0', color: '#9ca3af', fontSize: 14 }}>
+              Ticket #{result.ticket_number} · {result.ticket_type}
+            </p>
+
+            {status === 'already' && (
+              <p style={{ marginTop: 8, color: '#f59e0b', fontSize: 13 }}>
+                ALREADY CHECKED IN at{' '}
                 {result.checked_in_at
-                  ? new Date(result.checked_in_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
-                  : '—'}
+                  ? new Date(result.checked_in_at).toLocaleTimeString()
+                  : ''}
               </p>
-            </div>
+            )}
 
-            <TicketBlock ticket={result} />
-
-            <button onClick={handleReset} style={{ width: '100%', background: 'none', border: '1px solid #222', color: '#555', padding: '12px', borderRadius: '10px', cursor: 'pointer', fontSize: '12px', letterSpacing: '2px', fontFamily: 'Inter, sans-serif', fontWeight: 700 }}>
-              VERIFY ANOTHER →
-            </button>
-          </div>
-        )}
-
-        {/* Found – Confirm Entry */}
-        {status === 'found' && result && (
-          <div style={{ backgroundColor: 'rgba(16,185,129,0.05)', border: '1px solid rgba(16,185,129,0.3)', borderRadius: '20px', padding: '32px' }}>
-            <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-              <p style={{ fontSize: '48px', margin: '0 0 16px' }}>✅</p>
-              <p style={{ color: '#10b981', fontSize: '16px', fontWeight: 900, letterSpacing: '2px', margin: '0 0 4px' }}>VALID TICKET</p>
-              <p style={{ color: '#555', fontSize: '13px', margin: 0 }}>{result.events?.title}</p>
-            </div>
-
-            <TicketBlock ticket={result} />
+            {status === 'found' && (
+              <button
+                onClick={handleCheckIn}
+                disabled={loading}
+                style={{
+                  marginTop: 12,
+                  width: '100%',
+                  padding: 10,
+                  borderRadius: 6,
+                  border: 'none',
+                  backgroundColor: '#16a34a',
+                  color: '#fff',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                }}
+              >
+                {loading ? 'CHECKING IN...' : 'CONFIRM ENTRY'}
+              </button>
+            )}
 
             <button
-              onClick={handleCheckIn}
-              disabled={loading}
-              style={{ width: '100%', backgroundColor: '#10b981', color: '#fff', border: 'none', padding: '18px', borderRadius: '12px', fontWeight: 900, fontSize: '15px', letterSpacing: '3px', cursor: 'pointer', fontFamily: 'Inter, sans-serif', marginBottom: '12px' }}
+              onClick={handleReset}
+              style={{
+                marginTop: 8,
+                width: '100%',
+                padding: 8,
+                borderRadius: 6,
+                border: '1px solid #374151',
+                background: 'none',
+                color: '#9ca3af',
+                fontSize: 13,
+                cursor: 'pointer',
+              }}
             >
-              {loading ? 'CHECKING IN...' : '✅ CONFIRM ENTRY →'}
-            </button>
-
-            <button onClick={handleReset} style={{ width: '100%', background: 'none', border: '1px solid #222', color: '#555', padding: '12px', borderRadius: '10px', cursor: 'pointer', fontSize: '12px', letterSpacing: '2px', fontFamily: 'Inter, sans-serif', fontWeight: 700 }}>
-              CANCEL
+              RESET
             </button>
           </div>
         )}
       </div>
     </main>
-  )
-}
-
-// Ticket details block
-function TicketBlock({ ticket }: { ticket: any }) {
-  return (
-    <div style={{ backgroundColor: '#111', borderRadius: '12px', padding: '20px', marginBottom: '20px' }}>
-      <p style={{ color: '#333', fontSize: '10px', letterSpacing: '2px', fontWeight: 700, margin: '0 0 14px' }}>TICKET DETAILS</p>
-
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-        {[
-          { label: 'HOLDER', value: ticket.holder_name },
-          {
-            label: 'TICKET TYPE',
-            value: ticket.ticket_type?.toUpperCase(),
-            color: ticket.ticket_type === 'backstage' ? '#a855f7' : '#22c55e',
-          },
-          { label: 'TICKET #', value: `#${ticket.ticket_number}` },
-          { label: 'EVENT', value: ticket.events?.title },
-          { label: 'PHONE', value: ticket.holder_phone || '—' },
-          { label: 'INSTAGRAM', value: ticket.holder_instagram ? `@${ticket.holder_instagram}` : '—' },
-        ].map((item) => (
-          <div key={item.label} style={{ backgroundColor: '#0d0d0d', border: '1px solid #1a1a1a', borderRadius: '8px', padding: '10px 12px' }}>
-            <p style={{ color: '#333', fontSize: '9px', letterSpacing: '2px', fontWeight: 700, margin: '0 0 4px' }}>{item.label}</p>
-            <p style={{ color: (item as any).color || '#fff', fontSize: '13px', fontWeight: 600, margin: 0 }}>{item.value}</p>
-          </div>
-        ))}
-      </div>
-    </div>
   )
 }
