@@ -11,18 +11,18 @@ export default function VerifyEntryPage() {
   const [status, setStatus] = useState<'idle' | 'found' | 'notfound' | 'already'>('idle')
   const [loading, setLoading] = useState(false)
 
-  // ✅ Scanner states
+  // Scanner states
   const [scannerOpen, setScannerOpen] = useState(false)
-  const scannerRef = useRef<any>(null)
   const scannerInstanceRef = useRef<any>(null)
 
+  // check admin auth
   useEffect(() => {
     if (typeof window !== 'undefined' && localStorage.getItem('admin_auth') !== 'true') {
       router.push('/dashboard/login')
     }
   }, [router])
 
-  // ✅ تشغيل الكاميرا
+  // تشغيل الكاميرا
   useEffect(() => {
     if (!scannerOpen) return
 
@@ -36,12 +36,22 @@ export default function VerifyEntryPage() {
           { facingMode: 'environment' },
           { fps: 10, qrbox: { width: 250, height: 250 } },
           async (decodedText: string) => {
-            // استخراج الـ qr_code من اللينك
-            const parts = decodedText.split('/')
-            const qrCode = parts[parts.length - 1]
+            console.log('SCANNED TEXT:', decodedText)
 
-            await scanner.stop()
+            let qrCode = decodedText.trim()
+            if (qrCode.includes('/')) {
+              const parts = qrCode.split('/')
+              qrCode = parts[parts.length - 1]
+            }
+
+            if (!qrCode) {
+              console.error('NO QR CODE PARSED')
+              return
+            }
+
+            await scanner.stop().catch(() => {})
             setScannerOpen(false)
+
             setCode(qrCode)
             await verifyByQR(qrCode)
           },
@@ -60,7 +70,7 @@ export default function VerifyEntryPage() {
     }
   }, [scannerOpen])
 
-  // ✅ verify من جدول tickets
+  // verify من جدول tickets
   const verifyByQR = async (qrCode: string) => {
     setLoading(true)
     setResult(null)
@@ -75,6 +85,8 @@ export default function VerifyEntryPage() {
       `)
       .eq('qr_code', qrCode.trim())
       .single()
+
+    console.log('VERIFY RESPONSE', { data, error })
 
     if (error || !data) {
       setStatus('notfound')
@@ -94,13 +106,13 @@ export default function VerifyEntryPage() {
     setLoading(false)
   }
 
-  // ✅ verify يدوي بالكود
+  // verify يدوي بالكود
   const handleVerify = async () => {
     if (!code.trim()) return
     await verifyByQR(code.trim())
   }
 
-  // ✅ check-in على جدول tickets
+  // check-in على جدول tickets
   const handleCheckIn = async () => {
     if (!result) return
     setLoading(true)
@@ -130,14 +142,13 @@ export default function VerifyEntryPage() {
   return (
     <main style={{ minHeight: '100vh', backgroundColor: '#050505', padding: '60px 24px', fontFamily: 'Inter, sans-serif' }}>
       <div style={{ maxWidth: '560px', margin: '0 auto' }}>
-
         {/* Header */}
         <div style={{ marginBottom: '48px' }}>
           <p style={{ color: '#dc2626', fontSize: '11px', letterSpacing: '4px', fontWeight: 700, margin: '0 0 8px' }}>● ADMIN</p>
           <h1 style={{ fontSize: '36px', fontWeight: 900, color: '#fff', margin: 0, letterSpacing: '-1px' }}>VERIFY ENTRY</h1>
         </div>
 
-        {/* ✅ زرار فتح الكاميرا */}
+        {/* زرار فتح الكاميرا */}
         <button
           onClick={() => { handleReset(); setScannerOpen(true) }}
           style={{
@@ -162,7 +173,7 @@ export default function VerifyEntryPage() {
           <span style={{ fontSize: '20px' }}>📷</span> SCAN QR CODE
         </button>
 
-        {/* ✅ QR Scanner Modal */}
+        {/* QR Scanner Modal */}
         {scannerOpen && (
           <div style={{
             position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.95)',
@@ -172,13 +183,11 @@ export default function VerifyEntryPage() {
             <p style={{ color: '#dc2626', fontSize: '11px', letterSpacing: '4px', fontWeight: 700, marginBottom: '24px' }}>● SCANNING QR CODE</p>
 
             <div style={{ position: 'relative', width: '100%', maxWidth: '340px' }}>
-              {/* QR Reader container */}
               <div
                 id="qr-reader"
                 style={{ width: '100%', borderRadius: '16px', overflow: 'hidden' }}
               />
 
-              {/* Corner decorations */}
               {[
                 { top: 0, left: 0, borderTop: '3px solid #dc2626', borderLeft: '3px solid #dc2626' },
                 { top: 0, right: 0, borderTop: '3px solid #dc2626', borderRight: '3px solid #dc2626' },
@@ -249,7 +258,7 @@ export default function VerifyEntryPage() {
           </button>
         </div>
 
-        {/* ❌ Not Found */}
+        {/* Not Found */}
         {status === 'notfound' && (
           <div style={{ backgroundColor: 'rgba(239,68,68,0.05)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '20px', padding: '40px', textAlign: 'center' }}>
             <p style={{ fontSize: '48px', margin: '0 0 16px' }}>❌</p>
@@ -261,14 +270,14 @@ export default function VerifyEntryPage() {
           </div>
         )}
 
-        {/* ⚠️ Already Checked In */}
+        {/* Already Checked In */}
         {status === 'already' && result && (
           <div style={{ backgroundColor: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: '20px', padding: '32px' }}>
             <div style={{ textAlign: 'center', marginBottom: '24px' }}>
               <p style={{ fontSize: '48px', margin: '0 0 16px' }}>⚠️</p>
               <p style={{ color: '#f59e0b', fontSize: '16px', fontWeight: 900, letterSpacing: '2px', margin: '0 0 8px' }}>ALREADY CHECKED IN</p>
               <p style={{ color: '#555', fontSize: '13px', margin: 0 }}>
-                Entered at:{' '}
+                Entered at{' '}
                 {result.checked_in_at
                   ? new Date(result.checked_in_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
                   : '—'}
@@ -283,7 +292,7 @@ export default function VerifyEntryPage() {
           </div>
         )}
 
-        {/* ✅ Found — Confirm Entry */}
+        {/* Found — Confirm Entry */}
         {status === 'found' && result && (
           <div style={{ backgroundColor: 'rgba(16,185,129,0.05)', border: '1px solid rgba(16,185,129,0.3)', borderRadius: '20px', padding: '32px' }}>
             <div style={{ textAlign: 'center', marginBottom: '24px' }}>
@@ -312,7 +321,7 @@ export default function VerifyEntryPage() {
   )
 }
 
-// ✅ Ticket details block
+// Ticket details block
 function TicketBlock({ ticket }: { ticket: any }) {
   return (
     <div style={{ backgroundColor: '#111', borderRadius: '12px', padding: '20px', marginBottom: '20px' }}>
@@ -330,7 +339,7 @@ function TicketBlock({ ticket }: { ticket: any }) {
           { label: 'EVENT', value: ticket.events?.title },
           { label: 'PHONE', value: ticket.holder_phone || '—' },
           { label: 'INSTAGRAM', value: ticket.holder_instagram ? `@${ticket.holder_instagram}` : '—' },
-        ].map(item => (
+        ].map((item) => (
           <div key={item.label} style={{ backgroundColor: '#0d0d0d', border: '1px solid #1a1a1a', borderRadius: '8px', padding: '10px 12px' }}>
             <p style={{ color: '#333', fontSize: '9px', letterSpacing: '2px', fontWeight: 700, margin: '0 0 4px' }}>{item.label}</p>
             <p style={{ color: (item as any).color || '#fff', fontSize: '13px', fontWeight: 600, margin: 0 }}>{item.value}</p>
