@@ -16,52 +16,54 @@ export default function TicketPage({
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
 
-  useEffect(() => {
-    if (!qr_code) return
+useEffect(() => {
+  console.log('TICKET PAGE EFFECT RUN', { qr_code })
 
-    const run = async () => {
-      const { data, error } = await supabase
-        .from('tickets')
-        .select(`*, events(title, date, location, image_url)`)
-        .eq('qr_code', qr_code)
-        .single()
+  if (!qr_code) return
 
-      console.log('TICKET RESPONSE', { data, error, qr_code })
+  const run = async () => {
+    const { data, error } = await supabase
+      .from('tickets')
+      .select(`*, events(title, date, location, image_url)`)
+      .eq('qr_code', qr_code)
+      .single()
 
-      if (error || !data) {
-        console.error('TICKET ERROR', error)
-        setNotFound(true)
-        setLoading(false)
-        return
-      }
+    console.log('TICKET RESPONSE', { data, error, qr_code })
 
-      setTicket(data)
-      setEvent(data.events)
+    if (error || !data) {
+      console.error('TICKET ERROR', error)
+      setNotFound(true)
       setLoading(false)
+      return
     }
 
-    run()
+    setTicket(data)
+    setEvent(data.events)
+    setLoading(false)
+  }
 
-    const channel = supabase
-      .channel(`ticket-${qr_code}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'tickets',
-          filter: `qr_code=eq.${qr_code}`,
-        },
-        (payload) => {
-          setTicket((prev: any) => ({ ...prev, ...payload.new }))
-        },
-      )
-      .subscribe()
+  run()
 
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [qr_code])
+  const channel = supabase
+    .channel(`ticket-${qr_code}`)
+    .on(
+      'postgres_changes',
+      {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'tickets',
+        filter: `qr_code=eq.${qr_code}`,
+      },
+      (payload) => {
+        setTicket((prev: any) => ({ ...prev, ...payload.new }))
+      },
+    )
+    .subscribe()
+
+  return () => {
+    supabase.removeChannel(channel)
+  }
+}, [qr_code])
 
   // ─── LOADING
   if (loading) {
