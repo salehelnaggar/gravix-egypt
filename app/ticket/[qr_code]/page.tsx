@@ -4,11 +4,13 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import QRCode from 'react-qr-code'
 
-export default function TicketPage({
-  params,
-}: {
-  params: { qr_code: string }
-}) {
+type TicketPageProps = {
+  params: {
+    qr_code: string
+  }
+}
+
+export default function TicketPage({ params }: TicketPageProps) {
   const qr_code = params.qr_code
 
   const [ticket, setTicket] = useState<any>(null)
@@ -16,54 +18,54 @@ export default function TicketPage({
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
 
-useEffect(() => {
-  console.log('TICKET PAGE EFFECT RUN', { qr_code })
+  useEffect(() => {
+    console.log('TICKET PAGE EFFECT RUN', { qr_code })
 
-  if (!qr_code) return
+    if (!qr_code) return
 
-  const run = async () => {
-    const { data, error } = await supabase
-      .from('tickets')
-      .select(`*, events(title, date, location, image_url)`)
-      .eq('qr_code', qr_code)
-      .single()
+    const run = async () => {
+      const { data, error } = await supabase
+        .from('tickets')
+        .select(`*, events(title, date, location, image_url)`)
+        .eq('qr_code', qr_code)
+        .single()
 
-    console.log('TICKET RESPONSE', { data, error, qr_code })
+      console.log('TICKET RESPONSE', { data, error, qr_code })
 
-    if (error || !data) {
-      console.error('TICKET ERROR', error)
-      setNotFound(true)
+      if (error || !data) {
+        console.error('TICKET ERROR', error)
+        setNotFound(true)
+        setLoading(false)
+        return
+      }
+
+      setTicket(data)
+      setEvent(data.events)
       setLoading(false)
-      return
     }
 
-    setTicket(data)
-    setEvent(data.events)
-    setLoading(false)
-  }
+    run()
 
-  run()
+    const channel = supabase
+      .channel(`ticket-${qr_code}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'tickets',
+          filter: `qr_code=eq.${qr_code}`,
+        },
+        (payload) => {
+          setTicket((prev: any) => ({ ...prev, ...payload.new }))
+        },
+      )
+      .subscribe()
 
-  const channel = supabase
-    .channel(`ticket-${qr_code}`)
-    .on(
-      'postgres_changes',
-      {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'tickets',
-        filter: `qr_code=eq.${qr_code}`,
-      },
-      (payload) => {
-        setTicket((prev: any) => ({ ...prev, ...payload.new }))
-      },
-    )
-    .subscribe()
-
-  return () => {
-    supabase.removeChannel(channel)
-  }
-}, [qr_code])
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [qr_code])
 
   // ─── LOADING
   if (loading) {
@@ -384,7 +386,6 @@ useEffect(() => {
             alignItems: 'center',
           }}
         >
-          {/* Left circle */}
           <div
             style={{
               position: 'absolute',
@@ -396,7 +397,6 @@ useEffect(() => {
               border: `1px solid ${accentColor}20`,
             }}
           />
-          {/* Right circle */}
           <div
             style={{
               position: 'absolute',
@@ -408,7 +408,6 @@ useEffect(() => {
               border: `1px solid ${accentColor}20`,
             }}
           />
-          {/* Dashed line */}
           <div
             style={{
               width: '100%',
@@ -427,7 +426,7 @@ useEffect(() => {
             padding: '24px',
           }}
         >
-          {/* ── EVENT DETAILS GRID ── */}
+          {/* EVENT DETAILS GRID */}
           <div
             style={{
               display: 'grid',
@@ -436,7 +435,6 @@ useEffect(() => {
               marginBottom: '24px',
             }}
           >
-            {/* Date */}
             <div
               style={{
                 backgroundColor: '#111',
@@ -476,7 +474,6 @@ useEffect(() => {
               </p>
             </div>
 
-            {/* Time */}
             <div
               style={{
                 backgroundColor: '#111',
@@ -514,7 +511,6 @@ useEffect(() => {
               </p>
             </div>
 
-            {/* Venue */}
             <div
               style={{
                 backgroundColor: '#111',
@@ -547,7 +543,6 @@ useEffect(() => {
               </p>
             </div>
 
-            {/* Type */}
             <div
               style={{
                 backgroundColor: '#111',
@@ -582,11 +577,10 @@ useEffect(() => {
             </div>
           </div>
 
-          {/* ── QR CODE SECTION ── */}
+          {/* QR SECTION */}
           <div style={{ textAlign: 'center' }}>
             {isCheckedIn ? (
               <>
-                {/* QR with X */}
                 <div
                   style={{
                     position: 'relative',
@@ -607,7 +601,6 @@ useEffect(() => {
                       fgColor="#ffffff"
                     />
                   </div>
-                  {/* X overlay */}
                   <div
                     style={{
                       position: 'absolute',
@@ -690,7 +683,6 @@ useEffect(() => {
                   SCAN AT ENTRANCE
                 </p>
 
-                {/* QR with glow */}
                 <div
                   style={{
                     display: 'inline-block',
@@ -711,7 +703,6 @@ useEffect(() => {
                   />
                 </div>
 
-                {/* Valid badge */}
                 <div
                   style={{
                     background: isBackstage
@@ -754,7 +745,6 @@ useEffect(() => {
               </>
             )}
 
-            {/* Footer */}
             <p
               style={{
                 color: '#1c1c1c',
