@@ -325,7 +325,8 @@ export default function VerifyPage() {
                 marginTop: '10px',
               }}
             >
-Face The Camera To Scan The QR Code            </p>
+              Face The Camera To Scan The QR Code
+            </p>
           </div>
 
           {/* Manual code card */}
@@ -404,7 +405,7 @@ Face The Camera To Scan The QR Code            </p>
           </div>
         </section>
 
-        {/* RIGHT: ticket status */}
+        {/* RIGHT: ticket status + full details */}
         <section style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {status === 'idle' && (
             <div
@@ -463,6 +464,7 @@ Face The Camera To Scan The QR Code            </p>
                 padding: '20px',
               }}
             >
+              {/* TOP: event + status */}
               <div
                 style={{
                   display: 'flex',
@@ -499,16 +501,18 @@ Face The Camera To Scan The QR Code            </p>
                       marginTop: '4px',
                     }}
                   >
-                    Holder: {result.holder_name || result.reservations?.name}
+                    {result.events?.date
+                      ? new Date(result.events.date).toLocaleString()
+                      : ''}
                   </div>
                   <div
                     style={{
-                      color: '#444',
-                      fontSize: '11px',
+                      color: '#777',
+                      fontSize: '12px',
                       marginTop: '2px',
                     }}
                   >
-                    Ticket #{result.ticket_number} · {result.ticket_type}
+                    📍 {result.events?.location}
                   </div>
                 </div>
 
@@ -518,7 +522,7 @@ Face The Camera To Scan The QR Code            </p>
                     border: '1px solid #1f1f1f',
                     padding: '8px 10px',
                     textAlign: 'right',
-                    minWidth: 110,
+                    minWidth: 120,
                   }}
                 >
                   <div
@@ -549,24 +553,120 @@ Face The Camera To Scan The QR Code            </p>
                       ? 'CHECKED IN'
                       : 'INVALID'}
                   </div>
+                  {status === 'already' && (
+                    <div
+                      style={{
+                        color: '#facc15',
+                        fontSize: '10px',
+                        marginTop: '4px',
+                      }}
+                    >
+                      {result.checked_in_at
+                        ? new Date(result.checked_in_at).toLocaleTimeString()
+                        : ''}
+                    </div>
+                  )}
                 </div>
               </div>
 
-              {status === 'already' && (
+              {/* MIDDLE: ticket + holder details */}
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: '12px',
+                  marginTop: '8px',
+                  fontSize: '12px',
+                  color: '#ddd',
+                }}
+              >
                 <div
                   style={{
-                    color: '#facc15',
-                    fontSize: '11px',
-                    marginBottom: '8px',
+                    borderRadius: '12px',
+                    border: '1px solid #151515',
+                    padding: '10px',
+                    backgroundColor: '#050505',
                   }}
                 >
-                  ALREADY CHECKED IN{' '}
-                  {result.checked_in_at
-                    ? `at ${new Date(result.checked_in_at).toLocaleTimeString()}`
-                    : ''}
+                  <div
+                    style={{
+                      color: '#666',
+                      fontSize: '10px',
+                      letterSpacing: '2px',
+                      marginBottom: '4px',
+                    }}
+                  >
+                    HOLDER
+                  </div>
+                  <div style={{ fontWeight: 600 }}>
+                    {result.holder_name || result.reservations?.name || '—'}
+                  </div>
+                  <div
+                    style={{
+                      color: '#777',
+                      fontSize: '11px',
+                      marginTop: '2px',
+                    }}
+                  >
+                    PHONE: {result.holder_phone || result.reservations?.phone || '—'}
+                  </div>
+                  <div
+                    style={{
+                      color: '#777',
+                      fontSize: '11px',
+                      marginTop: '2px',
+                    }}
+                  >
+                    INSTAGRAM: {result.holder_instagram || '—'}
+                  </div>
                 </div>
-              )}
 
+                <div
+                  style={{
+                    borderRadius: '12px',
+                    border: '1px solid #151515',
+                    padding: '10px',
+                    backgroundColor: '#050505',
+                  }}
+                >
+                  <div
+                    style={{
+                      color: '#666',
+                      fontSize: '10px',
+                      letterSpacing: '2px',
+                      marginBottom: '4px',
+                    }}
+                  >
+                    TICKET
+                  </div>
+                  <div style={{ fontWeight: 600 }}>
+                    #{result.ticket_number} · {result.ticket_type}
+                  </div>
+                  <div
+                    style={{
+                      color: '#777',
+                      fontSize: '11px',
+                      marginTop: '2px',
+                    }}
+                  >
+                    QR: {result.qr_code}
+                  </div>
+                  <div
+                    style={{
+                      color: '#777',
+                      fontSize: '11px',
+                      marginTop: '2px',
+                    }}
+                  >
+                    CREATED:{' '}
+                    {result.created_at
+                      ? new Date(result.created_at).toLocaleString()
+                      : '—'}
+                  </div>
+                </div>
+              </div>
+
+              {/* BOTTOM: actions */}
               {status === 'found' && (
                 <button
                   onClick={handleCheckIn}
@@ -583,7 +683,7 @@ Face The Camera To Scan The QR Code            </p>
                     letterSpacing: '2px',
                     border: 'none',
                     cursor: loading ? 'default' : 'pointer',
-                    marginTop: '8px',
+                    marginTop: '12px',
                   }}
                 >
                   {loading ? 'CHECKING IN...' : 'CONFIRM ENTRY'}
