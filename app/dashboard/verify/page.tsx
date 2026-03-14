@@ -11,18 +11,15 @@ export default function VerifyEntryPage() {
   const [status, setStatus] = useState<'idle' | 'found' | 'notfound' | 'already'>('idle')
   const [loading, setLoading] = useState(false)
 
-  // Scanner states
   const [scannerOpen, setScannerOpen] = useState(false)
   const scannerInstanceRef = useRef<any>(null)
 
-  // admin auth
   useEffect(() => {
     if (typeof window !== 'undefined' && localStorage.getItem('admin_auth') !== 'true') {
       router.push('/dashboard/login')
     }
   }, [router])
 
-  // تشغيل الكاميرا
   useEffect(() => {
     if (!scannerOpen) return
 
@@ -36,7 +33,6 @@ export default function VerifyEntryPage() {
           { facingMode: 'environment' },
           { fps: 10, qrbox: { width: 250, height: 250 } },
           async (decodedText: string) => {
-            // اقرأ النص اللي جوه الكود
             console.log('SCANNED TEXT:', decodedText)
 
             let qrCode = decodedText.trim()
@@ -68,7 +64,6 @@ export default function VerifyEntryPage() {
     }
   }, [scannerOpen])
 
-  // verify من جدول tickets
   const verifyByQR = async (qrCode: string) => {
     setLoading(true)
     setResult(null)
@@ -102,13 +97,11 @@ export default function VerifyEntryPage() {
     setLoading(false)
   }
 
-  // verify يدوي
   const handleVerify = async () => {
     if (!code.trim()) return
     await verifyByQR(code.trim())
   }
 
-  // check-in
   const handleCheckIn = async () => {
     if (!result) return
     setLoading(true)
@@ -138,13 +131,11 @@ export default function VerifyEntryPage() {
   return (
     <main style={{ minHeight: '100vh', backgroundColor: '#050505', padding: '60px 24px', fontFamily: 'Inter, sans-serif' }}>
       <div style={{ maxWidth: '560px', margin: '0 auto' }}>
-        {/* Header */}
         <div style={{ marginBottom: '48px' }}>
           <p style={{ color: '#dc2626', fontSize: '11px', letterSpacing: '4px', fontWeight: 700, margin: '0 0 8px' }}>● ADMIN</p>
           <h1 style={{ fontSize: '36px', fontWeight: 900, color: '#fff', margin: 0, letterSpacing: '-1px' }}>VERIFY ENTRY</h1>
         </div>
 
-        {/* زرار فتح الكاميرا */}
         <button
           onClick={() => { handleReset(); setScannerOpen(true) }}
           style={{
@@ -169,7 +160,6 @@ export default function VerifyEntryPage() {
           <span style={{ fontSize: '20px' }}>📷</span> SCAN QR CODE
         </button>
 
-        {/* QR Scanner Modal */}
         {scannerOpen && (
           <div style={{
             position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.95)',
@@ -179,10 +169,7 @@ export default function VerifyEntryPage() {
             <p style={{ color: '#dc2626', fontSize: '11px', letterSpacing: '4px', fontWeight: 700, marginBottom: '24px' }}>● SCANNING QR CODE</p>
 
             <div style={{ position: 'relative', width: '100%', maxWidth: '340px' }}>
-              <div
-                id="qr-reader"
-                style={{ width: '100%', borderRadius: '16px', overflow: 'hidden' }}
-              />
+              <div id="qr-reader" style={{ width: '100%', borderRadius: '16px', overflow: 'hidden' }} />
 
               {[
                 { top: 0, left: 0, borderTop: '3px solid #dc2626', borderLeft: '3px solid #dc2626' },
@@ -317,7 +304,6 @@ export default function VerifyEntryPage() {
   )
 }
 
-// Ticket details block
 function TicketBlock({ ticket }: { ticket: any }) {
   return (
     <div style={{ backgroundColor: '#111', borderRadius: '12px', padding: '20px', marginBottom: '20px' }}>
