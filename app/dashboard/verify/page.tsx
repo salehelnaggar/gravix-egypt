@@ -15,7 +15,7 @@ export default function VerifyEntryPage() {
   const [scannerOpen, setScannerOpen] = useState(false)
   const scannerInstanceRef = useRef<any>(null)
 
-  // check admin auth
+  // admin auth
   useEffect(() => {
     if (typeof window !== 'undefined' && localStorage.getItem('admin_auth') !== 'true') {
       router.push('/dashboard/login')
@@ -36,6 +36,7 @@ export default function VerifyEntryPage() {
           { facingMode: 'environment' },
           { fps: 10, qrbox: { width: 250, height: 250 } },
           async (decodedText: string) => {
+            // اقرأ النص اللي جوه الكود
             console.log('SCANNED TEXT:', decodedText)
 
             let qrCode = decodedText.trim()
@@ -44,10 +45,7 @@ export default function VerifyEntryPage() {
               qrCode = parts[parts.length - 1]
             }
 
-            if (!qrCode) {
-              console.error('NO QR CODE PARSED')
-              return
-            }
+            if (!qrCode) return
 
             await scanner.stop().catch(() => {})
             setScannerOpen(false)
@@ -86,8 +84,6 @@ export default function VerifyEntryPage() {
       .eq('qr_code', qrCode.trim())
       .single()
 
-    console.log('VERIFY RESPONSE', { data, error })
-
     if (error || !data) {
       setStatus('notfound')
       setLoading(false)
@@ -106,13 +102,13 @@ export default function VerifyEntryPage() {
     setLoading(false)
   }
 
-  // verify يدوي بالكود
+  // verify يدوي
   const handleVerify = async () => {
     if (!code.trim()) return
     await verifyByQR(code.trim())
   }
 
-  // check-in على جدول tickets
+  // check-in
   const handleCheckIn = async () => {
     if (!result) return
     setLoading(true)
@@ -292,7 +288,7 @@ export default function VerifyEntryPage() {
           </div>
         )}
 
-        {/* Found — Confirm Entry */}
+        {/* Found – Confirm Entry */}
         {status === 'found' && result && (
           <div style={{ backgroundColor: 'rgba(16,185,129,0.05)', border: '1px solid rgba(16,185,129,0.3)', borderRadius: '20px', padding: '32px' }}>
             <div style={{ textAlign: 'center', marginBottom: '24px' }}>
