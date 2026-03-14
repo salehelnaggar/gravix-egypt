@@ -100,7 +100,7 @@ export default function TicketPage({
 
       <div style={{
         width: '100%',
-        maxWidth: '400px',
+        maxWidth: '420px',
         animation: 'fadeIn 0.4s ease',
       }}>
 
@@ -132,7 +132,7 @@ export default function TicketPage({
                 alt={event?.title}
                 style={{
                   width: '100%',
-                  height: '200px',
+                  height: '220px',
                   objectFit: 'cover',
                   display: 'block',
                   filter: isCheckedIn ? 'grayscale(80%) brightness(0.5)' : 'brightness(0.75)',
@@ -177,39 +177,15 @@ export default function TicketPage({
               }}>
                 <h1 style={{
                   color: '#fff',
-                  fontSize: '24px',
+                  fontSize: '26px',
                   fontWeight: 900,
-                  margin: '0 0 6px',
+                  margin: '0 0 8px',
                   letterSpacing: '-0.5px',
-                  textShadow: '0 2px 8px rgba(0,0,0,0.8)',
+                  textShadow: '0 2px 12px rgba(0,0,0,0.9)',
+                  lineHeight: 1.2,
                 }}>
                   {event?.title}
                 </h1>
-                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                  <span style={{
-                    backgroundColor: 'rgba(0,0,0,0.6)',
-                    color: '#888',
-                    fontSize: '11px',
-                    padding: '3px 10px',
-                    borderRadius: '6px',
-                  }}>
-                    📅 {event?.date
-                      ? new Date(event.date).toLocaleDateString('en-US', {
-                          weekday: 'short', month: 'short', day: 'numeric',
-                          year: 'numeric', timeZone: 'UTC',
-                        })
-                      : 'N/A'}
-                  </span>
-                  <span style={{
-                    backgroundColor: 'rgba(0,0,0,0.6)',
-                    color: '#888',
-                    fontSize: '11px',
-                    padding: '3px 10px',
-                    borderRadius: '6px',
-                  }}>
-                    📍 {event?.location}
-                  </span>
-                </div>
               </div>
             </div>
           ) : (
@@ -221,7 +197,7 @@ export default function TicketPage({
           )}
 
           {/* Holder info */}
-          <div style={{ padding: '20px 24px 24px' }}>
+          <div style={{ padding: '24px' }}>
             <div style={{
               display: 'flex',
               justifyContent: 'space-between',
@@ -301,133 +277,265 @@ export default function TicketPage({
           }} />
         </div>
 
-        {/* ── BOTTOM CARD (QR) ── */}
+        {/* ── BOTTOM CARD (EVENT DETAILS + QR) ── */}
         <div style={{
           backgroundColor: '#0a0a0a',
           borderRadius: '0 0 24px 24px',
           border: `1px solid ${accentColor}30`,
           borderTop: 'none',
           padding: '24px',
-          textAlign: 'center',
         }}>
 
-          {isCheckedIn ? (
-            <>
-              {/* QR فيه خط */}
-              <div style={{ position: 'relative', display: 'inline-block', marginBottom: '20px' }}>
-                <div style={{ opacity: 0.08, filter: 'grayscale(100%)' }}>
+          {/* ── EVENT DETAILS GRID ── */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: '10px',
+            marginBottom: '24px',
+          }}>
+            {/* Date */}
+            <div style={{
+              backgroundColor: '#111',
+              border: '1px solid #1a1a1a',
+              borderRadius: '12px',
+              padding: '12px 14px',
+            }}>
+              <p style={{
+                color: '#333',
+                fontSize: '9px',
+                letterSpacing: '2px',
+                fontWeight: 700,
+                margin: '0 0 6px',
+              }}>
+                📅 DATE
+              </p>
+              <p style={{
+                color: '#fff',
+                fontSize: '12px',
+                fontWeight: 700,
+                margin: 0,
+                lineHeight: 1.4,
+              }}>
+                {event?.date
+                  ? new Date(event.date).toLocaleDateString('en-US', {
+                      weekday: 'short',
+                      month: 'short',
+                      day: 'numeric',
+                      timeZone: 'UTC',
+                    })
+                  : 'N/A'}
+              </p>
+            </div>
+
+            {/* Time */}
+            <div style={{
+              backgroundColor: '#111',
+              border: '1px solid #1a1a1a',
+              borderRadius: '12px',
+              padding: '12px 14px',
+            }}>
+              <p style={{
+                color: '#333',
+                fontSize: '9px',
+                letterSpacing: '2px',
+                fontWeight: 700,
+                margin: '0 0 6px',
+              }}>
+                🕐 TIME
+              </p>
+              <p style={{
+                color: '#fff',
+                fontSize: '12px',
+                fontWeight: 700,
+                margin: 0,
+                lineHeight: 1.4,
+              }}>
+                {event?.date
+                  ? new Date(event.date).toLocaleTimeString('en-US', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })
+                  : 'N/A'}
+              </p>
+            </div>
+
+            {/* Venue */}
+            <div style={{
+              backgroundColor: '#111',
+              border: '1px solid #1a1a1a',
+              borderRadius: '12px',
+              padding: '12px 14px',
+            }}>
+              <p style={{
+                color: '#333',
+                fontSize: '9px',
+                letterSpacing: '2px',
+                fontWeight: 700,
+                margin: '0 0 6px',
+              }}>
+                📍 VENUE
+              </p>
+              <p style={{
+                color: '#fff',
+                fontSize: '12px',
+                fontWeight: 700,
+                margin: 0,
+                lineHeight: 1.4,
+              }}>
+                {event?.location || 'N/A'}
+              </p>
+            </div>
+
+            {/* Type */}
+            <div style={{
+              backgroundColor: '#111',
+              border: '1px solid #1a1a1a',
+              borderRadius: '12px',
+              padding: '12px 14px',
+            }}>
+              <p style={{
+                color: '#333',
+                fontSize: '9px',
+                letterSpacing: '2px',
+                fontWeight: 700,
+                margin: '0 0 6px',
+              }}>
+                {isBackstage ? '🎭' : '🎵'} TYPE
+              </p>
+              <p style={{
+                color: isBackstage ? '#a855f7' : '#10b981',
+                fontSize: '12px',
+                fontWeight: 700,
+                margin: 0,
+                lineHeight: 1.4,
+                textTransform: 'uppercase',
+              }}>
+                {ticket?.ticket_type || 'N/A'}
+              </p>
+            </div>
+          </div>
+
+          {/* ── QR CODE SECTION ── */}
+          <div style={{ textAlign: 'center' }}>
+
+            {isCheckedIn ? (
+              <>
+                {/* QR with X */}
+                <div style={{ position: 'relative', display: 'inline-block', marginBottom: '20px' }}>
+                  <div style={{ opacity: 0.08, filter: 'grayscale(100%)' }}>
+                    <QRCode
+                      value={`https://gravixegypt.online/ticket/${ticket.qr_code}`}
+                      size={160}
+                      bgColor="transparent"
+                      fgColor="#ffffff"
+                    />
+                  </div>
+                  {/* X overlay */}
+                  <div style={{
+                    position: 'absolute',
+                    inset: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}>
+                    <div style={{
+                      fontSize: '72px',
+                      color: '#ef4444',
+                      lineHeight: 1,
+                      opacity: 0.9,
+                    }}>✕</div>
+                  </div>
+                </div>
+
+                <div style={{
+                  backgroundColor: 'rgba(239,68,68,0.08)',
+                  border: '1px solid rgba(239,68,68,0.3)',
+                  borderRadius: '14px',
+                  padding: '18px 20px',
+                }}>
+                  <p style={{ color: '#ef4444', fontSize: '15px', fontWeight: 900, letterSpacing: '2px', margin: '0 0 6px' }}>
+                    ALREADY CHECKED IN
+                  </p>
+                  <p style={{ color: '#555', fontSize: '12px', margin: 0 }}>
+                    Entered at{' '}
+                    <span style={{ color: '#888', fontWeight: 700, fontFamily: 'monospace' }}>
+                      {ticket.checked_in_at
+                        ? new Date(ticket.checked_in_at).toLocaleTimeString('en-US', {
+                            hour: '2-digit', minute: '2-digit',
+                          })
+                        : 'N/A'}
+                    </span>
+                  </p>
+                </div>
+              </>
+            ) : (
+              <>
+                <p style={{ color: '#333', fontSize: '9px', letterSpacing: '3px', margin: '0 0 16px' }}>
+                  SCAN AT ENTRANCE
+                </p>
+
+                {/* QR with glow */}
+                <div style={{
+                  display: 'inline-block',
+                  backgroundColor: '#fff',
+                  borderRadius: '20px',
+                  padding: '16px',
+                  boxShadow: isBackstage
+                    ? '0 0 40px rgba(168,85,247,0.2), 0 0 80px rgba(168,85,247,0.1)'
+                    : '0 0 40px rgba(16,185,129,0.2), 0 0 80px rgba(16,185,129,0.1)',
+                  marginBottom: '20px',
+                }}>
                   <QRCode
                     value={`https://gravixegypt.online/ticket/${ticket.qr_code}`}
-                    size={160}
-                    bgColor="transparent"
-                    fgColor="#ffffff"
+                    size={180}
+                    bgColor="#ffffff"
+                    fgColor="#000000"
                   />
                 </div>
-                {/* X overlay */}
+
+                {/* Valid badge */}
                 <div style={{
-                  position: 'absolute',
-                  inset: 0,
+                  background: isBackstage
+                    ? 'linear-gradient(135deg, rgba(168,85,247,0.15), rgba(124,58,237,0.05))'
+                    : 'linear-gradient(135deg, rgba(16,185,129,0.15), rgba(5,150,105,0.05))',
+                  border: `1px solid ${isBackstage ? 'rgba(168,85,247,0.4)' : 'rgba(16,185,129,0.4)'}`,
+                  borderRadius: '12px',
+                  padding: '14px 20px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
+                  gap: '8px',
                 }}>
-                  <div style={{
-                    fontSize: '72px',
-                    color: '#ef4444',
-                    lineHeight: 1,
-                    opacity: 0.9,
-                  }}>✕</div>
-                </div>
-              </div>
-
-              <div style={{
-                backgroundColor: 'rgba(239,68,68,0.08)',
-                border: '1px solid rgba(239,68,68,0.3)',
-                borderRadius: '14px',
-                padding: '18px 20px',
-              }}>
-                <p style={{ color: '#ef4444', fontSize: '15px', fontWeight: 900, letterSpacing: '2px', margin: '0 0 6px' }}>
-                  ALREADY CHECKED IN
-                </p>
-                <p style={{ color: '#555', fontSize: '12px', margin: 0 }}>
-                  Entered at{' '}
-                  <span style={{ color: '#888', fontWeight: 700, fontFamily: 'monospace' }}>
-                    {ticket.checked_in_at
-                      ? new Date(ticket.checked_in_at).toLocaleTimeString('en-US', {
-                          hour: '2-digit', minute: '2-digit',
-                        })
-                      : 'N/A'}
+                  <span style={{
+                    width: '8px', height: '8px',
+                    backgroundColor: accentColor,
+                    borderRadius: '50%',
+                    display: 'inline-block',
+                    animation: 'pulse 2s infinite',
+                  }} />
+                  <span style={{
+                    color: accentColor,
+                    fontSize: '13px',
+                    fontWeight: 900,
+                    letterSpacing: '3px',
+                  }}>
+                    VALID TICKET
                   </span>
-                </p>
-              </div>
-            </>
-          ) : (
-            <>
-              <p style={{ color: '#333', fontSize: '9px', letterSpacing: '3px', margin: '0 0 16px' }}>
-                SCAN AT ENTRANCE
-              </p>
+                </div>
+              </>
+            )}
 
-              {/* QR with glow */}
-              <div style={{
-                display: 'inline-block',
-                backgroundColor: '#fff',
-                borderRadius: '20px',
-                padding: '16px',
-                boxShadow: isBackstage
-                  ? '0 0 40px rgba(168,85,247,0.2), 0 0 80px rgba(168,85,247,0.1)'
-                  : '0 0 40px rgba(16,185,129,0.2), 0 0 80px rgba(16,185,129,0.1)',
-                marginBottom: '20px',
-              }}>
-                <QRCode
-                  value={`https://gravixegypt.online/ticket/${ticket.qr_code}`}
-                  size={180}
-                  bgColor="#ffffff"
-                  fgColor="#000000"
-                />
-              </div>
-
-              {/* Valid badge */}
-              <div style={{
-                background: isBackstage
-                  ? 'linear-gradient(135deg, rgba(168,85,247,0.15), rgba(124,58,237,0.05))'
-                  : 'linear-gradient(135deg, rgba(16,185,129,0.15), rgba(5,150,105,0.05))',
-                border: `1px solid ${isBackstage ? 'rgba(168,85,247,0.4)' : 'rgba(16,185,129,0.4)'}`,
-                borderRadius: '12px',
-                padding: '14px 20px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-              }}>
-                <span style={{
-                  width: '8px', height: '8px',
-                  backgroundColor: accentColor,
-                  borderRadius: '50%',
-                  display: 'inline-block',
-                  animation: 'pulse 2s infinite',
-                }} />
-                <span style={{
-                  color: accentColor,
-                  fontSize: '13px',
-                  fontWeight: 900,
-                  letterSpacing: '3px',
-                }}>
-                  VALID TICKET
-                </span>
-              </div>
-            </>
-          )}
-
-          {/* Footer */}
-          <p style={{
-            color: '#1c1c1c',
-            fontSize: '9px',
-            textAlign: 'center',
-            marginTop: '20px',
-            letterSpacing: '3px',
-          }}>
-            GRAVIX © 2025 — DO NOT SHARE
-          </p>
+            {/* Footer */}
+            <p style={{
+              color: '#1c1c1c',
+              fontSize: '9px',
+              textAlign: 'center',
+              marginTop: '20px',
+              letterSpacing: '3px',
+            }}>
+              GRAVIX © 2025 — DO NOT SHARE
+            </p>
+          </div>
         </div>
       </div>
     </main>
@@ -449,6 +557,6 @@ const S: Record<string, React.CSSProperties> = {
     border: '1px solid #1a1a1a',
     borderRadius: '24px',
     width: '100%',
-    maxWidth: '400px',
+    maxWidth: '420px',
   },
 }
