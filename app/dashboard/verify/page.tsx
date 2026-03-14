@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
@@ -16,6 +16,9 @@ export default function VerifyPage() {
 
   const [scannerOpen, setScannerOpen] = useState(false)
   const scannerInstanceRef = useRef<any>(null)
+
+  const isMobile =
+    typeof window !== 'undefined' && window.innerWidth <= 640
 
   // admin auth
   useEffect(() => {
@@ -91,7 +94,19 @@ export default function VerifyPage() {
       .from('tickets')
       .select(
         `
-        *,
+        id,
+        reservation_id,
+        event_id,
+        user_id,
+        holder_name,
+        holder_phone,
+        holder_instagram,
+        ticket_type,
+        ticket_number,
+        qr_code,
+        checked_in,
+        checked_in_at,
+        created_at,
         events (title, date, location),
         reservations (name, phone)
       `,
@@ -136,7 +151,25 @@ export default function VerifyPage() {
         checked_in_at: new Date().toISOString(),
       })
       .eq('id', result.id)
-      .select()
+      .select(
+        `
+        id,
+        reservation_id,
+        event_id,
+        user_id,
+        holder_name,
+        holder_phone,
+        holder_instagram,
+        ticket_type,
+        ticket_number,
+        qr_code,
+        checked_in,
+        checked_in_at,
+        created_at,
+        events (title, date, location),
+        reservations (name, phone)
+      `,
+      )
       .single()
 
     if (error) {
@@ -157,122 +190,402 @@ export default function VerifyPage() {
   }
 
   return (
-    <main className="min-h-screen bg-black text-white px-4 py-6">
-      <div className="mx-auto flex max-w-3xl flex-col gap-6 md:flex-row">
-        {/* LEFT: controls */}
-        <section className="flex-1 space-y-4">
-          <header className="space-y-1">
-            <p className="text-[10px] uppercase tracking-[0.35em] text-red-500">
-              gravix · gate control
-            </p>
-            <h1 className="text-2xl font-semibold tracking-tight">VERIFY ENTRY</h1>
-            <p className="text-xs text-zinc-500">
-              Scan ticket QR or enter code to validate and confirm entry in real time.
-            </p>
-          </header>
+    <main
+      style={{
+        backgroundColor: '#050505',
+        minHeight: '100vh',
+        fontFamily: 'Inter, sans-serif',
+        padding: '24px 16px',
+      }}
+    >
+      {/* BACKGROUND GLOW */}
+      <div
+        style={{
+          position: 'fixed',
+          inset: 0,
+          pointerEvents: 'none',
+          background:
+            'radial-gradient(circle at top, rgba(220,38,38,0.18) 0, transparent 55%)',
+          opacity: 0.9,
+        }}
+      />
 
-          <div className="rounded-2xl border border-red-900/70 bg-gradient-to-br from-red-950/60 via-black to-black p-4 shadow-[0_0_40px_rgba(239,68,68,0.25)]">
+      <div
+        style={{
+          maxWidth: '1100px',
+          margin: '0 auto',
+          position: 'relative',
+          zIndex: 1,
+          display: 'flex',
+          flexDirection: isMobile ? 'column' : 'row',
+          gap: '24px',
+        }}
+      >
+        {/* LEFT: title + controls */}
+        <section style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div>
+            <div
+              style={{
+                border: '1px solid rgba(220,38,38,0.4)',
+                color: '#dc2626',
+                fontSize: '10px',
+                fontWeight: 700,
+                padding: '6px 16px',
+                borderRadius: '999px',
+                marginBottom: '16px',
+                letterSpacing: '3px',
+                backgroundColor: 'rgba(220,38,38,0.05)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+              }}
+            >
+              <span
+                style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: '999px',
+                  backgroundColor: '#22c55e',
+                  boxShadow: '0 0 12px rgba(34,197,94,0.8)',
+                }}
+              />
+              GATE CONTROL
+            </div>
+
+            <h1
+              style={{
+                fontSize: isMobile ? '28px' : '36px',
+                fontWeight: 900,
+                color: '#fff',
+                margin: 0,
+                letterSpacing: '-1px',
+              }}
+            >
+              VERIFY ENTRY
+            </h1>
+            <p
+              style={{
+                color: '#666',
+                fontSize: '13px',
+                maxWidth: '420px',
+                lineHeight: 1.7,
+                marginTop: '8px',
+              }}
+            >
+              Scan ticket QR or enter code to validate and confirm entry in real time at the gate.
+            </p>
+          </div>
+
+          {/* Scan card */}
+          <div
+            style={{
+              borderRadius: '20px',
+              border: '1px solid rgba(220,38,38,0.35)',
+              background:
+                'linear-gradient(135deg, rgba(24,0,0,0.9), rgba(10,10,10,0.95))',
+              padding: '16px',
+              boxShadow: '0 20px 40px rgba(220,38,38,0.25)',
+            }}
+          >
             <button
               onClick={() => setScannerOpen(true)}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 px-4 py-3 text-xs font-semibold uppercase tracking-[0.25em] text-white transition hover:bg-red-500 active:scale-[0.98]"
+              style={{
+                width: '100%',
+                background:
+                  'linear-gradient(135deg, #dc2626, #b91c1c)',
+                color: '#fff',
+                padding: '12px 20px',
+                borderRadius: '12px',
+                fontWeight: 700,
+                fontSize: '12px',
+                border: 'none',
+                letterSpacing: '2px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+              }}
             >
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-white" />
+              <span
+                style={{
+                  width: 10,
+                  height: 10,
+                  borderRadius: '999px',
+                  backgroundColor: '#fff',
+                  boxShadow: '0 0 18px rgba(255,255,255,0.9)',
+                }}
+              />
               SCAN QR CODE
             </button>
-            <p className="mt-3 text-[11px] text-red-100/80">
+            <p
+              style={{
+                color: '#fca5a5',
+                fontSize: '11px',
+                marginTop: '10px',
+              }}
+            >
               وجّه التذكرة ناحية الكاميرا. لو الكود URL كامل، السيستم هيلقط الـ ID تلقائيًا.
             </p>
           </div>
 
-          <div className="rounded-2xl border border-zinc-800 bg-gradient-to-br from-zinc-950 via-black to-black p-4">
-            <div className="flex items-center justify-between text-[11px]">
-              <span className="uppercase tracking-[0.3em] text-zinc-500">manual entry</span>
-              <span className="text-zinc-600">GRV-XXXX-XXXX</span>
+          {/* Manual code card */}
+          <div
+            style={{
+              borderRadius: '20px',
+              border: '1px solid #1a1a1a',
+              backgroundColor: '#0b0b0b',
+              padding: '16px',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '10px',
+              }}
+            >
+              <div
+                style={{
+                  color: '#666',
+                  fontSize: '11px',
+                  letterSpacing: '2px',
+                }}
+              >
+                MANUAL ENTRY
+              </div>
+              <div
+                style={{
+                  color: '#333',
+                  fontSize: '11px',
+                  letterSpacing: '2px',
+                }}
+              >
+                GRV-XXXX-XXXX
+              </div>
             </div>
 
-            <div className="mt-3 space-y-2">
-              <input
-                type="text"
-                value={code}
-                onChange={(e) => setCode(e.target.value.toUpperCase())}
-                onKeyDown={(e) => e.key === 'Enter' && handleVerify()}
-                placeholder="GRV-2K26-0001"
-                className="w-full rounded-xl border border-zinc-800 bg-black px-3 py-2 text-sm text-white outline-none ring-red-600/40 placeholder:text-zinc-600 focus:border-red-600/70 focus:ring-1"
-              />
-              <button
-                onClick={handleVerify}
-                disabled={loading || !code.trim()}
-                className="flex w-full items-center justify-center rounded-xl bg-zinc-100 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.25em] text-black transition enabled:hover:bg-white disabled:cursor-not-allowed disabled:bg-zinc-900 disabled:text-zinc-500"
-              >
-                {loading ? 'CHECKING...' : 'VERIFY'}
-              </button>
-            </div>
+            <input
+              type="text"
+              value={code}
+              onChange={(e) => setCode(e.target.value.toUpperCase())}
+              onKeyDown={(e) => e.key === 'Enter' && handleVerify()}
+              placeholder="GRV-2K26-0001"
+              style={{
+                width: '100%',
+                borderRadius: '12px',
+                backgroundColor: '#050505',
+                border: '1px solid #1f1f1f',
+                padding: '10px 12px',
+                color: '#fff',
+                fontSize: '13px',
+                outline: 'none',
+                marginBottom: '8px',
+              }}
+            />
+            <button
+              onClick={handleVerify}
+              disabled={loading || !code.trim()}
+              style={{
+                width: '100%',
+                borderRadius: '12px',
+                backgroundColor: loading || !code.trim() ? '#111' : '#e5e5e5',
+                color: loading || !code.trim() ? '#555' : '#050505',
+                padding: '10px 12px',
+                fontSize: '11px',
+                fontWeight: 700,
+                letterSpacing: '2px',
+                border: 'none',
+                cursor: loading || !code.trim() ? 'default' : 'pointer',
+              }}
+            >
+              {loading ? 'CHECKING...' : 'VERIFY'}
+            </button>
           </div>
         </section>
 
-        {/* RIGHT: status / ticket */}
-        <section className="flex-1 space-y-3">
+        {/* RIGHT: ticket status */}
+        <section style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {status === 'idle' && (
+            <div
+              style={{
+                borderRadius: '20px',
+                border: '1px solid #141414',
+                backgroundColor: '#050505',
+                padding: '20px',
+                color: '#444',
+                fontSize: '13px',
+              }}
+            >
+              Ready to scan. Use camera or manual code to verify tickets at the door.
+            </div>
+          )}
+
           {status === 'notfound' && (
-            <div className="rounded-2xl border border-red-900 bg-gradient-to-br from-red-950 via-black to-black p-4">
-              <p className="text-xs font-semibold tracking-[0.25em] text-red-400">
+            <div
+              style={{
+                borderRadius: '20px',
+                border: '1px solid #7f1d1d',
+                background:
+                  'linear-gradient(135deg, #220000, #050505)',
+                padding: '20px',
+              }}
+            >
+              <div
+                style={{
+                  color: '#fecaca',
+                  fontSize: '12px',
+                  letterSpacing: '2px',
+                  fontWeight: 700,
+                  marginBottom: '4px',
+                }}
+              >
                 INVALID TICKET
-              </p>
-              <p className="mt-2 text-[11px] text-red-100/80">
+              </div>
+              <div
+                style={{
+                  color: '#fca5a5',
+                  fontSize: '11px',
+                }}
+              >
                 QR code غير مسجّل على أي تذكرة. تأكد إنك بتسكان كود Gravix الصحيح أو من النظام
                 الرسمي فقط.
-              </p>
+              </div>
             </div>
           )}
 
           {status !== 'idle' && result && (
-            <div className="rounded-2xl border border-zinc-800 bg-gradient-to-br from-zinc-950 via-black to-black p-4 space-y-3">
-              <div className="flex items-start justify-between gap-3">
-                <div className="space-y-1">
-                  <p className="text-[10px] uppercase tracking-[0.3em] text-zinc-500">event</p>
-                  <p className="text-sm font-semibold tracking-tight">
+            <div
+              style={{
+                borderRadius: '20px',
+                border: '1px solid #1a1a1a',
+                backgroundColor: '#050505',
+                padding: '20px',
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  gap: '16px',
+                  marginBottom: '12px',
+                }}
+              >
+                <div>
+                  <div
+                    style={{
+                      color: '#666',
+                      fontSize: '11px',
+                      letterSpacing: '2px',
+                      marginBottom: '4px',
+                    }}
+                  >
+                    EVENT
+                  </div>
+                  <div
+                    style={{
+                      color: '#fff',
+                      fontSize: '15px',
+                      fontWeight: 700,
+                      letterSpacing: '-0.5px',
+                    }}
+                  >
                     {result.events?.title}
-                  </p>
-                  <p className="text-[11px] text-zinc-400">
+                  </div>
+                  <div
+                    style={{
+                      color: '#777',
+                      fontSize: '12px',
+                      marginTop: '4px',
+                    }}
+                  >
                     Holder: {result.holder_name || result.reservations?.name}
-                  </p>
-                  <p className="text-[11px] text-zinc-500">
+                  </div>
+                  <div
+                    style={{
+                      color: '#444',
+                      fontSize: '11px',
+                      marginTop: '2px',
+                    }}
+                  >
                     Ticket #{result.ticket_number} · {result.ticket_type}
-                  </p>
+                  </div>
                 </div>
-                <div className="rounded-xl border border-zinc-800 px-3 py-2 text-right">
-                  <p className="text-[10px] uppercase tracking-[0.3em] text-zinc-500">status</p>
-                  <p
-                    className={`mt-1 text-[11px] font-semibold ${
-                      status === 'found'
-                        ? 'text-emerald-400'
-                        : status === 'already'
-                        ? 'text-amber-300'
-                        : 'text-red-400'
-                    }`}
+
+                <div
+                  style={{
+                    borderRadius: '12px',
+                    border: '1px solid #1f1f1f',
+                    padding: '8px 10px',
+                    textAlign: 'right',
+                    minWidth: 110,
+                  }}
+                >
+                  <div
+                    style={{
+                      color: '#666',
+                      fontSize: '10px',
+                      letterSpacing: '2px',
+                      marginBottom: '4px',
+                    }}
+                  >
+                    STATUS
+                  </div>
+                  <div
+                    style={{
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      color:
+                        status === 'found'
+                          ? '#22c55e'
+                          : status === 'already'
+                          ? '#fbbf24'
+                          : '#ef4444',
+                    }}
                   >
                     {status === 'found'
                       ? 'VALID'
                       : status === 'already'
                       ? 'CHECKED IN'
                       : 'INVALID'}
-                  </p>
+                  </div>
                 </div>
               </div>
 
               {status === 'already' && (
-                <p className="text-[11px] text-amber-300">
+                <div
+                  style={{
+                    color: '#facc15',
+                    fontSize: '11px',
+                    marginBottom: '8px',
+                  }}
+                >
                   ALREADY CHECKED IN{' '}
                   {result.checked_in_at
                     ? `at ${new Date(result.checked_in_at).toLocaleTimeString()}`
                     : ''}
-                </p>
+                </div>
               )}
 
               {status === 'found' && (
                 <button
                   onClick={handleCheckIn}
                   disabled={loading}
-                  className="mt-1 flex w-full items-center justify-center rounded-xl bg-emerald-500 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.25em] text-black transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:bg-emerald-900 disabled:text-emerald-300"
+                  style={{
+                    width: '100%',
+                    background:
+                      'linear-gradient(135deg, #22c55e, #16a34a)',
+                    color: '#050505',
+                    padding: '10px 12px',
+                    borderRadius: '12px',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    letterSpacing: '2px',
+                    border: 'none',
+                    cursor: loading ? 'default' : 'pointer',
+                    marginTop: '8px',
+                  }}
                 >
                   {loading ? 'CHECKING IN...' : 'CONFIRM ENTRY'}
                 </button>
@@ -280,16 +593,22 @@ export default function VerifyPage() {
 
               <button
                 onClick={handleReset}
-                className="w-full rounded-xl border border-zinc-800 px-4 py-2 text-[11px] uppercase tracking-[0.25em] text-zinc-400 hover:bg-zinc-950/70"
+                style={{
+                  width: '100%',
+                  backgroundColor: 'transparent',
+                  color: '#666',
+                  padding: '10px 12px',
+                  borderRadius: '12px',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  letterSpacing: '2px',
+                  border: '1px solid #1a1a1a',
+                  cursor: 'pointer',
+                  marginTop: '8px',
+                }}
               >
                 RESET
               </button>
-            </div>
-          )}
-
-          {status === 'idle' && (
-            <div className="rounded-2xl border border-zinc-900 bg-gradient-to-br from-zinc-950 via-black to-black p-4 text-[11px] text-zinc-500">
-              Ready to scan. Use camera or manual code to verify tickets at the door.
             </div>
           )}
         </section>
@@ -297,11 +616,37 @@ export default function VerifyPage() {
 
       {/* Scanner overlay */}
       {scannerOpen && (
-        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-black/90 px-4">
-          <div className="rounded-2xl border border-red-500/60 bg-black/70 p-3">
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0,0,0,0.9)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexDirection: 'column',
+            gap: 16,
+            zIndex: 50,
+          }}
+        >
+          <div
+            style={{
+              borderRadius: '20px',
+              border: '1px solid rgba(220,38,38,0.6)',
+              backgroundColor: '#050505',
+              padding: 16,
+            }}
+          >
             <div
               id="qr-reader"
-              className="h-[260px] w-[260px] overflow-hidden rounded-xl border border-red-500/60"
+              style={{
+                width: 260,
+                height: 260,
+                borderRadius: '16px',
+                overflow: 'hidden',
+                border: '1px solid rgba(220,38,38,0.7)',
+                backgroundColor: '#000',
+              }}
             />
           </div>
           <button
@@ -309,7 +654,16 @@ export default function VerifyPage() {
               scannerInstanceRef.current?.stop().catch(() => {})
               setScannerOpen(false)
             }}
-            className="rounded-full border border-zinc-700 px-4 py-2 text-[11px] uppercase tracking-[0.25em] text-zinc-300 hover:bg-zinc-900"
+            style={{
+              padding: '8px 18px',
+              borderRadius: '999px',
+              border: '1px solid #444',
+              backgroundColor: 'transparent',
+              color: '#e5e5e5',
+              fontSize: '11px',
+              letterSpacing: '2px',
+              cursor: 'pointer',
+            }}
           >
             CLOSE
           </button>
