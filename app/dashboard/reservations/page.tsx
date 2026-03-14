@@ -85,20 +85,79 @@ export default function DashboardReservations() {
     setLoading(false)
   }
 
-  const generateCode = async (id: string) => {
-    const code = Math.floor(100000 + Math.random() * 900000).toString()
+  // ✅ الدالة الجديدة — CONFIRM + SEND TICKET
+  const handleConfirmAndSendTickets = async (reservation: any) => {
     setLoading(true)
 
-    const { error } = await supabase
+    // 1. تأكيد الحجز
+    const { error: confirmError } = await supabase
       .from('reservations')
-      .update({ status: 'confirmed', entry_code: code })
-      .eq('id', id)
+      .update({ status: 'confirmed' })
+      .eq('id', reservation.id)
 
-    if (error) {
-      alert('Error: ' + error.message)
+    if (confirmError) {
+      alert('Error confirming: ' + confirmError.message)
       setLoading(false)
       return
     }
+
+    // 2. بناء قائمة كل الأشخاص
+    const people: any[] = Array.isArray(reservation.people_details)
+      ? reservation.people_details
+      : []
+
+    const allPeople = people.length > 0
+      ? people
+      : [{
+          name: reservation.name,
+          phone: reservation.phone,
+          instagram: reservation.instagram,
+          ticket_type: 'standing'
+        }]
+
+    // 3. إنشاء ticket لكل شخص
+    const ticketsToInsert = allPeople.map((person: any, index: number) => ({
+      reservation_id: reservation.id,
+      event_id: reservation.event_id,
+      user_id: reservation.user_id,
+      holder_name: person.name || reservation.name,
+      holder_phone: person.phone || null,
+      holder_instagram: person.instagram || null,
+      ticket_type: person.ticket_type || 'standing',
+      ticket_number: index + 1,
+      qr_code: `GRV-${Date.now()}-${Math.random()
+        .toString(36)
+        .substring(2, 8)
+        .toUpperCase()}-${index}`,
+    }))
+
+    const { data: createdTickets, error: ticketsError } = await supabase
+      .from('tickets')
+      .insert(ticketsToInsert)
+      .select()
+
+    if (ticketsError) {
+      alert('Error creating tickets: ' + ticketsError.message)
+      setLoading(false)
+      return
+    }
+
+    // 4. بناء رسالة الواتساب
+    const eventTitle = reservation.events?.title || 'GRAVIX EVENT'
+
+    const ticketLines = (createdTickets || [])
+      .map(
+        (t: any) =>
+          `Ticket #${t.ticket_number} — ${t.holder_name} (${t.ticket_type.toUpperCase()})\n https://gravixegypt.online/ticket/${t.qr_code}`,
+      )
+      .join('\n\n')
+
+    const message = encodeURIComponent(
+      `Booking Confirmed — GRAVIX\n\n${eventTitle}\n\n${ticketLines}\n\nShow your QR code at the door.`,
+    )
+
+    const phone = reservation.phone?.replace(/\D/g, '')
+    window.open(`https://wa.me/2${phone}?text=${message}`, '_blank')
 
     await load()
     setLoading(false)
@@ -135,6 +194,8 @@ export default function DashboardReservations() {
 
     const standingCount = selected.standing_count ?? 0
     const backstageCount = selected.backstage_count ?? 0
+
+    const alreadySent = selected.status === 'confirmed'
 
     return (
       <main
@@ -207,12 +268,8 @@ export default function DashboardReservations() {
               </div>
               <div
                 style={{
-                  backgroundColor: `${
-                    statusColors[selected.status] || '#555'
-                  }15`,
-                  border: `1px solid ${
-                    statusColors[selected.status] || '#555'
-                  }40`,
+                  backgroundColor: `${statusColors[selected.status] || '#555'}15`,
+                  border: `1px solid ${statusColors[selected.status] || '#555'}40`,
                   color: statusColors[selected.status] || '#555',
                   padding: '8px 20px',
                   borderRadius: '999px',
@@ -304,107 +361,27 @@ export default function DashboardReservations() {
                 marginBottom: '24px',
               }}
             >
-              <div
-                style={{
-                  backgroundColor: '#111',
-                  border: '1px solid #1a1a1a',
-                  borderRadius: '10px',
-                  padding: '14px 16px',
-                }}
-              >
-                <p
+              {[
+                { label: 'TOTAL PEOPLE', value: `${selected.num_people} person${selected.num_people > 1 ? 's' : ''}`, color: '#fff' },
+                { label: 'STANDING', value: `${standingCount}x @ ${selected.standing_price_per_person} EGP`, color: '#fff' },
+                { label: 'BACKSTAGE', value: `${backstageCount}x @ ${selected.backstage_price_per_person} EGP`, color: '#fff' },
+                { label: 'TOTAL', value: `${selected.total_price} EGP`, color: '#fff' },
+              ].map(card => (
+                <div
+                  key={card.label}
                   style={{
-                    color: '#333',
-                    fontSize: '10px',
-                    letterSpacing: '2px',
-                    fontWeight: 700,
-                    margin: '0 0 4px',
+                    backgroundColor: '#111',
+                    border: '1px solid #1a1a1a',
+                    borderRadius: '10px',
+                    padding: '14px 16px',
                   }}
                 >
-                  TOTAL PEOPLE
-                </p>
-                <p
-                  style={{ color: '#fff', fontSize: '16px', margin: 0 }}
-                >{`${selected.num_people} person${
-                  selected.num_people > 1 ? 's' : ''
-                }`}</p>
-              </div>
-              <div
-                style={{
-                  backgroundColor: '#111',
-                  border: '1px solid #1a1a1a',
-                  borderRadius: '10px',
-                  padding: '14px 16px',
-                }}
-              >
-                <p
-                  style={{
-                    color: '#333',
-                    fontSize: '10px',
-                    letterSpacing: '2px',
-                    fontWeight: 700,
-                    margin: '0 0 4px',
-                  }}
-                >
-                  STANDING
-                </p>
-                <p style={{ color: '#fff', fontSize: '16px', margin: 0 }}>
-                  {standingCount}x @ {selected.standing_price_per_person} EGP
-                </p>
-              </div>
-              <div
-                style={{
-                  backgroundColor: '#111',
-                  border: '1px solid #1a1a1a',
-                  borderRadius: '10px',
-                  padding: '14px 16px',
-                }}
-              >
-                <p
-                  style={{
-                    color: '#333',
-                    fontSize: '10px',
-                    letterSpacing: '2px',
-                    fontWeight: 700,
-                    margin: '0 0 4px',
-                  }}
-                >
-                  BACKSTAGE
-                </p>
-                <p style={{ color: '#fff', fontSize: '16px', margin: 0 }}>
-                  {backstageCount}x @ {selected.backstage_price_per_person} EGP
-                </p>
-              </div>
-              <div
-                style={{
-                  backgroundColor: '#111',
-                  border: '1px solid #1a1a1a',
-                  borderRadius: '10px',
-                  padding: '14px 16px',
-                }}
-              >
-                <p
-                  style={{
-                    color: '#333',
-                    fontSize: '10px',
-                    letterSpacing: '2px',
-                    fontWeight: 700,
-                    margin: '0 0 4px',
-                  }}
-                >
-                  TOTAL
-                </p>
-                <p
-                  style={{
-                    color: '#fff',
-                    fontSize: '16px',
-                    fontWeight: 700,
-                    margin: 0,
-                  }}
-                >
-                  {selected.total_price} EGP
-                </p>
-              </div>
+                  <p style={{ color: '#333', fontSize: '10px', letterSpacing: '2px', fontWeight: 700, margin: '0 0 4px' }}>
+                    {card.label}
+                  </p>
+                  <p style={{ color: card.color, fontSize: '16px', margin: 0 }}>{card.value}</p>
+                </div>
+              ))}
             </div>
 
             {/* Main guest + event info */}
@@ -416,105 +393,22 @@ export default function DashboardReservations() {
                 marginBottom: '24px',
               }}
             >
-              <div
-                style={{
-                  backgroundColor: '#111',
-                  border: '1px solid #1a1a1a',
-                  borderRadius: '10px',
-                  padding: '14px 16px',
-                }}
-              >
-                <p
-                  style={{
-                    color: '#333',
-                    fontSize: '10px',
-                    letterSpacing: '2px',
-                    fontWeight: 700,
-                    margin: '0 0 4px',
-                  }}
-                >
-                  MAIN GUEST
-                </p>
-                <p
-                  style={{
-                    color: '#fff',
-                    fontSize: '14px',
-                    margin: '0 0 2px',
-                  }}
-                >
-                  {mainGuest?.name || selected.name}
-                </p>
-                <p
-                  style={{
-                    color: '#888',
-                    fontSize: '12px',
-                    margin: '0 0 2px',
-                  }}
-                >
-                  {selected.email}
-                </p>
-                <p
-                  style={{
-                    color: '#888',
-                    fontSize: '12px',
-                    margin: '0 0 2px',
-                  }}
-                >
-                  {selected.phone}
-                </p>
-                <p
-                  style={{
-                    color: '#888',
-                    fontSize: '12px',
-                    margin: 0,
-                  }}
-                >
-                  @{selected.instagram}
-                </p>
+              <div style={{ backgroundColor: '#111', border: '1px solid #1a1a1a', borderRadius: '10px', padding: '14px 16px' }}>
+                <p style={{ color: '#333', fontSize: '10px', letterSpacing: '2px', fontWeight: 700, margin: '0 0 4px' }}>MAIN GUEST</p>
+                <p style={{ color: '#fff', fontSize: '14px', margin: '0 0 2px' }}>{mainGuest?.name || selected.name}</p>
+                <p style={{ color: '#888', fontSize: '12px', margin: '0 0 2px' }}>{selected.email}</p>
+                <p style={{ color: '#888', fontSize: '12px', margin: '0 0 2px' }}>{selected.phone}</p>
+                <p style={{ color: '#888', fontSize: '12px', margin: 0 }}>@{selected.instagram}</p>
               </div>
 
-              <div
-                style={{
-                  backgroundColor: '#111',
-                  border: '1px solid #1a1a1a',
-                  borderRadius: '10px',
-                  padding: '14px 16px',
-                }}
-              >
-                <p
-                  style={{
-                    color: '#333',
-                    fontSize: '10px',
-                    letterSpacing: '2px',
-                    fontWeight: 700,
-                    margin: '0 0 4px',
-                  }}
-                >
-                  MAIN GUEST TICKET
-                </p>
-                <p
-                  style={{
-                    color: '#f97316',
-                    fontSize: '14px',
-                    fontWeight: 700,
-                    margin: '0 0 4px',
-                  }}
-                >
+              <div style={{ backgroundColor: '#111', border: '1px solid #1a1a1a', borderRadius: '10px', padding: '14px 16px' }}>
+                <p style={{ color: '#333', fontSize: '10px', letterSpacing: '2px', fontWeight: 700, margin: '0 0 4px' }}>MAIN GUEST TICKET</p>
+                <p style={{ color: '#f97316', fontSize: '14px', fontWeight: 700, margin: '0 0 4px' }}>
                   {mainGuest?.ticket_type
                     ? mainGuest.ticket_type.toUpperCase()
-                    : standingCount > 0
-                    ? 'STANDING'
-                    : backstageCount > 0
-                    ? 'BACKSTAGE'
-                    : 'N/A'}
+                    : standingCount > 0 ? 'STANDING' : backstageCount > 0 ? 'BACKSTAGE' : 'N/A'}
                 </p>
-                <p
-                  style={{
-                    color: '#666',
-                    fontSize: '12px',
-                    margin: 0,
-                  }}
-                >
+                <p style={{ color: '#666', fontSize: '12px', margin: 0 }}>
                   Wave:{' '}
                   {mainGuest?.ticket_type === 'backstage'
                     ? selected.backstage_wave_label || 'N/A'
@@ -522,38 +416,12 @@ export default function DashboardReservations() {
                 </p>
               </div>
 
-              <div
-                style={{
-                  backgroundColor: '#111',
-                  border: '1px solid #1a1a1a',
-                  borderRadius: '10px',
-                  padding: '14px 16px',
-                }}
-              >
-                <p
-                  style={{
-                    color: '#333',
-                    fontSize: '10px',
-                    letterSpacing: '2px',
-                    fontWeight: 700,
-                    margin: '0 0 4px',
-                  }}
-                >
-                  EVENT DATE
-                </p>
-                <p
-                  style={{
-                    color: '#fff',
-                    fontSize: '14px',
-                    margin: 0,
-                  }}
-                >
+              <div style={{ backgroundColor: '#111', border: '1px solid #1a1a1a', borderRadius: '10px', padding: '14px 16px' }}>
+                <p style={{ color: '#333', fontSize: '10px', letterSpacing: '2px', fontWeight: 700, margin: '0 0 4px' }}>EVENT DATE</p>
+                <p style={{ color: '#fff', fontSize: '14px', margin: 0 }}>
                   {selected.events?.date
                     ? new Date(selected.events.date).toLocaleString('en-US', {
-                        weekday: 'short',
-                        month: 'short',
-                        day: 'numeric',
-                        year: 'numeric',
+                        weekday: 'short', month: 'short', day: 'numeric', year: 'numeric',
                       })
                     : 'N/A'}
                 </p>
@@ -571,18 +439,9 @@ export default function DashboardReservations() {
                   marginBottom: '24px',
                 }}
               >
-                <p
-                  style={{
-                    color: '#333',
-                    fontSize: '10px',
-                    letterSpacing: '2px',
-                    fontWeight: 700,
-                    margin: '0 0 12px',
-                  }}
-                >
+                <p style={{ color: '#333', fontSize: '10px', letterSpacing: '2px', fontWeight: 700, margin: '0 0 12px' }}>
                   ALL GUESTS ({guests.length})
                 </p>
-
                 <div
                   style={{
                     display: 'grid',
@@ -601,7 +460,6 @@ export default function DashboardReservations() {
                   <span>PHONE</span>
                   <span>INSTAGRAM</span>
                 </div>
-
                 {guests.map((p: any, i: number) => (
                   <div
                     key={i}
@@ -610,32 +468,17 @@ export default function DashboardReservations() {
                       gridTemplateColumns: '0.5fr 1.4fr 1fr 1fr 1fr',
                       gap: '10px',
                       padding: '10px',
-                      borderBottom:
-                        i < guests.length - 1
-                          ? '1px solid #1a1a1a'
-                          : 'none',
+                      borderBottom: i < guests.length - 1 ? '1px solid #1a1a1a' : 'none',
                       fontSize: '13px',
                     }}
                   >
                     <span style={{ color: '#555' }}>{i + 1}</span>
                     <span style={{ color: '#fff' }}>{p.name}</span>
-                    <span
-                      style={{
-                        color:
-                          p.ticket_type === 'backstage'
-                            ? '#a855f7'
-                            : '#22c55e',
-                        fontWeight: 600,
-                      }}
-                    >
-                      {p.ticket_type
-                        ? p.ticket_type.toUpperCase()
-                        : 'UNKNOWN'}
+                    <span style={{ color: p.ticket_type === 'backstage' ? '#a855f7' : '#22c55e', fontWeight: 600 }}>
+                      {p.ticket_type ? p.ticket_type.toUpperCase() : 'UNKNOWN'}
                     </span>
                     <span style={{ color: '#ddd' }}>{p.phone}</span>
-                    <span style={{ color: '#ddd' }}>
-                      {p.instagram ? `@${p.instagram}` : '-'}
-                    </span>
+                    <span style={{ color: '#ddd' }}>{p.instagram ? `@${p.instagram}` : '-'}</span>
                   </div>
                 ))}
               </div>
@@ -652,38 +495,14 @@ export default function DashboardReservations() {
                   marginBottom: '24px',
                 }}
               >
-                <p
-                  style={{
-                    color: '#333',
-                    fontSize: '10px',
-                    letterSpacing: '2px',
-                    fontWeight: 700,
-                    margin: '0 0 6px',
-                  }}
-                >
-                  PAYMENT DEADLINE
-                </p>
-                <p
-                  style={{
-                    color: '#3b82f6',
-                    fontSize: '16px',
-                    fontWeight: 700,
-                    margin: 0,
-                  }}
-                >
-                  {new Date(
-                    selected.payment_deadline,
-                  ).toLocaleDateString('en-US', {
-                    weekday: 'short',
-                    month: 'short',
-                    day: 'numeric',
+                <p style={{ color: '#333', fontSize: '10px', letterSpacing: '2px', fontWeight: 700, margin: '0 0 6px' }}>PAYMENT DEADLINE</p>
+                <p style={{ color: '#3b82f6', fontSize: '16px', fontWeight: 700, margin: 0 }}>
+                  {new Date(selected.payment_deadline).toLocaleDateString('en-US', {
+                    weekday: 'short', month: 'short', day: 'numeric',
                   })}{' '}
                   at{' '}
-                  {new Date(
-                    selected.payment_deadline,
-                  ).toLocaleTimeString('en-US', {
-                    hour: '2-digit',
-                    minute: '2-digit',
+                  {new Date(selected.payment_deadline).toLocaleTimeString('en-US', {
+                    hour: '2-digit', minute: '2-digit',
                   })}
                 </p>
               </div>
@@ -700,27 +519,8 @@ export default function DashboardReservations() {
                   marginBottom: '24px',
                 }}
               >
-                <p
-                  style={{
-                    color: '#333',
-                    fontSize: '10px',
-                    letterSpacing: '2px',
-                    fontWeight: 700,
-                    margin: '0 0 6px',
-                  }}
-                >
-                  📱 SENT FROM NUMBER
-                </p>
-                <p
-                  style={{
-                    color: '#3b82f6',
-                    fontSize: '22px',
-                    fontWeight: 900,
-                    fontFamily: 'monospace',
-                    letterSpacing: '3px',
-                    margin: 0,
-                  }}
-                >
+                <p style={{ color: '#333', fontSize: '10px', letterSpacing: '2px', fontWeight: 700, margin: '0 0 6px' }}>📱 SENT FROM NUMBER</p>
+                <p style={{ color: '#3b82f6', fontSize: '22px', fontWeight: 900, fontFamily: 'monospace', letterSpacing: '3px', margin: 0 }}>
                   {selected.payment_sender_phone}
                 </p>
               </div>
@@ -737,138 +537,81 @@ export default function DashboardReservations() {
                   marginBottom: '24px',
                 }}
               >
-                <p
-                  style={{
-                    color: '#8b5cf6',
-                    fontSize: '10px',
-                    letterSpacing: '3px',
-                    fontWeight: 700,
-                    margin: '0 0 12px',
-                  }}
-                >
+                <p style={{ color: '#8b5cf6', fontSize: '10px', letterSpacing: '3px', fontWeight: 700, margin: '0 0 12px' }}>
                   💸 PAYMENT SCREENSHOT
                 </p>
-                <a
-                  href={selected.payment_screenshot_url}
-                  target="_blank"
-                  rel="noreferrer"
-                >
+                <a href={selected.payment_screenshot_url} target="_blank" rel="noreferrer">
                   <img
                     src={selected.payment_screenshot_url}
                     alt="Payment proof"
-                    style={{
-                      width: '100%',
-                      maxHeight: '300px',
-                      objectFit: 'contain',
-                      borderRadius: '8px',
-                      cursor: 'zoom-in',
-                    }}
+                    style={{ width: '100%', maxHeight: '300px', objectFit: 'contain', borderRadius: '8px', cursor: 'zoom-in' }}
                   />
                 </a>
-                <p
-                  style={{
-                    color: '#333',
-                    fontSize: '11px',
-                    margin: '8px 0 0',
-                    textAlign: 'center',
-                  }}
-                >
-                  Click to open full size
-                </p>
+                <p style={{ color: '#333', fontSize: '11px', margin: '8px 0 0', textAlign: 'center' }}>Click to open full size</p>
               </div>
             )}
 
-            {/* Entry code */}
-            {selected.entry_code && (
+            {/* ✅ Tickets sent indicator */}
+            {alreadySent && (
               <div
                 style={{
                   backgroundColor: 'rgba(16,185,129,0.05)',
                   border: '1px solid rgba(16,185,129,0.3)',
                   borderRadius: '12px',
-                  padding: '20px',
-                  textAlign: 'center',
+                  padding: '16px 20px',
                   marginBottom: '24px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
                 }}
               >
-                <p
-                  style={{
-                    color: '#444',
-                    fontSize: '10px',
-                    letterSpacing: '3px',
-                    margin: '0 0 8px',
-                  }}
-                >
-                  ENTRY CODE
-                </p>
-                <p
-                  style={{
-                    color: '#10b981',
-                    fontSize: '36px',
-                    fontWeight: 900,
-                    letterSpacing: '8px',
-                    fontFamily: 'monospace',
-                    margin: 0,
-                  }}
-                >
-                  {selected.entry_code}
-                </p>
+                <span style={{ fontSize: '18px' }}>✅</span>
+                <div>
+                  <p style={{ color: '#10b981', fontSize: '11px', fontWeight: 700, letterSpacing: '2px', margin: '0 0 2px' }}>
+                    TICKETS SENT
+                  </p>
+                  <p style={{ color: '#444', fontSize: '12px', margin: 0 }}>
+                    Tickets were already confirmed and sent to this guest.
+                  </p>
+                </div>
               </div>
             )}
 
             {/* Actions */}
-            <div
-              style={{
-                borderTop: '1px solid #1a1a1a',
-                paddingTop: '24px',
-              }}
-            >
-              <p
-                style={{
-                  color: '#333',
-                  fontSize: '10px',
-                  letterSpacing: '2px',
-                  fontWeight: 700,
-                  marginBottom: '14px',
-                }}
-              >
+            <div style={{ borderTop: '1px solid #1a1a1a', paddingTop: '24px' }}>
+              <p style={{ color: '#333', fontSize: '10px', letterSpacing: '2px', fontWeight: 700, marginBottom: '14px' }}>
                 ACTIONS
               </p>
-              <div
-                style={{
-                  display: 'flex',
-                  gap: '10px',
-                  flexWrap: 'wrap',
-                }}
-              >
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                 <button
                   onClick={() => updateStatus(selected.id, 'reviewing')}
-                  style={btnStyle(
-                    '#fb923c',
-                    selected.status === 'reviewing',
-                  )}
+                  style={btnStyle('#fb923c', selected.status === 'reviewing')}
                   disabled={loading}
                 >
                   🔎 MARK AS REVIEWING
                 </button>
                 <button
-                  onClick={() =>
-                    updateStatus(selected.id, 'awaiting_payment')
-                  }
-                  style={btnStyle(
-                    '#3b82f6',
-                    selected.status === 'awaiting_payment',
-                  )}
+                  onClick={() => updateStatus(selected.id, 'awaiting_payment')}
+                  style={btnStyle('#3b82f6', selected.status === 'awaiting_payment')}
                   disabled={loading}
                 >
                   💳 REQUEST PAYMENT
                 </button>
+
+                {/* ✅ الزرار الجديد */}
                 <button
-                  onClick={() => generateCode(selected.id)}
-                  style={btnStyle('#10b981')}
-                  disabled={loading}
+                  onClick={() => handleConfirmAndSendTickets(selected)}
+                  style={{
+                    ...btnStyle('#10b981'),
+                    opacity: alreadySent ? 0.4 : loading ? 0.5 : 1,
+                    cursor: alreadySent ? 'not-allowed' : loading ? 'not-allowed' : 'pointer',
+                  }}
+                  disabled={loading || alreadySent}
+                  title={alreadySent ? 'Tickets already sent' : ''}
                 >
-                  ✅ CONFIRM + SEND CODE
+                  🎫 CONFIRM + SEND TICKET
                 </button>
+
                 <button
                   onClick={() => updateStatus(selected.id, 'rejected')}
                   style={btnStyle('#ef4444')}
@@ -878,14 +621,7 @@ export default function DashboardReservations() {
                 </button>
               </div>
               {loading && (
-                <p
-                  style={{
-                    color: '#555',
-                    fontSize: '12px',
-                    marginTop: '12px',
-                    letterSpacing: '1px',
-                  }}
-                >
+                <p style={{ color: '#555', fontSize: '12px', marginTop: '12px', letterSpacing: '1px' }}>
                   Updating...
                 </p>
               )}
@@ -918,49 +654,20 @@ export default function DashboardReservations() {
           }}
         >
           <div>
-            <p
-              style={{
-                color: '#dc2626',
-                fontSize: '11px',
-                letterSpacing: '4px',
-                fontWeight: 700,
-                margin: '0 0 8px',
-              }}
-            >
+            <p style={{ color: '#dc2626', fontSize: '11px', letterSpacing: '4px', fontWeight: 700, margin: '0 0 8px' }}>
               ● ADMIN
             </p>
-            <h1
-              style={{
-                fontSize: '36px',
-                fontWeight: 900,
-                color: '#fff',
-                margin: 0,
-                letterSpacing: '-1px',
-              }}
-            >
+            <h1 style={{ fontSize: '36px', fontWeight: 900, color: '#fff', margin: 0, letterSpacing: '-1px' }}>
               RESERVATIONS
             </h1>
           </div>
-          <p
-            style={{
-              color: '#444',
-              fontSize: '13px',
-              margin: 0,
-            }}
-          >
+          <p style={{ color: '#444', fontSize: '13px', margin: 0 }}>
             {reservations.length} total bookings
           </p>
         </div>
 
         {/* Filter tabs */}
-        <div
-          style={{
-            display: 'flex',
-            gap: '8px',
-            flexWrap: 'wrap',
-            marginBottom: '24px',
-          }}
-        >
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '24px' }}>
           {['all', ...allStatuses].map(s => (
             <button
               key={s}
@@ -968,9 +675,7 @@ export default function DashboardReservations() {
               style={{
                 backgroundColor: filter === s ? '#dc2626' : '#111',
                 color: filter === s ? '#fff' : '#444',
-                border: `1px solid ${
-                  filter === s ? '#dc2626' : '#1a1a1a'
-                }`,
+                border: `1px solid ${filter === s ? '#dc2626' : '#1a1a1a'}`,
                 padding: '7px 14px',
                 borderRadius: '8px',
                 fontSize: '11px',
@@ -981,11 +686,7 @@ export default function DashboardReservations() {
               }}
             >
               {s.replace(/_/g, ' ').toUpperCase()}{' '}
-              (
-              {s === 'all'
-                ? reservations.length
-                : reservations.filter(r => r.status === s).length}
-              )
+              ({s === 'all' ? reservations.length : reservations.filter(r => r.status === s).length})
             </button>
           ))}
         </div>
@@ -1008,15 +709,7 @@ export default function DashboardReservations() {
             }}
           >
             {['GUEST', 'EVENT', 'TICKETS', 'TOTAL', 'STATUS'].map(h => (
-              <span
-                key={h}
-                style={{
-                  color: '#333',
-                  fontSize: '10px',
-                  letterSpacing: '2px',
-                  fontWeight: 700,
-                }}
-              >
+              <span key={h} style={{ color: '#333', fontSize: '10px', letterSpacing: '2px', fontWeight: 700 }}>
                 {h}
               </span>
             ))}
@@ -1031,78 +724,24 @@ export default function DashboardReservations() {
                 gridTemplateColumns: '2fr 1.5fr 1fr 1fr 1.5fr',
                 padding: '16px 24px',
                 cursor: 'pointer',
-                borderBottom:
-                  i < filtered.length - 1
-                    ? '1px solid #111'
-                    : 'none',
+                borderBottom: i < filtered.length - 1 ? '1px solid #111' : 'none',
                 transition: 'background 0.15s',
               }}
-              onMouseEnter={e =>
-                (e.currentTarget.style.backgroundColor = '#111')
-              }
-              onMouseLeave={e =>
-                (e.currentTarget.style.backgroundColor =
-                  'transparent')
-              }
+              onMouseEnter={e => (e.currentTarget.style.backgroundColor = '#111')}
+              onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
             >
               <div>
-                <p
-                  style={{
-                    color: '#fff',
-                    fontSize: '14px',
-                    fontWeight: 600,
-                    margin: '0 0 2px',
-                  }}
-                >
-                  {r.name}
-                </p>
-                <p
-                  style={{
-                    color: '#444',
-                    fontSize: '12px',
-                    margin: 0,
-                  }}
-                >
-                  {r.email}
-                </p>
+                <p style={{ color: '#fff', fontSize: '14px', fontWeight: 600, margin: '0 0 2px' }}>{r.name}</p>
+                <p style={{ color: '#444', fontSize: '12px', margin: 0 }}>{r.email}</p>
               </div>
-              <span
-                style={{
-                  color: '#666',
-                  fontSize: '13px',
-                  alignSelf: 'center',
-                }}
-              >
-                {r.events?.title}
-              </span>
-              <span
-                style={{
-                  color: '#666',
-                  fontSize: '13px',
-                  alignSelf: 'center',
-                }}
-              >
-                {r.num_people}x
-              </span>
-              <span
-                style={{
-                  color: '#fff',
-                  fontSize: '13px',
-                  fontWeight: 600,
-                  alignSelf: 'center',
-                }}
-              >
-                {r.total_price} EGP
-              </span>
+              <span style={{ color: '#666', fontSize: '13px', alignSelf: 'center' }}>{r.events?.title}</span>
+              <span style={{ color: '#666', fontSize: '13px', alignSelf: 'center' }}>{r.num_people}x</span>
+              <span style={{ color: '#fff', fontSize: '13px', fontWeight: 600, alignSelf: 'center' }}>{r.total_price} EGP</span>
               <div style={{ alignSelf: 'center' }}>
                 <span
                   style={{
-                    backgroundColor: `${
-                      statusColors[r.status] || '#555'
-                    }15`,
-                    border: `1px solid ${
-                      statusColors[r.status] || '#555'
-                    }30`,
+                    backgroundColor: `${statusColors[r.status] || '#555'}15`,
+                    border: `1px solid ${statusColors[r.status] || '#555'}30`,
                     color: statusColors[r.status] || '#555',
                     padding: '4px 10px',
                     borderRadius: '999px',
@@ -1118,21 +757,8 @@ export default function DashboardReservations() {
           ))}
 
           {filtered.length === 0 && (
-            <div
-              style={{
-                textAlign: 'center',
-                padding: '60px',
-                color: '#333',
-              }}
-            >
-              <p
-                style={{
-                  fontSize: '12px',
-                  letterSpacing: '3px',
-                }}
-              >
-                NO RESERVATIONS FOUND
-              </p>
+            <div style={{ textAlign: 'center', padding: '60px', color: '#333' }}>
+              <p style={{ fontSize: '12px', letterSpacing: '3px' }}>NO RESERVATIONS FOUND</p>
             </div>
           )}
         </div>
