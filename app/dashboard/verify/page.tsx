@@ -325,8 +325,7 @@ export default function VerifyPage() {
                 marginTop: '10px',
               }}
             >
-              وجّه التذكرة ناحية الكاميرا. لو الكود URL كامل، السيستم هيلقط الـ ID تلقائيًا.
-            </p>
+Face The Camera To Scan The QR Code            </p>
           </div>
 
           {/* Manual code card */}
