@@ -1369,9 +1369,8 @@ export default function HomePage() {
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: isMobile
-                ? '1fr'
-                : 'repeat(3, 1fr)',
+              gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
+
               gap: '16px',
             }}
           >
