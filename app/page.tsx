@@ -15,7 +15,6 @@ type EventWithWaves = {
   is_active: boolean
   is_finished?: boolean
 
-  // STANDING
   standing_wave_1_price?: number | null
   standing_wave_1_sold_out?: boolean | null
   standing_wave_2_price?: number | null
@@ -23,7 +22,6 @@ type EventWithWaves = {
   standing_wave_3_price?: number | null
   standing_wave_3_sold_out?: boolean | null
 
-  // BACKSTAGE
   backstage_wave_1_price?: number | null
   backstage_wave_1_sold_out?: boolean | null
   backstage_wave_2_price?: number | null
@@ -55,12 +53,16 @@ export default function HomePage() {
   const [events, setEvents] = useState<EventWithWaves[]>([])
   const [djs, setDjs] = useState<DJ[]>([])
   const [partners, setPartners] = useState<Partner[]>([])
-
-  const isMobile =
-    typeof window !== 'undefined' && window.innerWidth <= 640
+  const [isMobile, setIsMobile] = useState(false)
 
   useEffect(() => {
-    // Events
+    const check = () => setIsMobile(window.innerWidth <= 640)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
+
+  useEffect(() => {
     supabase
       .from('events')
       .select('*')
@@ -71,14 +73,11 @@ export default function HomePage() {
         const sorted = [...data].sort((a: any, b: any) => {
           if (a.is_finished && !b.is_finished) return 1
           if (!a.is_finished && b.is_finished) return -1
-          return (
-            new Date(b.date).getTime() - new Date(a.date).getTime()
-          )
+          return new Date(b.date).getTime() - new Date(a.date).getTime()
         })
         setEvents(sorted as EventWithWaves[])
       })
 
-    // DJs
     supabase
       .from('djs')
       .select('*')
@@ -86,8 +85,6 @@ export default function HomePage() {
       .limit(10)
       .then(({ data }) => setDjs((data as DJ[]) || []))
 
-    // Exclusive partners (مرتبة بالـ priority)
-    
     supabase
       .from('partners')
       .select('*')
@@ -111,23 +108,15 @@ export default function HomePage() {
       }
     }
 
-    // كل standing خلص؟
     const standingAllSold =
-      (!!event.standing_wave_1_sold_out ||
-        event.standing_wave_1_price == null) &&
-      (!!event.standing_wave_2_sold_out ||
-        event.standing_wave_2_price == null) &&
-      (!!event.standing_wave_3_sold_out ||
-        event.standing_wave_3_price == null)
+      (!!event.standing_wave_1_sold_out || event.standing_wave_1_price == null) &&
+      (!!event.standing_wave_2_sold_out || event.standing_wave_2_price == null) &&
+      (!!event.standing_wave_3_sold_out || event.standing_wave_3_price == null)
 
-    // كل backstage خلص؟
     const backstageAllSold =
-      (!!event.backstage_wave_1_sold_out ||
-        event.backstage_wave_1_price == null) &&
-      (!!event.backstage_wave_2_sold_out ||
-        event.backstage_wave_2_price == null) &&
-      (!!event.backstage_wave_3_sold_out ||
-        event.backstage_wave_3_price == null)
+      (!!event.backstage_wave_1_sold_out || event.backstage_wave_1_price == null) &&
+      (!!event.backstage_wave_2_sold_out || event.backstage_wave_2_price == null) &&
+      (!!event.backstage_wave_3_sold_out || event.backstage_wave_3_price == null)
 
     if (standingAllSold && backstageAllSold) {
       return {
@@ -139,20 +128,10 @@ export default function HomePage() {
       }
     }
 
-    type Option = {
-      price: number
-      label: string
-      subtitle: string
-      color: string
-    }
-
+    type Option = { price: number; label: string; subtitle: string; color: string }
     const options: Option[] = []
 
-    // Standing
-    if (
-      !event.standing_wave_1_sold_out &&
-      event.standing_wave_1_price != null
-    ) {
+    if (!event.standing_wave_1_sold_out && event.standing_wave_1_price != null) {
       options.push({
         price: event.standing_wave_1_price,
         label: 'STANDING · W1',
@@ -186,11 +165,7 @@ export default function HomePage() {
       })
     }
 
-    // Backstage
-    if (
-      !event.backstage_wave_1_sold_out &&
-      event.backstage_wave_1_price != null
-    ) {
+    if (!event.backstage_wave_1_sold_out && event.backstage_wave_1_price != null) {
       options.push({
         price: event.backstage_wave_1_price,
         label: 'BACKSTAGE · W1',
@@ -235,7 +210,6 @@ export default function HomePage() {
     }
 
     const best = options.sort((a, b) => a.price - b.price)[0]
-
     return {
       price: best.price,
       label: best.label,
@@ -251,14 +225,14 @@ export default function HomePage() {
         backgroundColor: '#050505',
         minHeight: '100vh',
         fontFamily: 'Inter, sans-serif',
+        overflowX: 'hidden',
       }}
     >
       {/* HERO */}
       <section
         style={{
           minHeight: '100vh',
-          background:
-            'linear-gradient(135deg, #050505 0%, #110000 50%, #050505 100%)',
+          background: 'linear-gradient(135deg, #050505 0%, #110000 50%, #050505 100%)',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -332,8 +306,7 @@ export default function HomePage() {
             fontWeight: 400,
           }}
         >
-          Egypt&apos;s #1 platform for booking the hottest live events
-          &amp; concerts
+          Egypt&apos;s #1 platform for booking the hottest live events & concerts
         </p>
 
         <div
@@ -349,13 +322,10 @@ export default function HomePage() {
         >
           <button
             onClick={() =>
-              document
-                .getElementById('events')
-                ?.scrollIntoView({ behavior: 'smooth' })
+              document.getElementById('events')?.scrollIntoView({ behavior: 'smooth' })
             }
             style={{
-              background:
-                'linear-gradient(135deg, #dc2626, #b91c1c)',
+              background: 'linear-gradient(135deg, #dc2626, #b91c1c)',
               color: '#fff',
               padding: '14px 24px',
               borderRadius: '12px',
@@ -376,9 +346,7 @@ export default function HomePage() {
 
           <button
             onClick={() =>
-              document
-                .getElementById('djs')
-                ?.scrollIntoView({ behavior: 'smooth' })
+              document.getElementById('djs')?.scrollIntoView({ behavior: 'smooth' })
             }
             style={{
               background: 'transparent',
@@ -409,24 +377,19 @@ export default function HomePage() {
             textDecoration: 'none',
             letterSpacing: '2px',
           }}
-          onMouseEnter={e =>
-            (e.currentTarget.style.color = '#dc2626')
-          }
-          onMouseLeave={e =>
-            (e.currentTarget.style.color = '#444')
-          }
+          onMouseEnter={e => (e.currentTarget.style.color = '#dc2626')}
+          onMouseLeave={e => (e.currentTarget.style.color = '#444')}
         >
           SIGN UP FREE
         </Link>
       </section>
 
       {/* EXCLUSIVE PARTNER */}
-    {partners.length > 0 && (
-  <section
-    id="partners"
-    style={{
-      borderTop: '1px solid #111',
-
+      {partners.length > 0 && (
+        <section
+          id="partners"
+          style={{
+            borderTop: '1px solid #111',
             backgroundColor: '#050505',
             padding: '24px 16px',
           }}
@@ -470,11 +433,9 @@ export default function HomePage() {
                 lineHeight: 1.6,
               }}
             >
-              Official partner powering upcoming GRAVIX nights and
-              experiences.
+              Official partner powering upcoming GRAVIX nights and experiences.
             </p>
 
-            {/* كارت بارتنر واحد في النص */}
             {(() => {
               const main = partners[0]
               if (!main) return null
@@ -501,8 +462,7 @@ export default function HomePage() {
                     const el = e.currentTarget as HTMLDivElement
                     el.style.borderColor = '#dc2626'
                     el.style.transform = 'translateY(-3px)'
-                    el.style.boxShadow =
-                      '0 16px 35px rgba(220,38,38,0.18)'
+                    el.style.boxShadow = '0 16px 35px rgba(220,38,38,0.18)'
                   }}
                   onMouseLeave={e => {
                     const el = e.currentTarget as HTMLDivElement
@@ -511,7 +471,6 @@ export default function HomePage() {
                     el.style.boxShadow = 'none'
                   }}
                 >
-                  {/* اللوجو */}
                   <div
                     style={{
                       height: 80,
@@ -550,7 +509,6 @@ export default function HomePage() {
                     )}
                   </div>
 
-                  {/* الاسم + الأزرار */}
                   <div>
                     <p
                       style={{
@@ -564,7 +522,6 @@ export default function HomePage() {
                     </p>
                   </div>
 
-                  {/* Buttons: website + instagram */}
                   <div
                     style={{
                       display: 'flex',
@@ -583,8 +540,7 @@ export default function HomePage() {
                           fontSize: 11,
                           padding: '6px 12px',
                           borderRadius: 999,
-                          border:
-                            '1px solid rgba(248,250,252,0.12)',
+                          border: '1px solid rgba(248,250,252,0.12)',
                           background:
                             'linear-gradient(135deg, rgba(248,250,252,0.08), rgba(15,23,42,0.9))',
                           color: '#f9fafb',
@@ -606,10 +562,8 @@ export default function HomePage() {
                           fontSize: 11,
                           padding: '6px 12px',
                           borderRadius: 999,
-                          border:
-                            '1px solid rgba(220,38,38,0.5)',
-                          backgroundColor:
-                            'rgba(220,38,38,0.12)',
+                          border: '1px solid rgba(220,38,38,0.5)',
+                          backgroundColor: 'rgba(220,38,38,0.12)',
                           color: '#fecaca',
                           textDecoration: 'none',
                           letterSpacing: '1.3px',
@@ -621,14 +575,12 @@ export default function HomePage() {
                     )}
                   </div>
 
-                  {/* badge صغير */}
                   <span
                     style={{
                       fontSize: 9,
                       color: '#f97316',
                       backgroundColor: 'rgba(248,113,113,0.06)',
-                      border:
-                        '1px solid rgba(248,113,113,0.4)',
+                      border: '1px solid rgba(248,113,113,0.4)',
                       padding: '2px 10px',
                       borderRadius: 999,
                       letterSpacing: '1.5px',
@@ -644,7 +596,7 @@ export default function HomePage() {
         </section>
       )}
 
-      {/* DJs SECTION — مرفوع فوق EVENTS */}
+      {/* DJs SECTION */}
       <section
         id="djs"
         style={{
@@ -711,15 +663,11 @@ export default function HomePage() {
             <div
               style={{
                 textAlign: 'center',
-                padding: '60px',
+                padding: '60px 16px',
                 color: '#333',
               }}
             >
-              <div
-                style={{ fontSize: '48px', marginBottom: '12px' }}
-              >
-                🎧
-              </div>
+              <div style={{ fontSize: '48px', marginBottom: '12px' }}>🎧</div>
               <p
                 style={{
                   letterSpacing: '2px',
@@ -730,18 +678,15 @@ export default function HomePage() {
               </p>
             </div>
           ) : (
-            <div
-              style={{ overflowX: 'auto', paddingBottom: '8px' }}
-            >
+            <div style={{ overflowX: 'auto', paddingBottom: '8px' }}>
               <div
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: `repeat(${djs.length}, minmax(220px, 1fr))`,
+                  gridTemplateColumns: isMobile
+                    ? 'repeat(auto-fill, minmax(220px, 1fr))'
+                    : `repeat(${djs.length}, minmax(220px, 1fr))`,
                   gap: '20px',
-                  minWidth:
-                    djs.length > 4
-                      ? `${djs.length * 240}px`
-                      : 'auto',
+                  minWidth: isMobile ? '100%' : djs.length > 4 ? `${djs.length * 240}px` : 'auto',
                 }}
               >
                 {djs.map(dj => (
@@ -755,16 +700,13 @@ export default function HomePage() {
                       transition: 'all 0.3s',
                     }}
                     onMouseEnter={e => {
-                      const el =
-                        e.currentTarget as HTMLDivElement
+                      const el = e.currentTarget as HTMLDivElement
                       el.style.borderColor = '#dc2626'
                       el.style.transform = 'translateY(-6px)'
-                      el.style.boxShadow =
-                        '0 24px 48px rgba(220,38,38,0.1)'
+                      el.style.boxShadow = '0 24px 48px rgba(220,38,38,0.1)'
                     }}
                     onMouseLeave={e => {
-                      const el =
-                        e.currentTarget as HTMLDivElement
+                      const el = e.currentTarget as HTMLDivElement
                       el.style.borderColor = '#1a1a1a'
                       el.style.transform = 'translateY(0)'
                       el.style.boxShadow = 'none'
@@ -879,8 +821,7 @@ export default function HomePage() {
                               display: 'block',
                               textAlign: 'center',
                               backgroundColor: 'transparent',
-                              border:
-                                '1px solid rgba(16,185,129,0.4)',
+                              border: '1px solid rgba(16,185,129,0.4)',
                               color: '#10b981',
                               padding: '10px',
                               borderRadius: '10px',
@@ -903,7 +844,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* EVENTS SECTION — بعد DJs */}
+      {/* EVENTS SECTION */}
       <section
         id="events"
         style={{
@@ -973,11 +914,7 @@ export default function HomePage() {
                 color: '#333',
               }}
             >
-              <div
-                style={{ fontSize: '48px', marginBottom: '12px' }}
-              >
-                🎭
-              </div>
+              <div style={{ fontSize: '48px', marginBottom: '12px' }}>🎭</div>
               <p
                 style={{
                   letterSpacing: '2px',
@@ -989,187 +926,183 @@ export default function HomePage() {
             </div>
           )}
 
-          <div
-            style={{ overflowX: 'auto', paddingBottom: '8px' }}
-          >
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: `repeat(${events.length}, minmax(260px, 1fr))`,
-                gap: '20px',
-                minWidth:
-                  events.length > 3
+          {events.length > 0 && (
+            <div style={{ overflowX: 'auto', paddingBottom: '8px' }}>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: isMobile
+                    ? 'repeat(auto-fill, minmax(260px, 1fr))'
+                    : `repeat(${events.length}, minmax(260px, 1fr))`,
+                  gap: '20px',
+                  minWidth: isMobile
+                    ? '100%'
+                    : events.length > 3
                     ? `${events.length * 280}px`
                     : 'auto',
-              }}
-            >
-              {events.map(event => {
-                const { soldOut } = getCurrentPriceAndWave(event)
+                }}
+              >
+                {events.map(event => {
+                  const { soldOut } = getCurrentPriceAndWave(event)
 
-                return (
-                  <div
-                    key={event.id}
-                    style={{
-                      backgroundColor: '#0d0d0d',
-                      border: '1px solid #1a1a1a',
-                      borderRadius: '20px',
-                      overflow: 'hidden',
-                      transition: 'all 0.3s',
-                      cursor: 'pointer',
-                    }}
-                    onMouseEnter={e => {
-                      const el =
-                        e.currentTarget as HTMLDivElement
-                      el.style.borderColor = '#dc2626'
-                      el.style.transform = 'translateY(-6px)'
-                      el.style.boxShadow =
-                        '0 24px 48px rgba(220,38,38,0.1)'
-                    }}
-                    onMouseLeave={e => {
-                      const el =
-                        e.currentTarget as HTMLDivElement
-                      el.style.borderColor = '#1a1a1a'
-                      el.style.transform = 'translateY(0)'
-                      el.style.boxShadow = 'none'
-                    }}
-                  >
-                    {event.image_url ? (
-                      <div
-                        style={{
-                          width: '100%',
-                          aspectRatio: '3/4',
-                          overflow: 'hidden',
-                          backgroundColor: '#000',
-                        }}
-                      >
-                        <img
-                          src={event.image_url}
-                          alt={event.title}
-                          style={{
-                            width: '100%',
-                            height: '100%',
-                            objectFit: 'cover',
-                          }}
-                        />
-                      </div>
-                    ) : (
-                      <div
-                        style={{
-                          width: '100%',
-                          aspectRatio: '3/4',
-                          background:
-                            'linear-gradient(135deg, #1a0000, #0d0d0d)',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: '48px',
-                        }}
-                      >
-                        🎶
-                      </div>
-                    )}
-
-                    <div style={{ padding: '20px' }}>
-                      <div
-                        style={{
-                          color: '#dc2626',
-                          fontSize: '11px',
-                          letterSpacing: '2px',
-                          marginBottom: '8px',
-                          fontWeight: 700,
-                        }}
-                      >
-                        {new Date(
-                          event.date,
-                        )
-                          .toLocaleDateString('en-US', {
-                            month: 'short',
-                            day: 'numeric',
-                            year: 'numeric',
-                            timeZone: 'UTC',
-                          })
-                          .toUpperCase()}
-                      </div>
-                      <h3
-                        style={{
-                          fontSize: '18px',
-                          fontWeight: 900,
-                          color: '#fff',
-                          marginBottom: '6px',
-                          letterSpacing: '-0.5px',
-                        }}
-                      >
-                        {event.title}
-                      </h3>
-                      <div
-                        style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          marginBottom: '16px',
-                          flexWrap: 'wrap',
-                          gap: '8px',
-                        }}
-                      >
-                        <span
-                          style={{
-                            color: '#555',
-                            fontSize: '13px',
-                          }}
-                        >
-                          📍 {event.location}
-                        </span>
-                        <div style={{ flex: 1 }} />
-                      </div>
-
-                      {soldOut || event.is_finished ? (
+                  return (
+                    <div
+                      key={event.id}
+                      style={{
+                        backgroundColor: '#0d0d0d',
+                        border: '1px solid #1a1a1a',
+                        borderRadius: '20px',
+                        overflow: 'hidden',
+                        transition: 'all 0.3s',
+                        cursor: 'pointer',
+                      }}
+                      onMouseEnter={e => {
+                        const el = e.currentTarget as HTMLDivElement
+                        el.style.borderColor = '#dc2626'
+                        el.style.transform = 'translateY(-6px)'
+                        el.style.boxShadow = '0 24px 48px rgba(220,38,38,0.1)'
+                      }}
+                      onMouseLeave={e => {
+                        const el = e.currentTarget as HTMLDivElement
+                        el.style.borderColor = '#1a1a1a'
+                        el.style.transform = 'translateY(0)'
+                        el.style.boxShadow = 'none'
+                      }}
+                    >
+                      {event.image_url ? (
                         <div
                           style={{
-                            display: 'block',
                             width: '100%',
-                            backgroundColor: '#111',
-                            border: '1px solid #1a1a1a',
-                            color: '#ef4444',
-                            textAlign: 'center',
-                            padding: '12px',
-                            borderRadius: '12px',
-                            fontSize: '13px',
-                            letterSpacing: '2px',
-                            fontWeight: 700,
-                            boxSizing: 'border-box',
+                            aspectRatio: '3/4',
+                            overflow: 'hidden',
+                            backgroundColor: '#000',
                           }}
                         >
-                          {event.is_finished
-                            ? 'EVENT ENDED'
-                            : 'SOLD OUT'}
+                          <img
+                            src={event.image_url}
+                            alt={event.title}
+                            style={{
+                              width: '100%',
+                              height: '100%',
+                              objectFit: 'cover',
+                            }}
+                          />
                         </div>
                       ) : (
-                        <Link
-                          href={`/events/${event.id}`}
+                        <div
                           style={{
-                            display: 'block',
                             width: '100%',
+                            aspectRatio: '3/4',
                             background:
-                              'linear-gradient(135deg, #dc2626, #b91c1c)',
-                            color: '#fff',
-                            textAlign: 'center',
-                            padding: '12px',
-                            borderRadius: '12px',
-                            fontWeight: 700,
-                            textDecoration: 'none',
-                            fontSize: '14px',
-                            letterSpacing: '1px',
+                              'linear-gradient(135deg, #1a0000, #0d0d0d)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '48px',
                           }}
                         >
-                          BOOK NOW
-                        </Link>
+                          🎶
+                        </div>
                       )}
+
+                      <div style={{ padding: '20px' }}>
+                        <div
+                          style={{
+                            color: '#dc2626',
+                            fontSize: '11px',
+                            letterSpacing: '2px',
+                            marginBottom: '8px',
+                            fontWeight: 700,
+                          }}
+                        >
+                          {new Date(event.date)
+                            .toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric',
+                              timeZone: 'UTC',
+                            })
+                            .toUpperCase()}
+                        </div>
+                        <h3
+                          style={{
+                            fontSize: '18px',
+                            fontWeight: 900,
+                            color: '#fff',
+                            marginBottom: '6px',
+                            letterSpacing: '-0.5px',
+                          }}
+                        >
+                          {event.title}
+                        </h3>
+                        <div
+                          style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            marginBottom: '16px',
+                            flexWrap: 'wrap',
+                            gap: '8px',
+                          }}
+                        >
+                          <span
+                            style={{
+                              color: '#555',
+                              fontSize: '13px',
+                            }}
+                          >
+                            📍 {event.location}
+                          </span>
+                          <div style={{ flex: 1 }} />
+                        </div>
+
+                        {soldOut || event.is_finished ? (
+                          <div
+                            style={{
+                              display: 'block',
+                              width: '100%',
+                              backgroundColor: '#111',
+                              border: '1px solid #1a1a1a',
+                              color: '#ef4444',
+                              textAlign: 'center',
+                              padding: '12px',
+                              borderRadius: '12px',
+                              fontSize: '13px',
+                              letterSpacing: '2px',
+                              fontWeight: 700,
+                              boxSizing: 'border-box',
+                            }}
+                          >
+                            {event.is_finished ? 'EVENT ENDED' : 'SOLD OUT'}
+                          </div>
+                        ) : (
+                          <Link
+                            href={`/events/${event.id}`}
+                            style={{
+                              display: 'block',
+                              width: '100%',
+                              background:
+                                'linear-gradient(135deg, #dc2626, #b91c1c)',
+                              color: '#fff',
+                              textAlign: 'center',
+                              padding: '12px',
+                              borderRadius: '12px',
+                              fontWeight: 700,
+                              textDecoration: 'none',
+                              fontSize: '14px',
+                              letterSpacing: '1px',
+                            }}
+                          >
+                            BOOK NOW
+                          </Link>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )
-              })}
+                  )
+                })}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </section>
 
@@ -1187,20 +1120,14 @@ export default function HomePage() {
             maxWidth: '900px',
             margin: '0 auto',
             display: 'grid',
-            gridTemplateColumns: isMobile
-              ? '1fr'
-              : 'repeat(3, 1fr)',
+            gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
             gap: '16px',
           }}
         >
           {[
             { icon: '🎉', title: 'EXCLUSIVE EVENTS', sub: 'Every month' },
             { icon: '⚡', title: 'INSTANT BOOKING', sub: 'No hassle' },
-            {
-              icon: '🔐',
-              title: 'SECURE PAYMENT',
-              sub: '100% guaranteed',
-            },
+            { icon: '🔐', title: 'SECURE PAYMENT', sub: '100% guaranteed' },
           ].map(s => (
             <div
               key={s.title}
@@ -1212,9 +1139,7 @@ export default function HomePage() {
                 backgroundColor: '#0d0d0d',
               }}
             >
-              <div
-                style={{ fontSize: '32px', marginBottom: '10px' }}
-              >
+              <div style={{ fontSize: '32px', marginBottom: '10px' }}>
                 {s.icon}
               </div>
               <div
@@ -1283,8 +1208,7 @@ export default function HomePage() {
             style={{
               width: '60px',
               height: '3px',
-              background:
-                'linear-gradient(90deg, #dc2626, transparent)',
+              background: 'linear-gradient(90deg, #dc2626, transparent)',
               borderRadius: '2px',
               margin: '0 auto 28px',
             }}
@@ -1297,10 +1221,9 @@ export default function HomePage() {
               margin: '0 0 16px',
             }}
           >
-            GRAVIX is Egypt&apos;s premier live events platform. We
-            connect music lovers, culture seekers, and night-life
-            enthusiasts with the most exclusive events across the
-            country.
+            GRAVIX is Egypt&apos;s premier live events platform. We connect music
+            lovers, culture seekers, and night-life enthusiasts with the most
+            exclusive events across the country.
           </p>
           <p
             style={{
@@ -1310,9 +1233,9 @@ export default function HomePage() {
               margin: 0,
             }}
           >
-            From intimate underground concerts to large-scale
-            festivals — we handle bookings, payments, and entry
-            management so you can focus on the experience.
+            From intimate underground concerts to large-scale festivals — we
+            handle bookings, payments, and entry management so you can focus on
+            the experience.
           </p>
         </div>
       </section>
@@ -1359,8 +1282,7 @@ export default function HomePage() {
             style={{
               width: '60px',
               height: '3px',
-              background:
-                'linear-gradient(90deg, #dc2626, transparent)',
+              background: 'linear-gradient(90deg, #dc2626, transparent)',
               borderRadius: '2px',
               margin: '0 auto 40px',
             }}
@@ -1369,9 +1291,7 @@ export default function HomePage() {
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: isMobile
-                ? '1fr'
-                : 'repeat(3, 1fr)',
+              gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
               gap: '16px',
             }}
           >
@@ -1450,6 +1370,7 @@ export default function HomePage() {
                       fontSize: '13px',
                       fontWeight: 700,
                       margin: 0,
+                      wordBreak: 'break-word',
                     }}
                   >
                     {c.value}
