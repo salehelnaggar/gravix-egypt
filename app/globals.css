@@ -12,6 +12,11 @@ body {
   background-color: #080808;
   color: #ffffff;
   font-family: 'Cairo', sans-serif;
+  overflow-x: hidden; /* ← ضيف السطر ده */
+}
+
+html {
+  overflow-x: hidden; /* ← والسطر ده */
 }
 
 a { color: inherit; }
