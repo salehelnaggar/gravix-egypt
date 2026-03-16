@@ -596,7 +596,7 @@ export default function HomePage() {
         </section>
       )}
 
-      {/* DJs SECTION */}
+      {/* DJs SECTION – SCROLL */}
       <section
         id="djs"
         style={{
@@ -678,21 +678,25 @@ export default function HomePage() {
               </p>
             </div>
           ) : (
-            <div style={{ overflowX: 'auto', paddingBottom: '8px' }}>
+            <div
+              style={{
+                overflowX: 'auto',
+                paddingBottom: '8px',
+                WebkitOverflowScrolling: 'touch',
+              }}
+            >
               <div
                 style={{
-                  display: 'grid',
-                  gridTemplateColumns: isMobile
-                    ? 'repeat(auto-fill, minmax(220px, 1fr))'
-                    : `repeat(${djs.length}, minmax(220px, 1fr))`,
-                  gap: '20px',
-                  minWidth: isMobile ? '100%' : djs.length > 4 ? `${djs.length * 240}px` : 'auto',
+                  display: 'flex',
+                  gap: '16px',
+                  paddingBottom: '4px',
                 }}
               >
                 {djs.map(dj => (
                   <div
                     key={dj.id}
                     style={{
+                      flex: '0 0 260px',
                       backgroundColor: '#0d0d0d',
                       border: '1px solid #1a1a1a',
                       borderRadius: '20px',
@@ -844,7 +848,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* EVENTS SECTION */}
+      {/* EVENTS SECTION – SCROLL */}
       <section
         id="events"
         style={{
@@ -927,19 +931,18 @@ export default function HomePage() {
           )}
 
           {events.length > 0 && (
-            <div style={{ overflowX: 'auto', paddingBottom: '8px' }}>
+            <div
+              style={{
+                overflowX: 'auto',
+                paddingBottom: '8px',
+                WebkitOverflowScrolling: 'touch',
+              }}
+            >
               <div
                 style={{
-                  display: 'grid',
-                  gridTemplateColumns: isMobile
-                    ? 'repeat(auto-fill, minmax(260px, 1fr))'
-                    : `repeat(${events.length}, minmax(260px, 1fr))`,
-                  gap: '20px',
-                  minWidth: isMobile
-                    ? '100%'
-                    : events.length > 3
-                    ? `${events.length * 280}px`
-                    : 'auto',
+                  display: 'flex',
+                  gap: '16px',
+                  paddingBottom: '4px',
                 }}
               >
                 {events.map(event => {
@@ -949,6 +952,7 @@ export default function HomePage() {
                     <div
                       key={event.id}
                       style={{
+                        flex: '0 0 280px',
                         backgroundColor: '#0d0d0d',
                         border: '1px solid #1a1a1a',
                         borderRadius: '20px',
