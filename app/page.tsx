@@ -99,13 +99,7 @@ export default function HomePage() {
 
   const getCurrentPriceAndWave = (event: EventWithWaves) => {
     if (event.is_finished) {
-      return {
-        price: null,
-        label: 'FINISHED',
-        subtitle: '',
-        color: '#555',
-        soldOut: true,
-      }
+      return { price: null, label: 'FINISHED', subtitle: '', color: '#555', soldOut: true }
     }
 
     const standingAllSold =
@@ -119,104 +113,30 @@ export default function HomePage() {
       (!!event.backstage_wave_3_sold_out || event.backstage_wave_3_price == null)
 
     if (standingAllSold && backstageAllSold) {
-      return {
-        price: null,
-        label: 'SOLD OUT',
-        subtitle: '',
-        color: '#ef4444',
-        soldOut: true,
-      }
+      return { price: null, label: 'SOLD OUT', subtitle: '', color: '#ef4444', soldOut: true }
     }
 
     type Option = { price: number; label: string; subtitle: string; color: string }
     const options: Option[] = []
 
-    if (!event.standing_wave_1_sold_out && event.standing_wave_1_price != null) {
-      options.push({
-        price: event.standing_wave_1_price,
-        label: 'STANDING · W1',
-        subtitle: 'EARLY BIRD',
-        color: '#22c55e',
-      })
-    }
-    if (
-      event.standing_wave_1_sold_out &&
-      !event.standing_wave_2_sold_out &&
-      event.standing_wave_2_price != null
-    ) {
-      options.push({
-        price: event.standing_wave_2_price,
-        label: 'STANDING · W2',
-        subtitle: 'REGULAR',
-        color: '#eab308',
-      })
-    }
-    if (
-      event.standing_wave_1_sold_out &&
-      event.standing_wave_2_sold_out &&
-      !event.standing_wave_3_sold_out &&
-      event.standing_wave_3_price != null
-    ) {
-      options.push({
-        price: event.standing_wave_3_price,
-        label: 'STANDING · W3',
-        subtitle: 'LAST WAVE',
-        color: '#3b82f6',
-      })
-    }
+    if (!event.standing_wave_1_sold_out && event.standing_wave_1_price != null)
+      options.push({ price: event.standing_wave_1_price, label: 'STANDING · W1', subtitle: 'EARLY BIRD', color: '#22c55e' })
+    if (event.standing_wave_1_sold_out && !event.standing_wave_2_sold_out && event.standing_wave_2_price != null)
+      options.push({ price: event.standing_wave_2_price, label: 'STANDING · W2', subtitle: 'REGULAR', color: '#eab308' })
+    if (event.standing_wave_1_sold_out && event.standing_wave_2_sold_out && !event.standing_wave_3_sold_out && event.standing_wave_3_price != null)
+      options.push({ price: event.standing_wave_3_price, label: 'STANDING · W3', subtitle: 'LAST WAVE', color: '#3b82f6' })
+    if (!event.backstage_wave_1_sold_out && event.backstage_wave_1_price != null)
+      options.push({ price: event.backstage_wave_1_price, label: 'BACKSTAGE · W1', subtitle: 'EARLY BIRD', color: '#f97316' })
+    if (event.backstage_wave_1_sold_out && !event.backstage_wave_2_sold_out && event.backstage_wave_2_price != null)
+      options.push({ price: event.backstage_wave_2_price, label: 'BACKSTAGE · W2', subtitle: 'REGULAR', color: '#facc15' })
+    if (event.backstage_wave_1_sold_out && event.backstage_wave_2_sold_out && !event.backstage_wave_3_sold_out && event.backstage_wave_3_price != null)
+      options.push({ price: event.backstage_wave_3_price, label: 'BACKSTAGE · W3', subtitle: 'LAST WAVE', color: '#a855f7' })
 
-    if (!event.backstage_wave_1_sold_out && event.backstage_wave_1_price != null) {
-      options.push({
-        price: event.backstage_wave_1_price,
-        label: 'BACKSTAGE · W1',
-        subtitle: 'EARLY BIRD',
-        color: '#f97316',
-      })
-    }
-    if (
-      event.backstage_wave_1_sold_out &&
-      !event.backstage_wave_2_sold_out &&
-      event.backstage_wave_2_price != null
-    ) {
-      options.push({
-        price: event.backstage_wave_2_price,
-        label: 'BACKSTAGE · W2',
-        subtitle: 'REGULAR',
-        color: '#facc15',
-      })
-    }
-    if (
-      event.backstage_wave_1_sold_out &&
-      event.backstage_wave_2_sold_out &&
-      !event.backstage_wave_3_sold_out &&
-      event.backstage_wave_3_price != null
-    ) {
-      options.push({
-        price: event.backstage_wave_3_price,
-        label: 'BACKSTAGE · W3',
-        subtitle: 'LAST WAVE',
-        color: '#a855f7',
-      })
-    }
-
-    if (options.length === 0) {
-      return {
-        price: null,
-        label: 'SOLD OUT',
-        subtitle: '',
-        color: '#ef4444',
-        soldOut: true,
-      }
-    }
+    if (options.length === 0)
+      return { price: null, label: 'SOLD OUT', subtitle: '', color: '#ef4444', soldOut: true }
 
     const best = options.sort((a, b) => a.price - b.price)[0]
-    return {
-      price: best.price,
-      label: best.label,
-      subtitle: best.subtitle,
-      color: best.color,
-      soldOut: false,
-    }
+    return { price: best.price, label: best.label, subtitle: best.subtitle, color: best.color, soldOut: false }
   }
 
   return (
@@ -248,8 +168,7 @@ export default function HomePage() {
             position: 'absolute',
             width: isMobile ? '420px' : '700px',
             height: isMobile ? '420px' : '700px',
-            background:
-              'radial-gradient(circle, rgba(220,38,38,0.12) 0%, transparent 70%)',
+            background: 'radial-gradient(circle, rgba(220,38,38,0.12) 0%, transparent 70%)',
             top: '50%',
             left: '50%',
             transform: 'translate(-50%, -50%)',
@@ -321,9 +240,7 @@ export default function HomePage() {
           }}
         >
           <button
-            onClick={() =>
-              document.getElementById('events')?.scrollIntoView({ behavior: 'smooth' })
-            }
+            onClick={() => document.getElementById('events')?.scrollIntoView({ behavior: 'smooth' })}
             style={{
               background: 'linear-gradient(135deg, #dc2626, #b91c1c)',
               color: '#fff',
@@ -345,9 +262,7 @@ export default function HomePage() {
           </button>
 
           <button
-            onClick={() =>
-              document.getElementById('djs')?.scrollIntoView({ behavior: 'smooth' })
-            }
+            onClick={() => document.getElementById('djs')?.scrollIntoView({ behavior: 'smooth' })}
             style={{
               background: 'transparent',
               color: '#fff',
@@ -370,13 +285,7 @@ export default function HomePage() {
 
         <Link
           href="/auth/register"
-          style={{
-            color: '#444',
-            fontSize: '12px',
-            fontWeight: 600,
-            textDecoration: 'none',
-            letterSpacing: '2px',
-          }}
+          style={{ color: '#444', fontSize: '12px', fontWeight: 600, textDecoration: 'none', letterSpacing: '2px' }}
           onMouseEnter={e => (e.currentTarget.style.color = '#dc2626')}
           onMouseLeave={e => (e.currentTarget.style.color = '#444')}
         >
@@ -384,85 +293,77 @@ export default function HomePage() {
         </Link>
       </section>
 
-      {/* EXCLUSIVE PARTNER */}
+      {/* EXCLUSIVE PARTNERS */}
       {partners.length > 0 && (
         <section
           id="partners"
           style={{
             borderTop: '1px solid #111',
             backgroundColor: '#050505',
-            padding: '24px 16px',
+            padding: '56px 16px',
           }}
         >
-          <div
-            style={{
-              maxWidth: '520px',
-              margin: '0 auto',
-              textAlign: 'center',
-            }}
-          >
-            <p
+          <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
+            {/* Header */}
+            <div style={{ textAlign: 'center', marginBottom: '48px' }}>
+              <p
+                style={{
+                  color: '#dc2626',
+                  fontSize: 10,
+                  letterSpacing: '3px',
+                  fontWeight: 700,
+                  margin: '0 0 10px',
+                }}
+              >
+                ● EXCLUSIVE PARTNERS
+              </p>
+              <h2
+                style={{
+                  fontSize: isMobile ? 22 : 30,
+                  fontWeight: 900,
+                  color: '#fff',
+                  margin: '0 0 10px',
+                  letterSpacing: '-0.5px',
+                }}
+              >
+                BRANDS LOCKED IN WITH GRAVIX
+              </h2>
+              <p style={{ color: '#555', fontSize: 13, margin: 0, lineHeight: 1.6 }}>
+                Official partners powering upcoming GRAVIX nights and experiences.
+              </p>
+            </div>
+
+            {/* Partners Grid */}
+            <div
               style={{
-                color: '#dc2626',
-                fontSize: 10,
-                letterSpacing: '3px',
-                fontWeight: 700,
-                margin: 0,
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: '24px',
+                justifyContent: 'center',
               }}
             >
-              ● EXCLUSIVE PARTNER
-            </p>
-
-            <h2
-              style={{
-                fontSize: isMobile ? 18 : 20,
-                fontWeight: 800,
-                color: '#fff',
-                margin: '4px 0 4px',
-                letterSpacing: '-0.3px',
-              }}
-            >
-              BRAND LOCKED IN WITH GRAVIX
-            </h2>
-
-            <p
-              style={{
-                color: '#777',
-                fontSize: 12,
-                margin: '0 0 16px',
-                lineHeight: 1.6,
-              }}
-            >
-              Official partner powering upcoming GRAVIX nights and experiences.
-            </p>
-
-            {(() => {
-              const main = partners[0]
-              if (!main) return null
-
-              return (
+              {partners.map(partner => (
                 <div
-                  key={main.id}
+                  key={partner.id}
                   style={{
-                    margin: '0 auto',
-                    maxWidth: 320,
-                    padding: '14px 16px',
-                    borderRadius: 18,
+                    width: isMobile ? '100%' : '200px',
+                    maxWidth: isMobile ? '340px' : '200px',
+                    backgroundColor: '#0d0d0d',
                     border: '1px solid #1a1a1a',
-                    background:
-                      'radial-gradient(circle at top, #111 0%, #020617 70%)',
+                    borderRadius: '20px',
+                    padding: '28px 20px 20px',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
-                    gap: 10,
-                    transition:
-                      'border-color 0.2s, transform 0.2s, box-shadow 0.2s',
+                    gap: '16px',
+                    transition: 'border-color 0.25s, transform 0.25s, box-shadow 0.25s',
+                    cursor: 'default',
                   }}
                   onMouseEnter={e => {
                     const el = e.currentTarget as HTMLDivElement
                     el.style.borderColor = '#dc2626'
-                    el.style.transform = 'translateY(-3px)'
-                    el.style.boxShadow = '0 16px 35px rgba(220,38,38,0.18)'
+                    el.style.transform = 'translateY(-6px)'
+                    el.style.boxShadow = '0 20px 50px rgba(220,38,38,0.2)'
                   }}
                   onMouseLeave={e => {
                     const el = e.currentTarget as HTMLDivElement
@@ -471,23 +372,25 @@ export default function HomePage() {
                     el.style.boxShadow = 'none'
                   }}
                 >
+                  {/* Circle Logo */}
                   <div
                     style={{
-                      height: 80,
-                      width: 80,
-                      borderRadius: '999px',
-                      backgroundColor: '#020617',
-                      border: '1px solid rgba(148,163,184,0.7)',
+                      width: 96,
+                      height: 96,
+                      borderRadius: '50%',
+                      backgroundColor: '#080808',
+                      border: '2px solid #222',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       overflow: 'hidden',
+                      flexShrink: 0,
                     }}
                   >
-                    {main.logo_url ? (
+                    {partner.logo_url ? (
                       <img
-                        src={main.logo_url}
-                        alt={main.name}
+                        src={partner.logo_url}
+                        alt={partner.name}
                         style={{
                           width: '100%',
                           height: '100%',
@@ -497,76 +400,80 @@ export default function HomePage() {
                         }}
                       />
                     ) : (
-                      <span
-                        style={{
-                          color: '#6b7280',
-                          fontSize: 11,
-                          letterSpacing: '2px',
-                        }}
-                      >
+                      <span style={{ color: '#333', fontSize: 11, letterSpacing: '2px' }}>
                         LOGO
                       </span>
                     )}
                   </div>
 
-                  <div>
-                    <p
+                  {/* Name + Badge */}
+                  <div style={{ textAlign: 'center' }}>
+                    <p style={{ color: '#fff', fontSize: 15, fontWeight: 800, margin: '0 0 6px', letterSpacing: '-0.3px' }}>
+                      {partner.name}
+                    </p>
+                    <span
                       style={{
-                        color: '#fff',
-                        fontSize: 14,
-                        fontWeight: 800,
-                        margin: 0,
+                        fontSize: 9,
+                        color: '#f97316',
+                        backgroundColor: 'rgba(249,115,22,0.08)',
+                        border: '1px solid rgba(249,115,22,0.35)',
+                        padding: '2px 10px',
+                        borderRadius: 999,
+                        letterSpacing: '1.5px',
+                        fontWeight: 700,
                       }}
                     >
-                      {main.name}
-                    </p>
+                      EXCLUSIVE PARTNER
+                    </span>
                   </div>
 
+                  {/* Buttons */}
                   <div
                     style={{
                       display: 'flex',
-                      flexWrap: 'wrap',
-                      gap: 8,
-                      justifyContent: 'center',
-                      marginTop: 4,
+                      flexDirection: 'column',
+                      gap: '8px',
+                      width: '100%',
                     }}
                   >
-                    {main.website && (
+                    {partner.website && (
                       <a
-                        href={main.website}
+                        href={partner.website}
                         target="_blank"
                         rel="noreferrer"
                         style={{
+                          display: 'block',
+                          textAlign: 'center',
                           fontSize: 11,
-                          padding: '6px 12px',
-                          borderRadius: 999,
+                          padding: '8px 12px',
+                          borderRadius: 10,
                           border: '1px solid rgba(248,250,252,0.12)',
-                          background:
-                            'linear-gradient(135deg, rgba(248,250,252,0.08), rgba(15,23,42,0.9))',
+                          background: 'linear-gradient(135deg, rgba(248,250,252,0.08), rgba(15,23,42,0.9))',
                           color: '#f9fafb',
                           textDecoration: 'none',
-                          letterSpacing: '1.3px',
+                          letterSpacing: '1.2px',
                           fontWeight: 700,
                         }}
                       >
                         OFFICIAL WEBSITE
                       </a>
                     )}
-
-                    {main.instagram_url && (
+                    {partner.instagram_url && (
                       <a
-                        href={main.instagram_url}
+                        href={partner.instagram_url}
                         target="_blank"
                         rel="noreferrer"
                         style={{
+                          display: 'block',
+                          textAlign: 'center',
                           fontSize: 11,
-                          padding: '6px 12px',
-                          borderRadius: 999,
-                          border: '1px solid rgba(220,38,38,0.5)',
-                          backgroundColor: 'rgba(220,38,38,0.12)',
+                          padding: '8px 12px',
+                          borderRadius: 10,
+                          border: '1px solid rgba(220,38,38,0.4)',
+                          backgroundColor: 'rgba(220,38,38,0.08)',
                           color: '#fecaca',
                           textDecoration: 'none',
-                          letterSpacing: '1.3px',
+                          letterSpacing: '1.2px',
                           fontWeight: 700,
                         }}
                       >
@@ -574,24 +481,9 @@ export default function HomePage() {
                       </a>
                     )}
                   </div>
-
-                  <span
-                    style={{
-                      fontSize: 9,
-                      color: '#f97316',
-                      backgroundColor: 'rgba(248,113,113,0.06)',
-                      border: '1px solid rgba(248,113,113,0.4)',
-                      padding: '2px 10px',
-                      borderRadius: 999,
-                      letterSpacing: '1.5px',
-                      fontWeight: 700,
-                    }}
-                  >
-                    EXCLUSIVE PARTNER
-                  </span>
                 </div>
-              )
-            })()}
+              ))}
+            </div>
           </div>
         </section>
       )}
@@ -617,15 +509,7 @@ export default function HomePage() {
             }}
           >
             <div>
-              <p
-                style={{
-                  color: '#dc2626',
-                  fontSize: '11px',
-                  letterSpacing: '4px',
-                  fontWeight: 700,
-                  margin: '0 0 8px',
-                }}
-              >
+              <p style={{ color: '#dc2626', fontSize: '11px', letterSpacing: '4px', fontWeight: 700, margin: '0 0 8px' }}>
                 ● FEATURED
               </p>
               <h2
@@ -660,38 +544,13 @@ export default function HomePage() {
           </div>
 
           {djs.length === 0 ? (
-            <div
-              style={{
-                textAlign: 'center',
-                padding: '60px 16px',
-                color: '#333',
-              }}
-            >
+            <div style={{ textAlign: 'center', padding: '60px 16px', color: '#333' }}>
               <div style={{ fontSize: '48px', marginBottom: '12px' }}>🎧</div>
-              <p
-                style={{
-                  letterSpacing: '2px',
-                  fontSize: '13px',
-                }}
-              >
-                NO DJs YET
-              </p>
+              <p style={{ letterSpacing: '2px', fontSize: '13px' }}>NO DJs YET</p>
             </div>
           ) : (
-            <div
-              style={{
-                overflowX: 'auto',
-                paddingBottom: '8px',
-                WebkitOverflowScrolling: 'touch',
-              }}
-            >
-              <div
-                style={{
-                  display: 'flex',
-                  gap: '16px',
-                  paddingBottom: '4px',
-                }}
-              >
+            <div style={{ overflowX: 'auto', paddingBottom: '8px', WebkitOverflowScrolling: 'touch' }}>
+              <div style={{ display: 'flex', gap: '16px', paddingBottom: '4px' }}>
                 {djs.map(dj => (
                   <div
                     key={dj.id}
@@ -717,31 +576,15 @@ export default function HomePage() {
                     }}
                   >
                     {dj.image_url ? (
-                      <div
-                        style={{
-                          width: '100%',
-                          aspectRatio: '3/4',
-                          overflow: 'hidden',
-                          backgroundColor: '#000',
-                        }}
-                      >
-                        <img
-                          src={dj.image_url}
-                          alt={dj.name}
-                          style={{
-                            width: '100%',
-                            height: '100%',
-                            objectFit: 'cover',
-                          }}
-                        />
+                      <div style={{ width: '100%', aspectRatio: '3/4', overflow: 'hidden', backgroundColor: '#000' }}>
+                        <img src={dj.image_url} alt={dj.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       </div>
                     ) : (
                       <div
                         style={{
                           width: '100%',
                           aspectRatio: '3/4',
-                          background:
-                            'linear-gradient(135deg, #1a0000, #0d0d0d)',
+                          background: 'linear-gradient(135deg, #1a0000, #0d0d0d)',
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
@@ -751,28 +594,11 @@ export default function HomePage() {
                         🎧
                       </div>
                     )}
-
                     <div style={{ padding: '20px' }}>
-                      <p
-                        style={{
-                          color: '#dc2626',
-                          fontSize: '10px',
-                          letterSpacing: '2px',
-                          fontWeight: 700,
-                          margin: '0 0 6px',
-                        }}
-                      >
+                      <p style={{ color: '#dc2626', fontSize: '10px', letterSpacing: '2px', fontWeight: 700, margin: '0 0 6px' }}>
                         ● DJ
                       </p>
-                      <h3
-                        style={{
-                          fontSize: '20px',
-                          fontWeight: 900,
-                          color: '#fff',
-                          margin: '0 0 8px',
-                          letterSpacing: '-0.5px',
-                        }}
-                      >
+                      <h3 style={{ fontSize: '20px', fontWeight: 900, color: '#fff', margin: '0 0 8px', letterSpacing: '-0.5px' }}>
                         {dj.name}
                       </h3>
                       {dj.bio && (
@@ -791,20 +617,13 @@ export default function HomePage() {
                           {dj.bio}
                         </p>
                       )}
-                      <div
-                        style={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: '8px',
-                        }}
-                      >
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                         <Link
                           href={`/djs/${dj.username || dj.id}`}
                           style={{
                             display: 'block',
                             textAlign: 'center',
-                            background:
-                              'linear-gradient(135deg, #dc2626, #b91c1c)',
+                            background: 'linear-gradient(135deg, #dc2626, #b91c1c)',
                             color: '#fff',
                             padding: '10px',
                             borderRadius: '10px',
@@ -849,13 +668,7 @@ export default function HomePage() {
       </section>
 
       {/* EVENTS SECTION – SCROLL */}
-      <section
-        id="events"
-        style={{
-          padding: '56px 16px',
-          backgroundColor: '#050505',
-        }}
-      >
+      <section id="events" style={{ padding: '56px 16px', backgroundColor: '#050505' }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
           <div
             style={{
@@ -868,15 +681,7 @@ export default function HomePage() {
             }}
           >
             <div>
-              <p
-                style={{
-                  color: '#dc2626',
-                  fontSize: '11px',
-                  letterSpacing: '4px',
-                  fontWeight: 700,
-                  margin: '0 0 8px',
-                }}
-              >
+              <p style={{ color: '#dc2626', fontSize: '11px', letterSpacing: '4px', fontWeight: 700, margin: '0 0 8px' }}>
                 ● UPCOMING
               </p>
               <h2
@@ -911,43 +716,17 @@ export default function HomePage() {
           </div>
 
           {events.length === 0 && (
-            <div
-              style={{
-                textAlign: 'center',
-                padding: isMobile ? '40px 16px' : '80px',
-                color: '#333',
-              }}
-            >
+            <div style={{ textAlign: 'center', padding: isMobile ? '40px 16px' : '80px', color: '#333' }}>
               <div style={{ fontSize: '48px', marginBottom: '12px' }}>🎭</div>
-              <p
-                style={{
-                  letterSpacing: '2px',
-                  fontSize: '13px',
-                }}
-              >
-                NO EVENTS YET
-              </p>
+              <p style={{ letterSpacing: '2px', fontSize: '13px' }}>NO EVENTS YET</p>
             </div>
           )}
 
           {events.length > 0 && (
-            <div
-              style={{
-                overflowX: 'auto',
-                paddingBottom: '8px',
-                WebkitOverflowScrolling: 'touch',
-              }}
-            >
-              <div
-                style={{
-                  display: 'flex',
-                  gap: '16px',
-                  paddingBottom: '4px',
-                }}
-              >
+            <div style={{ overflowX: 'auto', paddingBottom: '8px', WebkitOverflowScrolling: 'touch' }}>
+              <div style={{ display: 'flex', gap: '16px', paddingBottom: '4px' }}>
                 {events.map(event => {
                   const { soldOut } = getCurrentPriceAndWave(event)
-
                   return (
                     <div
                       key={event.id}
@@ -974,31 +753,15 @@ export default function HomePage() {
                       }}
                     >
                       {event.image_url ? (
-                        <div
-                          style={{
-                            width: '100%',
-                            aspectRatio: '3/4',
-                            overflow: 'hidden',
-                            backgroundColor: '#000',
-                          }}
-                        >
-                          <img
-                            src={event.image_url}
-                            alt={event.title}
-                            style={{
-                              width: '100%',
-                              height: '100%',
-                              objectFit: 'cover',
-                            }}
-                          />
+                        <div style={{ width: '100%', aspectRatio: '3/4', overflow: 'hidden', backgroundColor: '#000' }}>
+                          <img src={event.image_url} alt={event.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         </div>
                       ) : (
                         <div
                           style={{
                             width: '100%',
                             aspectRatio: '3/4',
-                            background:
-                              'linear-gradient(135deg, #1a0000, #0d0d0d)',
+                            background: 'linear-gradient(135deg, #1a0000, #0d0d0d)',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
@@ -1008,35 +771,13 @@ export default function HomePage() {
                           🎶
                         </div>
                       )}
-
                       <div style={{ padding: '20px' }}>
-                        <div
-                          style={{
-                            color: '#dc2626',
-                            fontSize: '11px',
-                            letterSpacing: '2px',
-                            marginBottom: '8px',
-                            fontWeight: 700,
-                          }}
-                        >
+                        <div style={{ color: '#dc2626', fontSize: '11px', letterSpacing: '2px', marginBottom: '8px', fontWeight: 700 }}>
                           {new Date(event.date)
-                            .toLocaleDateString('en-US', {
-                              month: 'short',
-                              day: 'numeric',
-                              year: 'numeric',
-                              timeZone: 'UTC',
-                            })
+                            .toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })
                             .toUpperCase()}
                         </div>
-                        <h3
-                          style={{
-                            fontSize: '18px',
-                            fontWeight: 900,
-                            color: '#fff',
-                            marginBottom: '6px',
-                            letterSpacing: '-0.5px',
-                          }}
-                        >
+                        <h3 style={{ fontSize: '18px', fontWeight: 900, color: '#fff', marginBottom: '6px', letterSpacing: '-0.5px' }}>
                           {event.title}
                         </h3>
                         <div
@@ -1049,14 +790,7 @@ export default function HomePage() {
                             gap: '8px',
                           }}
                         >
-                          <span
-                            style={{
-                              color: '#555',
-                              fontSize: '13px',
-                            }}
-                          >
-                            📍 {event.location}
-                          </span>
+                          <span style={{ color: '#555', fontSize: '13px' }}>📍 {event.location}</span>
                           <div style={{ flex: 1 }} />
                         </div>
 
@@ -1085,8 +819,7 @@ export default function HomePage() {
                             style={{
                               display: 'block',
                               width: '100%',
-                              background:
-                                'linear-gradient(135deg, #dc2626, #b91c1c)',
+                              background: 'linear-gradient(135deg, #dc2626, #b91c1c)',
                               color: '#fff',
                               textAlign: 'center',
                               padding: '12px',
@@ -1143,69 +876,21 @@ export default function HomePage() {
                 backgroundColor: '#0d0d0d',
               }}
             >
-              <div style={{ fontSize: '32px', marginBottom: '10px' }}>
-                {s.icon}
-              </div>
-              <div
-                style={{
-                  color: '#fff',
-                  fontWeight: 700,
-                  fontSize: '12px',
-                  letterSpacing: '1px',
-                }}
-              >
-                {s.title}
-              </div>
-              <div
-                style={{
-                  color: '#444',
-                  fontSize: '12px',
-                  marginTop: '4px',
-                }}
-              >
-                {s.sub}
-              </div>
+              <div style={{ fontSize: '32px', marginBottom: '10px' }}>{s.icon}</div>
+              <div style={{ color: '#fff', fontWeight: 700, fontSize: '12px', letterSpacing: '1px' }}>{s.title}</div>
+              <div style={{ color: '#444', fontSize: '12px', marginTop: '4px' }}>{s.sub}</div>
             </div>
           ))}
         </div>
       </section>
 
       {/* ABOUT */}
-      <section
-        id="about"
-        style={{
-          padding: '72px 16px',
-          backgroundColor: '#050505',
-          borderTop: '1px solid #111',
-        }}
-      >
-        <div
-          style={{
-            maxWidth: '800px',
-            margin: '0 auto',
-            textAlign: 'center',
-          }}
-        >
-          <p
-            style={{
-              color: '#dc2626',
-              fontSize: '11px',
-              letterSpacing: '4px',
-              fontWeight: 700,
-              margin: '0 0 12px',
-            }}
-          >
+      <section id="about" style={{ padding: '72px 16px', backgroundColor: '#050505', borderTop: '1px solid #111' }}>
+        <div style={{ maxWidth: '800px', margin: '0 auto', textAlign: 'center' }}>
+          <p style={{ color: '#dc2626', fontSize: '11px', letterSpacing: '4px', fontWeight: 700, margin: '0 0 12px' }}>
             ● ABOUT US
           </p>
-          <h2
-            style={{
-              fontSize: '32px',
-              fontWeight: 900,
-              color: '#fff',
-              margin: '0 0 20px',
-              letterSpacing: '-1px',
-            }}
-          >
+          <h2 style={{ fontSize: '32px', fontWeight: 900, color: '#fff', margin: '0 0 20px', letterSpacing: '-1px' }}>
             WHO WE ARE
           </h2>
           <div
@@ -1217,69 +902,24 @@ export default function HomePage() {
               margin: '0 auto 28px',
             }}
           />
-          <p
-            style={{
-              color: '#555',
-              fontSize: '15px',
-              lineHeight: 1.9,
-              margin: '0 0 16px',
-            }}
-          >
-            GRAVIX is Egypt&apos;s premier live events platform. We connect music
-            lovers, culture seekers, and night-life enthusiasts with the most
-            exclusive events across the country.
+          <p style={{ color: '#555', fontSize: '15px', lineHeight: 1.9, margin: '0 0 16px' }}>
+            GRAVIX is Egypt&apos;s premier live events platform. We connect music lovers, culture seekers, and night-life enthusiasts
+            with the most exclusive events across the country.
           </p>
-          <p
-            style={{
-              color: '#444',
-              fontSize: '14px',
-              lineHeight: 1.9,
-              margin: 0,
-            }}
-          >
-            From intimate underground concerts to large-scale festivals — we
-            handle bookings, payments, and entry management so you can focus on
-            the experience.
+          <p style={{ color: '#444', fontSize: '14px', lineHeight: 1.9, margin: 0 }}>
+            From intimate underground concerts to large-scale festivals — we handle bookings, payments, and entry management so you
+            can focus on the experience.
           </p>
         </div>
       </section>
 
       {/* CONTACT */}
-      <section
-        id="contact"
-        style={{
-          padding: '72px 16px',
-          backgroundColor: '#0a0a0a',
-          borderTop: '1px solid #111',
-        }}
-      >
-        <div
-          style={{
-            maxWidth: '700px',
-            margin: '0 auto',
-            textAlign: 'center',
-          }}
-        >
-          <p
-            style={{
-              color: '#dc2626',
-              fontSize: '11px',
-              letterSpacing: '4px',
-              fontWeight: 700,
-              margin: '0 0 14px',
-            }}
-          >
+      <section id="contact" style={{ padding: '72px 16px', backgroundColor: '#0a0a0a', borderTop: '1px solid #111' }}>
+        <div style={{ maxWidth: '700px', margin: '0 auto', textAlign: 'center' }}>
+          <p style={{ color: '#dc2626', fontSize: '11px', letterSpacing: '4px', fontWeight: 700, margin: '0 0 14px' }}>
             ● GET IN TOUCH
           </p>
-          <h2
-            style={{
-              fontSize: '32px',
-              fontWeight: 900,
-              color: '#fff',
-              margin: '0 0 16px',
-              letterSpacing: '-1px',
-            }}
-          >
+          <h2 style={{ fontSize: '32px', fontWeight: 900, color: '#fff', margin: '0 0 16px', letterSpacing: '-1px' }}>
             CONTACT US
           </h2>
           <div
@@ -1291,39 +931,11 @@ export default function HomePage() {
               margin: '0 auto 40px',
             }}
           />
-
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
-              gap: '16px',
-            }}
-          >
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '16px' }}>
             {[
-              {
-                href: 'https://instagram.com/gravix_eg',
-                icon: '📸',
-                label: 'INSTAGRAM',
-                value: '@gravix_eg',
-                hover: '#dc2626',
-                external: true,
-              },
-              {
-                href: 'https://wa.me/201093379437',
-                icon: '💬',
-                label: 'WHATSAPP',
-                value: '+20 1093379437',
-                hover: '#10b981',
-                external: true,
-              },
-              {
-                href: 'mailto:gravixegypt@gmail.com',
-                icon: '✉️',
-                label: 'EMAIL',
-                value: 'gravixegypt@gmail.com',
-                hover: '#3b82f6',
-                external: false,
-              },
+              { href: 'https://instagram.com/gravix_eg', icon: '📸', label: 'INSTAGRAM', value: '@gravix_eg', hover: '#dc2626', external: true },
+              { href: 'https://wa.me/201093379437', icon: '💬', label: 'WHATSAPP', value: '+20 1093379437', hover: '#10b981', external: true },
+              { href: 'mailto:gravixegypt@gmail.com', icon: '✉️', label: 'EMAIL', value: 'gravixegypt@gmail.com', hover: '#3b82f6', external: false },
             ].map(c => (
               <a
                 key={c.label}
@@ -1342,43 +954,12 @@ export default function HomePage() {
                     transition: 'border-color 0.2s',
                     cursor: 'pointer',
                   }}
-                  onMouseEnter={e =>
-                    (e.currentTarget.style.borderColor = c.hover)
-                  }
-                  onMouseLeave={e =>
-                    (e.currentTarget.style.borderColor = '#1a1a1a')
-                  }
+                  onMouseEnter={e => (e.currentTarget.style.borderColor = c.hover)}
+                  onMouseLeave={e => (e.currentTarget.style.borderColor = '#1a1a1a')}
                 >
-                  <p
-                    style={{
-                      fontSize: '32px',
-                      margin: '0 0 12px',
-                    }}
-                  >
-                    {c.icon}
-                  </p>
-                  <p
-                    style={{
-                      color: '#444',
-                      fontSize: '10px',
-                      letterSpacing: '2px',
-                      fontWeight: 700,
-                      margin: '0 0 8px',
-                    }}
-                  >
-                    {c.label}
-                  </p>
-                  <p
-                    style={{
-                      color: '#fff',
-                      fontSize: '13px',
-                      fontWeight: 700,
-                      margin: 0,
-                      wordBreak: 'break-word',
-                    }}
-                  >
-                    {c.value}
-                  </p>
+                  <p style={{ fontSize: '32px', margin: '0 0 12px' }}>{c.icon}</p>
+                  <p style={{ color: '#444', fontSize: '10px', letterSpacing: '2px', fontWeight: 700, margin: '0 0 8px' }}>{c.label}</p>
+                  <p style={{ color: '#fff', fontSize: '13px', fontWeight: 700, margin: 0, wordBreak: 'break-word' }}>{c.value}</p>
                 </div>
               </a>
             ))}
@@ -1387,102 +968,28 @@ export default function HomePage() {
       </section>
 
       {/* FOOTER */}
-      <footer
-        style={{
-          borderTop: '1px solid #111',
-          padding: '32px 16px',
-          textAlign: 'center',
-          backgroundColor: '#050505',
-        }}
-      >
-        <div
-          style={{
-            color: '#dc2626',
-            fontWeight: 900,
-            fontSize: '22px',
-            letterSpacing: '2px',
-            marginBottom: '12px',
-          }}
-        >
+      <footer style={{ borderTop: '1px solid #111', padding: '32px 16px', textAlign: 'center', backgroundColor: '#050505' }}>
+        <div style={{ color: '#dc2626', fontWeight: 900, fontSize: '22px', letterSpacing: '2px', marginBottom: '12px' }}>
           GRAVIX
         </div>
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'center',
-            gap: '16px',
-            marginBottom: '16px',
-            flexWrap: 'wrap',
-          }}
-        >
-          <a
-            href="https://instagram.com/gravix_eg"
-            target="_blank"
-            rel="noreferrer"
-            style={{
-              color: '#333',
-              fontSize: '12px',
-              textDecoration: 'none',
-              letterSpacing: '1px',
-            }}
-          >
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '16px', marginBottom: '16px', flexWrap: 'wrap' }}>
+          <a href="https://instagram.com/gravix_eg" target="_blank" rel="noreferrer" style={{ color: '#333', fontSize: '12px', textDecoration: 'none', letterSpacing: '1px' }}>
             INSTAGRAM
           </a>
-          <a
-            href="https://wa.me/201093379437"
-            target="_blank"
-            rel="noreferrer"
-            style={{
-              color: '#333',
-              fontSize: '12px',
-              textDecoration: 'none',
-              letterSpacing: '1px',
-            }}
-          >
+          <a href="https://wa.me/201093379437" target="_blank" rel="noreferrer" style={{ color: '#333', fontSize: '12px', textDecoration: 'none', letterSpacing: '1px' }}>
             WHATSAPP
           </a>
-          <a
-            href="mailto:gravixegypt@gmail.com"
-            style={{
-              color: '#333',
-              fontSize: '12px',
-              textDecoration: 'none',
-              letterSpacing: '1px',
-            }}
-          >
+          <a href="mailto:gravixegypt@gmail.com" style={{ color: '#333', fontSize: '12px', textDecoration: 'none', letterSpacing: '1px' }}>
             EMAIL
           </a>
-          <Link
-            href="/events"
-            style={{
-              color: '#333',
-              fontSize: '12px',
-              textDecoration: 'none',
-              letterSpacing: '1px',
-            }}
-          >
+          <Link href="/events" style={{ color: '#333', fontSize: '12px', textDecoration: 'none', letterSpacing: '1px' }}>
             EVENTS
           </Link>
-          <Link
-            href="/djs"
-            style={{
-              color: '#333',
-              fontSize: '12px',
-              textDecoration: 'none',
-              letterSpacing: '1px',
-            }}
-          >
+          <Link href="/djs" style={{ color: '#333', fontSize: '12px', textDecoration: 'none', letterSpacing: '1px' }}>
             DJs
           </Link>
         </div>
-        <p
-          style={{
-            color: '#222',
-            fontSize: '10px',
-            letterSpacing: '1.6px',
-            margin: 0,
-          }}
-        >
+        <p style={{ color: '#222', fontSize: '10px', letterSpacing: '1.6px', margin: 0 }}>
           © {new Date().getFullYear()} GRAVIX. ALL RIGHTS RESERVED.
         </p>
       </footer>
