@@ -94,27 +94,35 @@ export default function Navbar() {
             <button
               onClick={() => scrollTo('events')}
               style={linkStyle}
-              onMouseEnter={(e) => (e.currentTarget.style.color = '#fff')}
-              onMouseLeave={(e) => (e.currentTarget.style.color = '#555')}
+              onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
+              onMouseLeave={e => (e.currentTarget.style.color = '#555')}
             >
               EVENTS
             </button>
 
-            {/* NEW: DJS scroll link */}
             <button
               onClick={() => scrollTo('djs')}
               style={linkStyle}
-              onMouseEnter={(e) => (e.currentTarget.style.color = '#fff')}
-              onMouseLeave={(e) => (e.currentTarget.style.color = '#555')}
+              onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
+              onMouseLeave={e => (e.currentTarget.style.color = '#555')}
             >
               DJS
             </button>
 
             <button
+              onClick={() => scrollTo('partners')}
+              style={linkStyle}
+              onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
+              onMouseLeave={e => (e.currentTarget.style.color = '#555')}
+            >
+              PARTNERS
+            </button>
+
+            <button
               onClick={() => scrollTo('about')}
               style={linkStyle}
-              onMouseEnter={(e) => (e.currentTarget.style.color = '#fff')}
-              onMouseLeave={(e) => (e.currentTarget.style.color = '#555')}
+              onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
+              onMouseLeave={e => (e.currentTarget.style.color = '#555')}
             >
               ABOUT US
             </button>
@@ -122,8 +130,8 @@ export default function Navbar() {
             <button
               onClick={() => scrollTo('contact')}
               style={linkStyle}
-              onMouseEnter={(e) => (e.currentTarget.style.color = '#fff')}
-              onMouseLeave={(e) => (e.currentTarget.style.color = '#555')}
+              onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
+              onMouseLeave={e => (e.currentTarget.style.color = '#555')}
             >
               CONTACT US
             </button>
@@ -160,10 +168,10 @@ export default function Navbar() {
                       transition: 'border-color 0.2s',
                       flexShrink: 0,
                     }}
-                    onMouseEnter={(e) =>
+                    onMouseEnter={e =>
                       (e.currentTarget.style.borderColor = '#dc2626')
                     }
-                    onMouseLeave={(e) =>
+                    onMouseLeave={e =>
                       (e.currentTarget.style.borderColor = '#222')
                     }
                   >
@@ -203,10 +211,10 @@ export default function Navbar() {
                     fontWeight: 600,
                     transition: 'color 0.2s',
                   }}
-                  onMouseEnter={(e) =>
+                  onMouseEnter={e =>
                     (e.currentTarget.style.color = '#ef4444')
                   }
-                  onMouseLeave={(e) =>
+                  onMouseLeave={e =>
                     (e.currentTarget.style.color = '#333')
                   }
                 >
@@ -237,7 +245,7 @@ export default function Navbar() {
         {/* mobile menu button */}
         {isMobile && (
           <button
-            onClick={() => setMenuOpen((v) => !v)}
+            onClick={() => setMenuOpen(v => !v)}
             style={{
               background: 'none',
               border: '1px solid #222',
@@ -275,7 +283,6 @@ export default function Navbar() {
             EVENTS
           </button>
 
-          {/* NEW: DJS in mobile menu */}
           <button
             onClick={() => scrollTo('djs')}
             style={{ ...linkStyle, textAlign: 'left' }}
@@ -284,11 +291,19 @@ export default function Navbar() {
           </button>
 
           <button
+            onClick={() => scrollTo('partners')}
+            style={{ ...linkStyle, textAlign: 'left' }}
+          >
+            PARTNERS
+          </button>
+
+          <button
             onClick={() => scrollTo('about')}
             style={{ ...linkStyle, textAlign: 'left' }}
           >
             ABOUT US
           </button>
+
           <button
             onClick={() => scrollTo('contact')}
             style={{ ...linkStyle, textAlign: 'left' }}
