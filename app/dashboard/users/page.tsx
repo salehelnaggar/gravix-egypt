@@ -3,19 +3,17 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 
-const roles = ['superadmin', 'admin', 'staff', 'door']
+const roles = ['superadmin', 'admin', 'door']
 
 const roleColors: Record<string, string> = {
   superadmin: '#dc2626',
   admin:      '#8b5cf6',
-  staff:      '#3b82f6',
   door:       '#10b981',
 }
 
 const roleDesc: Record<string, string> = {
   superadmin: 'Full access — all pages + users + revenue',
   admin:      'Reservations + verify entry',
-  staff:      'Verify entry only',
   door:       'Verify entry only',
 }
 
@@ -24,7 +22,7 @@ export default function UsersPage() {
   const [users, setUsers] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState({ username: '', password: '', role: 'staff' })
+  const [form, setForm] = useState({ username: '', password: '', role: 'admin' })
   const [error, setError] = useState('')
   const [currentUser, setCurrentUser] = useState('')
 
@@ -62,7 +60,7 @@ export default function UsersPage() {
       return
     }
 
-    setForm({ username: '', password: '', role: 'staff' })
+    setForm({ username: '', password: '', role: 'admin' })
     setShowForm(false)
     await load()
     setLoading(false)
@@ -101,8 +99,8 @@ export default function UsersPage() {
           </button>
         </div>
 
-        {/* Role legend */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', marginBottom: '28px' }}>
+        {/* Role legend — 3 بس */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', marginBottom: '28px' }}>
           {roles.map(r => (
             <div key={r} style={{ backgroundColor: '#0d0d0d', border: `1px solid ${roleColors[r]}25`, borderRadius: '10px', padding: '12px 14px' }}>
               <span style={{ backgroundColor: `${roleColors[r]}18`, border: `1px solid ${roleColors[r]}40`, color: roleColors[r], fontSize: '9px', fontWeight: 700, letterSpacing: '2px', padding: '2px 8px', borderRadius: '999px', display: 'inline-block', marginBottom: '6px' }}>

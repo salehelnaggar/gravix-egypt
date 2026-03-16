@@ -4,11 +4,9 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 
-// ✅ الـ pages إيه كل role يشوفها
 const roleAccess: Record<string, string[]> = {
   superadmin: ['events', 'reservations', 'verify', 'djs', 'users'],
-  admin:      ['events', 'reservations', 'verify', 'djs'],
-  staff:      ['reservations', 'verify'],
+  admin:      ['reservations', 'verify'],
   door:       ['verify'],
 }
 
@@ -27,7 +25,7 @@ export default function DashboardPage() {
         router.push('/dashboard/login')
         return
       }
-      setRole(localStorage.getItem('admin_role') || 'staff')
+      setRole(localStorage.getItem('admin_role') || 'door')
       setUsername(localStorage.getItem('admin_username') || 'Admin')
     }
     loadStats()
@@ -72,16 +70,15 @@ export default function DashboardPage() {
   const roleBadgeColor: Record<string, string> = {
     superadmin: '#dc2626',
     admin:      '#8b5cf6',
-    staff:      '#3b82f6',
     door:       '#10b981',
   }
 
   const allNavCards = [
-    { key: 'events',       href: '/dashboard/events',       icon: '🎉', title: 'MANAGE EVENTS',   sub: 'Add, edit & delete events'                            },
-    { key: 'reservations', href: '/dashboard/reservations', icon: '📋', title: 'RESERVATIONS',    sub: 'View & manage all bookings'                           },
-    { key: 'verify',       href: '/dashboard/verify',       icon: '🔍', title: 'VERIFY ENTRY',    sub: 'Scan entry codes at the door'                        },
-    { key: 'djs',          href: '/dashboard/djs',          icon: '🎧', title: 'MANAGE DJs',      sub: `${stats.totalDjs} DJ${stats.totalDjs !== 1 ? 's' : ''} on the roster`, highlight: true },
-    { key: 'users',        href: '/dashboard/users',        icon: '👥', title: 'MANAGE USERS',    sub: 'Add & control admin access'                          },
+    { key: 'events',       href: '/dashboard/events',       icon: '🎉', title: 'MANAGE EVENTS',  sub: 'Add, edit & delete events' },
+    { key: 'reservations', href: '/dashboard/reservations', icon: '📋', title: 'RESERVATIONS',   sub: 'View & manage all bookings' },
+    { key: 'verify',       href: '/dashboard/verify',       icon: '🔍', title: 'VERIFY ENTRY',   sub: 'Scan entry codes at the door' },
+    { key: 'djs',          href: '/dashboard/djs',          icon: '🎧', title: 'MANAGE DJs',     sub: `${stats.totalDjs} DJ${stats.totalDjs !== 1 ? 's' : ''} on the roster`, highlight: true },
+    { key: 'users',        href: '/dashboard/users',        icon: '👥', title: 'MANAGE USERS',   sub: 'Add & control admin access' },
   ]
 
   const visibleCards = allNavCards.filter(c => can(c.key))
@@ -109,17 +106,17 @@ export default function DashboardPage() {
           </button>
         </div>
 
-        {/* Stats — بس لو مش door */}
-        {role !== 'door' && (
+        {/* Stats — admin و superadmin بس */}
+        {(role === 'superadmin' || role === 'admin') && (
           <>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '16px' }}>
               {[
-                { label: 'TOTAL BOOKINGS',   value: stats.total,     color: '#fff'     },
-                { label: 'PENDING',          value: stats.pending,   color: '#f59e0b'  },
-                { label: 'CONFIRMED',        value: stats.confirmed, color: '#10b981'  },
-                { label: 'AWAITING PAYMENT', value: stats.awaiting,  color: '#3b82f6'  },
-                { label: 'PAYMENT REVIEW',   value: stats.review,    color: '#8b5cf6'  },
-                { label: 'REJECTED',         value: stats.rejected,  color: '#ef4444'  },
+                { label: 'TOTAL BOOKINGS',   value: stats.total,     color: '#fff'    },
+                { label: 'PENDING',          value: stats.pending,   color: '#f59e0b' },
+                { label: 'CONFIRMED',        value: stats.confirmed, color: '#10b981' },
+                { label: 'AWAITING PAYMENT', value: stats.awaiting,  color: '#3b82f6' },
+                { label: 'PAYMENT REVIEW',   value: stats.review,    color: '#8b5cf6' },
+                { label: 'REJECTED',         value: stats.rejected,  color: '#ef4444' },
               ].map(c => (
                 <div key={c.label} style={{ backgroundColor: '#0d0d0d', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '24px' }}>
                   <p style={{ color: '#444', fontSize: '10px', letterSpacing: '2px', fontWeight: 700, margin: '0 0 12px' }}>{c.label}</p>
@@ -128,10 +125,12 @@ export default function DashboardPage() {
               ))}
             </div>
 
-            {/* Revenue — بس superadmin و admin */}
-            {(role === 'superadmin' || role === 'admin') && (
+            {/* Revenue — superadmin بس */}
+            {role === 'superadmin' && (
               <div style={{ backgroundColor: '#0d0d0d', border: '1px solid #1a1a1a', borderRadius: '20px', padding: '32px', marginBottom: '32px' }}>
-                <p style={{ color: '#555', fontSize: '11px', letterSpacing: '3px', fontWeight: 700, margin: '0 0 24px' }}>REVENUE SUMMARY — CONFIRMED BOOKINGS ONLY</p>
+                <p style={{ color: '#555', fontSize: '11px', letterSpacing: '3px', fontWeight: 700, margin: '0 0 24px' }}>
+                  REVENUE SUMMARY — CONFIRMED BOOKINGS ONLY
+                </p>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
                   <div style={{ backgroundColor: '#111', border: '1px solid #1a1a1a', borderRadius: '14px', padding: '24px' }}>
                     <p style={{ color: '#444', fontSize: '10px', letterSpacing: '2px', fontWeight: 700, margin: '0 0 8px' }}>🎟️ TICKETS SOLD</p>
@@ -156,7 +155,7 @@ export default function DashboardPage() {
         )}
 
         {/* Navigation Cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: visibleCards.length === 1 ? '1fr' : 'repeat(2, 1fr)', gap: '20px' }}>
           {visibleCards.map(item => (
             <Link
               key={item.href}
