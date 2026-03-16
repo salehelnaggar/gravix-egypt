@@ -41,14 +41,26 @@ type DJ = {
   username?: string
 }
 
+type Partner = {
+  id: string
+  name: string
+  logo_url: string | null
+  website: string | null
+  instagram_url?: string | null
+  is_exclusive: boolean
+  priority: number | null
+}
+
 export default function HomePage() {
   const [events, setEvents] = useState<EventWithWaves[]>([])
   const [djs, setDjs] = useState<DJ[]>([])
+  const [partners, setPartners] = useState<Partner[]>([])
 
   const isMobile =
     typeof window !== 'undefined' && window.innerWidth <= 640
 
   useEffect(() => {
+    // Events
     supabase
       .from('events')
       .select('*')
@@ -56,7 +68,7 @@ export default function HomePage() {
       .limit(10)
       .then(({ data }) => {
         if (!data) return
-        const sorted = [...data].sort((a, b) => {
+        const sorted = [...data].sort((a: any, b: any) => {
           if (a.is_finished && !b.is_finished) return 1
           if (!a.is_finished && b.is_finished) return -1
           return (
@@ -66,12 +78,25 @@ export default function HomePage() {
         setEvents(sorted as EventWithWaves[])
       })
 
+    // DJs
     supabase
       .from('djs')
       .select('*')
       .order('sort_order', { ascending: true })
       .limit(10)
       .then(({ data }) => setDjs((data as DJ[]) || []))
+
+    // Exclusive partners (مرتبة بالـ priority)
+    supabase
+      .from('partners')
+      .select('*')
+      .eq('is_exclusive', true)
+      .order('priority', { ascending: true })
+      .limit(5)
+      .then(({ data }) => {
+        if (!data) return
+        setPartners(data as Partner[])
+      })
   }, [])
 
   const getCurrentPriceAndWave = (event: EventWithWaves) => {
@@ -306,8 +331,8 @@ export default function HomePage() {
             fontWeight: 400,
           }}
         >
-          Egypt&apos;s #1 platform for booking the hottest live events &amp;
-          concerts
+          Egypt&apos;s #1 platform for booking the hottest live events
+          &amp; concerts
         </p>
 
         <div
@@ -383,10 +408,10 @@ export default function HomePage() {
             textDecoration: 'none',
             letterSpacing: '2px',
           }}
-          onMouseEnter={(e) =>
+          onMouseEnter={e =>
             (e.currentTarget.style.color = '#dc2626')
           }
-          onMouseLeave={(e) =>
+          onMouseLeave={e =>
             (e.currentTarget.style.color = '#444')
           }
         >
@@ -394,6 +419,228 @@ export default function HomePage() {
         </Link>
       </section>
 
+      {/* EXCLUSIVE PARTNER */}
+      {partners.length > 0 && (
+        <section
+          style={{
+            borderTop: '1px solid #111',
+            borderBottom: '1px solid #111',
+            backgroundColor: '#050505',
+            padding: '24px 16px',
+          }}
+        >
+          <div
+            style={{
+              maxWidth: '520px',
+              margin: '0 auto',
+              textAlign: 'center',
+            }}
+          >
+            <p
+              style={{
+                color: '#dc2626',
+                fontSize: 10,
+                letterSpacing: '3px',
+                fontWeight: 700,
+                margin: 0,
+              }}
+            >
+              ● EXCLUSIVE PARTNER
+            </p>
+
+            <h2
+              style={{
+                fontSize: isMobile ? 18 : 20,
+                fontWeight: 800,
+                color: '#fff',
+                margin: '4px 0 4px',
+                letterSpacing: '-0.3px',
+              }}
+            >
+              BRAND LOCKED IN WITH GRAVIX
+            </h2>
+
+            <p
+              style={{
+                color: '#777',
+                fontSize: 12,
+                margin: '0 0 16px',
+                lineHeight: 1.6,
+              }}
+            >
+              Official partner powering upcoming GRAVIX nights and
+              experiences.
+            </p>
+
+            {/* كارت بارتنر واحد في النص */}
+            {(() => {
+              const main = partners[0]
+              if (!main) return null
+
+              return (
+                <div
+                  key={main.id}
+                  style={{
+                    margin: '0 auto',
+                    maxWidth: 320,
+                    padding: '14px 16px',
+                    borderRadius: 18,
+                    border: '1px solid #1a1a1a',
+                    background:
+                      'radial-gradient(circle at top, #111 0%, #020617 70%)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: 10,
+                    transition:
+                      'border-color 0.2s, transform 0.2s, box-shadow 0.2s',
+                  }}
+                  onMouseEnter={e => {
+                    const el = e.currentTarget as HTMLDivElement
+                    el.style.borderColor = '#dc2626'
+                    el.style.transform = 'translateY(-3px)'
+                    el.style.boxShadow =
+                      '0 16px 35px rgba(220,38,38,0.18)'
+                  }}
+                  onMouseLeave={e => {
+                    const el = e.currentTarget as HTMLDivElement
+                    el.style.borderColor = '#1a1a1a'
+                    el.style.transform = 'translateY(0)'
+                    el.style.boxShadow = 'none'
+                  }}
+                >
+                  {/* اللوجو */}
+                  <div
+                    style={{
+                      height: 80,
+                      width: 80,
+                      borderRadius: '999px',
+                      backgroundColor: '#020617',
+                      border: '1px solid rgba(148,163,184,0.7)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      overflow: 'hidden',
+                    }}
+                  >
+                    {main.logo_url ? (
+                      <img
+                        src={main.logo_url}
+                        alt={main.name}
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'contain',
+                          objectPosition: 'center',
+                          display: 'block',
+                        }}
+                      />
+                    ) : (
+                      <span
+                        style={{
+                          color: '#6b7280',
+                          fontSize: 11,
+                          letterSpacing: '2px',
+                        }}
+                      >
+                        LOGO
+                      </span>
+                    )}
+                  </div>
+
+                  {/* الاسم + الأزرار */}
+                  <div>
+                    <p
+                      style={{
+                        color: '#fff',
+                        fontSize: 14,
+                        fontWeight: 800,
+                        margin: 0,
+                      }}
+                    >
+                      {main.name}
+                    </p>
+                  </div>
+
+                  {/* Buttons: website + instagram */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: 8,
+                      justifyContent: 'center',
+                      marginTop: 4,
+                    }}
+                  >
+                    {main.website && (
+                      <a
+                        href={main.website}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{
+                          fontSize: 11,
+                          padding: '6px 12px',
+                          borderRadius: 999,
+                          border:
+                            '1px solid rgba(248,250,252,0.12)',
+                          background:
+                            'linear-gradient(135deg, rgba(248,250,252,0.08), rgba(15,23,42,0.9))',
+                          color: '#f9fafb',
+                          textDecoration: 'none',
+                          letterSpacing: '1.3px',
+                          fontWeight: 700,
+                        }}
+                      >
+                        OFFICIAL WEBSITE
+                      </a>
+                    )}
+
+                    {main.instagram_url && (
+                      <a
+                        href={main.instagram_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{
+                          fontSize: 11,
+                          padding: '6px 12px',
+                          borderRadius: 999,
+                          border:
+                            '1px solid rgba(220,38,38,0.5)',
+                          backgroundColor:
+                            'rgba(220,38,38,0.12)',
+                          color: '#fecaca',
+                          textDecoration: 'none',
+                          letterSpacing: '1.3px',
+                          fontWeight: 700,
+                        }}
+                      >
+                        INSTAGRAM
+                      </a>
+                    )}
+                  </div>
+
+                  {/* badge صغير */}
+                  <span
+                    style={{
+                      fontSize: 9,
+                      color: '#f97316',
+                      backgroundColor: 'rgba(248,113,113,0.06)',
+                      border:
+                        '1px solid rgba(248,113,113,0.4)',
+                      padding: '2px 10px',
+                      borderRadius: 999,
+                      letterSpacing: '1.5px',
+                      fontWeight: 700,
+                    }}
+                  >
+                    EXCLUSIVE PARTNER
+                  </span>
+                </div>
+              )
+            })()}
+          </div>
+        </section>
+      )}
 
       {/* DJs SECTION — مرفوع فوق EVENTS */}
       <section
@@ -404,9 +651,7 @@ export default function HomePage() {
           borderTop: '1px solid #111',
         }}
       >
-        <div
-          style={{ maxWidth: '1100px', margin: '0 auto' }}
-        >
+        <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
           <div
             style={{
               display: 'flex',
@@ -497,7 +742,7 @@ export default function HomePage() {
                       : 'auto',
                 }}
               >
-                {djs.map((dj) => (
+                {djs.map(dj => (
                   <div
                     key={dj.id}
                     style={{
@@ -507,7 +752,7 @@ export default function HomePage() {
                       overflow: 'hidden',
                       transition: 'all 0.3s',
                     }}
-                    onMouseEnter={(e) => {
+                    onMouseEnter={e => {
                       const el =
                         e.currentTarget as HTMLDivElement
                       el.style.borderColor = '#dc2626'
@@ -515,7 +760,7 @@ export default function HomePage() {
                       el.style.boxShadow =
                         '0 24px 48px rgba(220,38,38,0.1)'
                     }}
-                    onMouseLeave={(e) => {
+                    onMouseLeave={e => {
                       const el =
                         e.currentTarget as HTMLDivElement
                       el.style.borderColor = '#1a1a1a'
@@ -664,9 +909,7 @@ export default function HomePage() {
           backgroundColor: '#050505',
         }}
       >
-        <div
-          style={{ maxWidth: '1100px', margin: '0 auto' }}
-        >
+        <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
           <div
             style={{
               display: 'flex',
@@ -758,7 +1001,7 @@ export default function HomePage() {
                     : 'auto',
               }}
             >
-              {events.map((event) => {
+              {events.map(event => {
                 const { soldOut } = getCurrentPriceAndWave(event)
 
                 return (
@@ -772,7 +1015,7 @@ export default function HomePage() {
                       transition: 'all 0.3s',
                       cursor: 'pointer',
                     }}
-                    onMouseEnter={(e) => {
+                    onMouseEnter={e => {
                       const el =
                         e.currentTarget as HTMLDivElement
                       el.style.borderColor = '#dc2626'
@@ -780,7 +1023,7 @@ export default function HomePage() {
                       el.style.boxShadow =
                         '0 24px 48px rgba(220,38,38,0.1)'
                     }}
-                    onMouseLeave={(e) => {
+                    onMouseLeave={e => {
                       const el =
                         e.currentTarget as HTMLDivElement
                       el.style.borderColor = '#1a1a1a'
@@ -836,12 +1079,14 @@ export default function HomePage() {
                       >
                         {new Date(
                           event.date,
-                        ).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric',
-                          timeZone: 'UTC',
-                        }).toUpperCase()}
+                        )
+                          .toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric',
+                            timeZone: 'UTC',
+                          })
+                          .toUpperCase()}
                       </div>
                       <h3
                         style={{
@@ -940,15 +1185,21 @@ export default function HomePage() {
             maxWidth: '900px',
             margin: '0 auto',
             display: 'grid',
-            gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
+            gridTemplateColumns: isMobile
+              ? '1fr'
+              : 'repeat(3, 1fr)',
             gap: '16px',
           }}
         >
           {[
             { icon: '🎉', title: 'EXCLUSIVE EVENTS', sub: 'Every month' },
             { icon: '⚡', title: 'INSTANT BOOKING', sub: 'No hassle' },
-            { icon: '🔐', title: 'SECURE PAYMENT', sub: '100% guaranteed' },
-          ].map((s) => (
+            {
+              icon: '🔐',
+              title: 'SECURE PAYMENT',
+              sub: '100% guaranteed',
+            },
+          ].map(s => (
             <div
               key={s.title}
               style={{
@@ -987,6 +1238,7 @@ export default function HomePage() {
           ))}
         </div>
       </section>
+
       {/* ABOUT */}
       <section
         id="about"
@@ -1056,9 +1308,9 @@ export default function HomePage() {
               margin: 0,
             }}
           >
-            From intimate underground concerts to large-scale festivals
-            — we handle bookings, payments, and entry management so you
-            can focus on the experience.
+            From intimate underground concerts to large-scale
+            festivals — we handle bookings, payments, and entry
+            management so you can focus on the experience.
           </p>
         </div>
       </section>
@@ -1146,7 +1398,7 @@ export default function HomePage() {
                 hover: '#3b82f6',
                 external: false,
               },
-            ].map((c) => (
+            ].map(c => (
               <a
                 key={c.label}
                 href={c.href}
@@ -1164,13 +1416,11 @@ export default function HomePage() {
                     transition: 'border-color 0.2s',
                     cursor: 'pointer',
                   }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.borderColor =
-                      c.hover)
+                  onMouseEnter={e =>
+                    (e.currentTarget.style.borderColor = c.hover)
                   }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.borderColor =
-                      '#1a1a1a')
+                  onMouseLeave={e =>
+                    (e.currentTarget.style.borderColor = '#1a1a1a')
                   }
                 >
                   <p
@@ -1306,8 +1556,7 @@ export default function HomePage() {
             margin: 0,
           }}
         >
-          © 2026 GRAVIX EGYPT. ALL RIGHTS RESERVED. DESIGNED BY SALEH
-          ELNAGGAR.
+          © {new Date().getFullYear()} GRAVIX. ALL RIGHTS RESERVED.
         </p>
       </footer>
     </main>
