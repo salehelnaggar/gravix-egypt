@@ -10,6 +10,14 @@ export default function Navbar() {
   const pathname = usePathname()
   const [user, setUser] = useState<any>(null)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth <= 640)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => setUser(user))
@@ -45,8 +53,28 @@ export default function Navbar() {
 
   const displayName = user?.user_metadata?.full_name || ''
 
-  const isMobile =
-    typeof window !== 'undefined' && window.innerWidth <= 640
+  const HamburgerIcon = () => (
+    <svg width="20" height="14" viewBox="0 0 20 14" fill="none">
+      <rect width="20" height="2" rx="1" fill="#ffffff" />
+      <rect y="6" width="20" height="2" rx="1" fill="#ffffff" />
+      <rect y="12" width="20" height="2" rx="1" fill="#ffffff" />
+    </svg>
+  )
+
+  const CloseIcon = () => (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <line x1="1" y1="1" x2="15" y2="15" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" />
+      <line x1="15" y1="1" x2="1" y2="15" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  )
+
+  const navLinks = [
+    { label: 'EVENTS', id: 'events' },
+    { label: 'DJS', id: 'djs' },
+    { label: 'PARTNERS', id: 'partners' },
+    { label: 'ABOUT US', id: 'about' },
+    { label: 'CONTACT US', id: 'contact' },
+  ]
 
   return (
     <nav
@@ -84,67 +112,25 @@ export default function Navbar() {
 
         {/* desktop links */}
         {!isMobile && (
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '24px',
-            }}
-          >
-            <button
-              onClick={() => scrollTo('events')}
-              style={linkStyle}
-              onMouseEnter={(e) => (e.currentTarget.style.color = '#fff')}
-              onMouseLeave={(e) => (e.currentTarget.style.color = '#555')}
-            >
-              EVENTS
-            </button>
-
-            {/* NEW: DJS scroll link */}
-            <button
-              onClick={() => scrollTo('djs')}
-              style={linkStyle}
-              onMouseEnter={(e) => (e.currentTarget.style.color = '#fff')}
-              onMouseLeave={(e) => (e.currentTarget.style.color = '#555')}
-            >
-              DJS
-            </button>
-
-            <button
-              onClick={() => scrollTo('about')}
-              style={linkStyle}
-              onMouseEnter={(e) => (e.currentTarget.style.color = '#fff')}
-              onMouseLeave={(e) => (e.currentTarget.style.color = '#555')}
-            >
-              ABOUT US
-            </button>
-
-            <button
-              onClick={() => scrollTo('contact')}
-              style={linkStyle}
-              onMouseEnter={(e) => (e.currentTarget.style.color = '#fff')}
-              onMouseLeave={(e) => (e.currentTarget.style.color = '#555')}
-            >
-              CONTACT US
-            </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+            {navLinks.map(link => (
+              <button
+                key={link.id}
+                onClick={() => scrollTo(link.id)}
+                style={linkStyle}
+                onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
+                onMouseLeave={e => (e.currentTarget.style.color = '#555')}
+              >
+                {link.label}
+              </button>
+            ))}
 
             {user ? (
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                }}
-              >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <Link
                   href="/profile"
                   title="My Profile"
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    textDecoration: 'none',
-                  }}
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none' }}
                 >
                   <div
                     style={{
@@ -160,12 +146,8 @@ export default function Navbar() {
                       transition: 'border-color 0.2s',
                       flexShrink: 0,
                     }}
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.borderColor = '#dc2626')
-                    }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.borderColor = '#222')
-                    }
+                    onMouseEnter={e => (e.currentTarget.style.borderColor = '#dc2626')}
+                    onMouseLeave={e => (e.currentTarget.style.borderColor = '#222')}
                   >
                     👤
                   </div>
@@ -203,12 +185,8 @@ export default function Navbar() {
                     fontWeight: 600,
                     transition: 'color 0.2s',
                   }}
-                  onMouseEnter={(e) =>
-                    (e.currentTarget.style.color = '#ef4444')
-                  }
-                  onMouseLeave={(e) =>
-                    (e.currentTarget.style.color = '#333')
-                  }
+                  onMouseEnter={e => (e.currentTarget.style.color = '#ef4444')}
+                  onMouseLeave={e => (e.currentTarget.style.color = '#333')}
                 >
                   LOGOUT
                 </button>
@@ -234,25 +212,53 @@ export default function Navbar() {
           </div>
         )}
 
-        {/* mobile menu button */}
+        {/* mobile: profile icon + hamburger */}
         {isMobile && (
-          <button
-            onClick={() => setMenuOpen((v) => !v)}
-            style={{
-              background: 'none',
-              border: '1px solid #222',
-              color: '#fff',
-              width: '34px',
-              height: '34px',
-              borderRadius: '8px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-            }}
-          >
-            {menuOpen ? '✕' : '☰'}
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            {user && (
+              <Link
+                href="/profile"
+                style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}
+              >
+                <div
+                  style={{
+                    width: '30px',
+                    height: '30px',
+                    borderRadius: '50%',
+                    backgroundColor: '#111',
+                    border: '1px solid #222',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '14px',
+                  }}
+                >
+                  👤
+                </div>
+              </Link>
+            )}
+
+            <button
+              onClick={() => setMenuOpen(v => !v)}
+              style={{
+                background: 'none',
+                border: '1px solid #1a1a1a',
+                borderRadius: '8px',
+                width: '38px',
+                height: '38px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                flexShrink: 0,
+                transition: 'border-color 0.2s',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.borderColor = '#dc2626')}
+              onMouseLeave={e => (e.currentTarget.style.borderColor = '#1a1a1a')}
+            >
+              {menuOpen ? <CloseIcon /> : <HamburgerIcon />}
+            </button>
+          </div>
         )}
       </div>
 
@@ -260,41 +266,42 @@ export default function Navbar() {
       {isMobile && menuOpen && (
         <div
           style={{
-            marginTop: '10px',
+            marginTop: '12px',
             borderTop: '1px solid #111',
-            paddingTop: '10px',
+            paddingTop: '12px',
             display: 'flex',
             flexDirection: 'column',
-            gap: '10px',
+            gap: '4px',
           }}
         >
-          <button
-            onClick={() => scrollTo('events')}
-            style={{ ...linkStyle, textAlign: 'left' }}
-          >
-            EVENTS
-          </button>
+          {navLinks.map(link => (
+            <button
+              key={link.id}
+              onClick={() => scrollTo(link.id)}
+              style={{
+                ...linkStyle,
+                textAlign: 'left',
+                padding: '10px 8px',
+                borderRadius: '8px',
+                fontSize: '12px',
+                letterSpacing: '2.5px',
+                width: '100%',
+                transition: 'background 0.15s, color 0.15s',
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.backgroundColor = 'rgba(220,38,38,0.06)'
+                e.currentTarget.style.color = '#fff'
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.backgroundColor = 'transparent'
+                e.currentTarget.style.color = '#555'
+              }}
+            >
+              {link.label}
+            </button>
+          ))}
 
-          {/* NEW: DJS in mobile menu */}
-          <button
-            onClick={() => scrollTo('djs')}
-            style={{ ...linkStyle, textAlign: 'left' }}
-          >
-            DJS
-          </button>
-
-          <button
-            onClick={() => scrollTo('about')}
-            style={{ ...linkStyle, textAlign: 'left' }}
-          >
-            ABOUT US
-          </button>
-          <button
-            onClick={() => scrollTo('contact')}
-            style={{ ...linkStyle, textAlign: 'left' }}
-          >
-            CONTACT US
-          </button>
+          <div style={{ height: '1px', backgroundColor: '#111', margin: '6px 0' }} />
 
           {user ? (
             <div
@@ -302,29 +309,25 @@ export default function Navbar() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',
-                marginTop: '6px',
+                padding: '6px 8px',
               }}
             >
               <Link
                 href="/profile"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  textDecoration: 'none',
-                }}
+                onClick={() => setMenuOpen(false)}
+                style={{ display: 'flex', alignItems: 'center', gap: '8px', textDecoration: 'none' }}
               >
                 <div
                   style={{
-                    width: '32px',
-                    height: '32px',
+                    width: '30px',
+                    height: '30px',
                     borderRadius: '50%',
                     backgroundColor: '#111',
                     border: '1px solid #222',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: '16px',
+                    fontSize: '14px',
                   }}
                 >
                   👤
@@ -335,7 +338,7 @@ export default function Navbar() {
                       color: '#888',
                       fontSize: '12px',
                       fontWeight: 700,
-                      maxWidth: '120px',
+                      maxWidth: '140px',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                       whiteSpace: 'nowrap',
@@ -356,10 +359,10 @@ export default function Navbar() {
                   border: 'none',
                   color: '#f87171',
                   cursor: 'pointer',
-                  fontSize: '12px',
+                  fontSize: '11px',
                   fontFamily: 'Inter, sans-serif',
-                  letterSpacing: '1px',
-                  fontWeight: 600,
+                  letterSpacing: '1.5px',
+                  fontWeight: 700,
                 }}
               >
                 LOGOUT
@@ -371,14 +374,15 @@ export default function Navbar() {
               style={{
                 backgroundColor: '#dc2626',
                 color: '#fff',
-                padding: '10px 0',
+                padding: '12px 0',
                 borderRadius: '10px',
                 fontWeight: 700,
                 fontSize: '13px',
                 textDecoration: 'none',
                 letterSpacing: '1px',
                 textAlign: 'center',
-                marginTop: '6px',
+                margin: '4px 0 2px',
+                display: 'block',
               }}
               onClick={() => setMenuOpen(false)}
             >
