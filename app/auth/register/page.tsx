@@ -55,6 +55,20 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
+    const password = form.password.trim()
+
+    const hasMinLength = password.length >= 8
+    const hasUpper = /[A-Z]/.test(password)
+    const hasNumber = /\d/.test(password)
+    const hasSpecial = /[!@#$%^&*]/.test(password) // زوّد الرموز لو حابب
+
+    if (!hasMinLength || !hasUpper || !hasNumber || !hasSpecial) {
+      setError(
+        'Password must be at least 8 characters and include: one uppercase letter, one number, and one special character like ! or @.'
+      )
+      return
+    }
+
     if (!captchaToken) {
       setError('Please complete the captcha.')
       return
@@ -75,10 +89,11 @@ export default function RegisterPage() {
 
     if (error) {
       setError(error.message)
-      // reset captcha
+
       if ((window as any).turnstile) {
         ;(window as any).turnstile.reset(widgetRef.current)
       }
+
       setCaptchaToken('')
       setLoading(false)
       return
@@ -102,10 +117,24 @@ export default function RegisterPage() {
     >
       <div style={{ width: '100%', maxWidth: '420px' }}>
         <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-          <h1 style={{ fontSize: '28px', fontWeight: 900, letterSpacing: '2px', color: '#dc2626' }}>
+          <h1
+            style={{
+              fontSize: '28px',
+              fontWeight: 900,
+              letterSpacing: '2px',
+              color: '#dc2626',
+            }}
+          >
             GRAVIX
           </h1>
-          <p style={{ color: '#444', fontSize: '13px', letterSpacing: '2px', marginTop: '8px' }}>
+          <p
+            style={{
+              color: '#444',
+              fontSize: '13px',
+              letterSpacing: '2px',
+              marginTop: '8px',
+            }}
+          >
             CREATE YOUR ACCOUNT
           </p>
         </div>
@@ -139,7 +168,15 @@ export default function RegisterPage() {
             style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}
           >
             <div>
-              <p style={{ color: '#444', fontSize: '10px', letterSpacing: '2px', fontWeight: 700, margin: '0 0 8px' }}>
+              <p
+                style={{
+                  color: '#444',
+                  fontSize: '10px',
+                  letterSpacing: '2px',
+                  fontWeight: 700,
+                  margin: '0 0 8px',
+                }}
+              >
                 FULL NAME
               </p>
               <input
@@ -153,7 +190,15 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <p style={{ color: '#444', fontSize: '10px', letterSpacing: '2px', fontWeight: 700, margin: '0 0 8px' }}>
+              <p
+                style={{
+                  color: '#444',
+                  fontSize: '10px',
+                  letterSpacing: '2px',
+                  fontWeight: 700,
+                  margin: '0 0 8px',
+                }}
+              >
                 EMAIL
               </p>
               <input
@@ -167,22 +212,36 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <p style={{ color: '#444', fontSize: '10px', letterSpacing: '2px', fontWeight: 700, margin: '0 0 8px' }}>
+              <p
+                style={{
+                  color: '#444',
+                  fontSize: '10px',
+                  letterSpacing: '2px',
+                  fontWeight: 700,
+                  margin: '0 0 8px',
+                }}
+              >
                 PASSWORD
               </p>
               <input
                 style={inputStyle}
                 type="password"
-                placeholder="Min 6 characters"
+                placeholder="Min 8 chars, 1 uppercase, 1 number, 1 special (! or @)"
                 required
-                minLength={6}
+                minLength={8}
                 value={form.password}
                 onChange={e => setForm({ ...form, password: e.target.value })}
               />
             </div>
 
             {/* Turnstile Widget */}
-            <div style={{ display: 'flex', justifyContent: 'center', margin: '4px 0' }}>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'center',
+                margin: '4px 0',
+              }}
+            >
               <div ref={widgetRef} />
             </div>
 
@@ -208,9 +267,19 @@ export default function RegisterPage() {
             </button>
           </form>
 
-          <p style={{ textAlign: 'center', color: '#333', fontSize: '13px', marginTop: '24px' }}>
+          <p
+            style={{
+              textAlign: 'center',
+              color: '#333',
+              fontSize: '13px',
+              marginTop: '24px',
+            }}
+          >
             Already have an account?{' '}
-            <Link href="/auth/login" style={{ color: '#dc2626', textDecoration: 'none', fontWeight: 700 }}>
+            <Link
+              href="/auth/login"
+              style={{ color: '#dc2626', textDecoration: 'none', fontWeight: 700 }}
+            >
               SIGN IN
             </Link>
           </p>
