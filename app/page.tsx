@@ -87,6 +87,7 @@ export default function HomePage() {
       .then(({ data }) => setDjs((data as DJ[]) || []))
 
     // Exclusive partners (مرتبة بالـ priority)
+    
     supabase
       .from('partners')
       .select('*')
@@ -420,11 +421,12 @@ export default function HomePage() {
       </section>
 
       {/* EXCLUSIVE PARTNER */}
-      {partners.length > 0 && (
-        <section
-          style={{
-            borderTop: '1px solid #111',
-            borderBottom: '1px solid #111',
+    {partners.length > 0 && (
+  <section
+    id="partners"
+    style={{
+      borderTop: '1px solid #111',
+
             backgroundColor: '#050505',
             padding: '24px 16px',
           }}
