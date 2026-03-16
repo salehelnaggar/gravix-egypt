@@ -15,6 +15,7 @@ export default function TicketPage({
 
   const [ticket, setTicket] = useState<any>(null)
   const [event, setEvent] = useState<any>(null)
+  const [reservation, setReservation] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
   const [downloading, setDownloading] = useState(false)
@@ -27,7 +28,7 @@ export default function TicketPage({
     const run = async () => {
       const { data, error } = await supabase
         .from('tickets')
-        .select(`*, events(title, date, location, image_url)`)
+        .select('*, events(title, date, location, location_url, image_url)')
         .eq('qr_code', qr_code)
         .single()
 
@@ -38,6 +39,16 @@ export default function TicketPage({
       }
       setTicket(data)
       setEvent(data.events)
+
+      if (data.reservation_id) {
+        const { data: res } = await supabase
+          .from('reservations')
+          .select('standing_price_per_person, backstage_price_per_person')
+          .eq('id', data.reservation_id)
+          .single()
+        if (res) setReservation(res)
+      }
+
       setLoading(false)
     }
 
@@ -47,58 +58,31 @@ export default function TicketPage({
       .channel(`ticket-${qr_code}`)
       .on(
         'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'tickets',
-          filter: `qr_code=eq.${qr_code}`,
-        },
-        (payload) => {
-          setTicket((prev: any) => ({ ...prev, ...payload.new }))
-        },
+        { event: 'UPDATE', schema: 'public', table: 'tickets', filter: `qr_code=eq.${qr_code}` },
+        (payload) => setTicket((prev: any) => ({ ...prev, ...payload.new })),
       )
       .subscribe()
 
-    return () => {
-      supabase.removeChannel(channel)
-    }
+    return () => { supabase.removeChannel(channel) }
   }, [qr_code])
 
   const handleDownloadPDF = async () => {
     if (!ticketRef.current) return
     try {
       setDownloading(true)
-
-      const card = ticketRef.current
-
-      const canvas = await html2canvas(card, {
-        scale: 2,
-        backgroundColor: '#050505',
-      })
-
+      const canvas = await html2canvas(ticketRef.current, { scale: 2, backgroundColor: '#050505' })
       const imgData = canvas.toDataURL('image/png')
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'pt',
-        format: 'a4',
-      })
-
+      const pdf = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' })
       const pageWidth = pdf.internal.pageSize.getWidth()
       const pageHeight = pdf.internal.pageSize.getHeight()
-
-      const imgWidth = pageWidth - 80 // margins
+      const imgWidth = pageWidth - 80
       const imgHeight = (canvas.height * imgWidth) / canvas.width
-
       const x = 40
       const y = (pageHeight - imgHeight) / 2
-
       pdf.setFillColor(5, 5, 5)
       pdf.rect(0, 0, pageWidth, pageHeight, 'F')
-
       pdf.addImage(imgData, 'PNG', x, y, imgWidth, imgHeight)
-
-      const filename = `GRAVIX-${ticket?.qr_code || 'ticket'}.pdf`
-      pdf.save(filename)
+      pdf.save(`GRAVIX-${ticket?.qr_code || 'ticket'}.pdf`)
     } catch (e) {
       console.error('PDF error', e)
     } finally {
@@ -111,31 +95,14 @@ export default function TicketPage({
     return (
       <main style={S.page}>
         <div style={{ textAlign: 'center' }}>
-          <div
-            style={{
-              width: '40px',
-              height: '40px',
-              border: '2px solid #1a1a1a',
-              borderTop: '2px solid #dc2626',
-              borderRadius: '50%',
-              animation: 'spin 0.8s linear infinite',
-              margin: '0 auto 16px',
-            }}
-          />
-          <p
-            style={{
-              color: '#333',
-              letterSpacing: '4px',
-              fontSize: '11px',
-              margin: 0,
-            }}
-          >
-            LOADING
-          </p>
+          <div style={{
+            width: '40px', height: '40px',
+            border: '2px solid #1a1a1a', borderTop: '2px solid #dc2626',
+            borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 16px',
+          }} />
+          <p style={{ color: '#333', letterSpacing: '4px', fontSize: '11px', margin: 0 }}>LOADING</p>
         </div>
-        <style>
-          {`@keyframes spin { to { transform: rotate(360deg) } }`}
-        </style>
+        <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
       </main>
     )
   }
@@ -144,28 +111,12 @@ export default function TicketPage({
   if (notFound) {
     return (
       <main style={S.page}>
-        <div
-          style={{
-            ...S.ticket,
-            textAlign: 'center',
-            padding: '60px 32px',
-          }}
-        >
+        <div style={{ ...S.ticket, textAlign: 'center', padding: '60px 32px' }}>
           <p style={{ fontSize: '56px', margin: '0 0 16px' }}>🚫</p>
-          <p
-            style={{
-              color: '#dc2626',
-              fontWeight: 900,
-              fontSize: '18px',
-              letterSpacing: '3px',
-              margin: '0 0 8px',
-            }}
-          >
+          <p style={{ color: '#dc2626', fontWeight: 900, fontSize: '18px', letterSpacing: '3px', margin: '0 0 8px' }}>
             INVALID TICKET
           </p>
-          <p
-            style={{ color: '#333', fontSize: '13px', margin: 0 }}
-          >
+          <p style={{ color: '#333', fontSize: '13px', margin: 0 }}>
             This ticket does not exist or has been revoked.
           </p>
         </div>
@@ -175,677 +126,350 @@ export default function TicketPage({
 
   const isCheckedIn = ticket?.checked_in
   const isBackstage = ticket?.ticket_type === 'backstage'
-  const accentColor = isCheckedIn
-    ? '#ef4444'
-    : isBackstage
-    ? '#a855f7'
-    : '#10b981'
+  const accentColor = isCheckedIn ? '#ef4444' : isBackstage ? '#a855f7' : '#10b981'
+  const typeLabel = isBackstage ? 'BACKSTAGE' : 'STANDING'
+
+  const ticketPrice = isBackstage
+    ? reservation?.backstage_price_per_person
+    : reservation?.standing_price_per_person
+  const priceDisplay = ticketPrice ? `${ticketPrice} EGP` : 'PAID'
+
+  const eventDate = event?.date
+    ? new Date(event.date).toLocaleDateString('en-US', {
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC',
+      })
+    : 'TBA'
+
+  const InfoRow = ({ label, value, link, accent }: {
+    label: string; value: string; link?: string; accent?: string
+  }) => (
+    <div style={{ marginBottom: '10px' }}>
+      <p style={{ color: '#555', fontSize: '9px', letterSpacing: '2px', fontWeight: 700, margin: '0 0 3px' }}>
+        {label}
+      </p>
+      {link ? (
+        <a href={link} target="_blank" rel="noreferrer"
+          style={{ color: '#3b82f6', fontSize: '12px', fontWeight: 600, textDecoration: 'none' }}>
+          {value} ↗
+        </a>
+      ) : (
+        <p style={{ color: accent || '#fff', fontSize: '12px', fontWeight: accent ? 700 : 500, margin: 0, lineHeight: 1.4 }}>
+          {value}
+        </p>
+      )}
+    </div>
+  )
+
+  const SectionTitle = ({ children }: { children: string }) => (
+    <p style={{
+      color: accentColor, fontSize: '9px', letterSpacing: '3px', fontWeight: 900,
+      margin: '0 0 10px', borderBottom: `1px solid ${accentColor}30`, paddingBottom: '6px',
+    }}>
+      {children}
+    </p>
+  )
 
   return (
-    <main style={S.page}>
-      <style>
-        {`
+    <main style={{
+      minHeight: '100vh', backgroundColor: '#080808',
+      display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center',
+      padding: '40px 20px', fontFamily: 'Inter, sans-serif',
+    }}>
+      <style>{`
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
         @keyframes fadeIn { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
-      `}
-      </style>
+      `}</style>
 
-      <div
-        style={{
-          width: '100%',
-          maxWidth: '420px',
-          animation: 'fadeIn 0.4s ease',
-        }}
-      >
-        {/* الكارت كله جوه الـ ref عشان snapshot ال PDF */}
-        <div ref={ticketRef}>
-          {/* ── TOP CARD ── */}
-          <div
-            style={{
-              backgroundColor: '#0a0a0a',
-              borderRadius: '24px 24px 0 0',
-              border: `1px solid ${accentColor}30`,
-              borderBottom: 'none',
-              overflow: 'hidden',
-              position: 'relative',
-            }}
-          >
-            {/* Gradient accent bar top */}
-            <div
-              style={{
-                height: '3px',
-                background: isCheckedIn
-                  ? 'linear-gradient(90deg, #ef4444, #dc2626)'
-                  : isBackstage
-                  ? 'linear-gradient(90deg, #a855f7, #7c3aed)'
-                  : 'linear-gradient(90deg, #10b981, #059669)',
-              }}
-            />
+      <div style={{ width: '100%', maxWidth: '900px', animation: 'fadeIn 0.4s ease' }}>
 
-            {/* Event image */}
-            {event?.image_url ? (
-              <div style={{ position: 'relative' }}>
-                <img
-                  src={event.image_url}
-                  alt={event?.title}
-                  style={{
-                    width: '100%',
-                    height: '220px',
-                    objectFit: 'cover',
-                    display: 'block',
-                    filter: isCheckedIn
-                      ? 'grayscale(80%) brightness(0.5)'
-                      : 'brightness(0.75)',
-                    transition: 'all 0.6s ease',
-                  }}
-                />
-                {/* Overlay gradient */}
-                <div
-                  style={{
-                    position: 'absolute',
-                    inset: 0,
-                    background:
-                      'linear-gradient(to bottom, transparent 30%, #0a0a0a 100%)',
-                  }}
-                />
-
-                {/* GRAVIX logo over image */}
-                <div
-                  style={{
-                    position: 'absolute',
-                    top: '16px',
-                    left: '0',
-                    right: '0',
-                    textAlign: 'center',
-                  }}
-                >
-                  <span
-                    style={{
-                      backgroundColor: 'rgba(0,0,0,0.6)',
-                      border: '1px solid rgba(220,38,38,0.5)',
-                      color: '#dc2626',
-                      fontSize: '10px',
-                      letterSpacing: '6px',
-                      fontWeight: 900,
-                      padding: '5px 16px',
-                      borderRadius: '999px',
-                    }}
-                  >
-                    ● GRAVIX
-                  </span>
-                </div>
-
-                {/* Event title over image */}
-                <div
-                  style={{
-                    position: 'absolute',
-                    bottom: '16px',
-                    left: '20px',
-                    right: '20px',
-                  }}
-                >
-                  <h1
-                    style={{
-                      color: '#fff',
-                      fontSize: '26px',
-                      fontWeight: 900,
-                      margin: '0 0 8px',
-                      letterSpacing: '-0.5px',
-                      textShadow:
-                        '0 2px 12px rgba(0,0,0,0.9)',
-                      lineHeight: 1.2,
-                    }}
-                  >
-                    {event?.title}
-                  </h1>
-                </div>
-              </div>
-            ) : (
-              // No image fallback
-              <div
+        {/* ══ TICKET CARD ══ */}
+        <div
+          ref={ticketRef}
+          style={{
+            borderRadius: '20px', overflow: 'hidden',
+            border: `1px solid ${accentColor}25`,
+            boxShadow: `0 0 80px ${accentColor}15, 0 0 160px ${accentColor}08`,
+            backgroundColor: '#0d0d0d',
+            opacity: isCheckedIn ? 0.7 : 1,
+            transition: 'opacity 0.5s',
+          }}
+        >
+          {/* ── TOP: EVENT IMAGE BANNER ── */}
+          <div style={{ position: 'relative', height: '200px', overflow: 'hidden', backgroundColor: '#111' }}>
+            {event?.image_url && (
+              <img
+                src={event.image_url}
+                alt={event?.title}
                 style={{
-                  padding: '32px 24px 16px',
-                  textAlign: 'center',
+                  width: '100%', height: '100%', objectFit: 'cover',
+                  opacity: isCheckedIn ? 0.2 : 0.5,
+                  filter: isCheckedIn ? 'grayscale(100%)' : 'saturate(0.7)',
+                  transition: 'all 0.6s ease',
                 }}
-              >
-                <p
-                  style={{
-                    color: '#dc2626',
-                    fontSize: '10px',
-                    letterSpacing: '6px',
-                    fontWeight: 900,
-                    margin: '0 0 12px',
-                  }}
-                >
-                  ● GRAVIX
-                </p>
-                <h1
-                  style={{
-                    color: '#fff',
-                    fontSize: '22px',
-                    fontWeight: 900,
-                    margin: 0,
-                  }}
-                >
-                  {event?.title}
-                </h1>
-              </div>
+              />
             )}
+            {/* Gradient overlay */}
+            <div style={{
+              position: 'absolute', inset: 0,
+              background: 'linear-gradient(to bottom, rgba(0,0,0,0.1) 0%, rgba(13,13,13,0.95) 100%)',
+            }} />
+            {/* Accent left bar */}
+            <div style={{
+              position: 'absolute', left: 0, top: 0, bottom: 0,
+              width: '5px', backgroundColor: accentColor,
+            }} />
+            {/* Top accent gradient bar */}
+            <div style={{
+              position: 'absolute', top: 0, left: 0, right: 0, height: '3px',
+              background: isCheckedIn
+                ? 'linear-gradient(90deg, #ef4444, #dc2626)'
+                : isBackstage
+                ? 'linear-gradient(90deg, #a855f7, #7c3aed)'
+                : 'linear-gradient(90deg, #10b981, #059669)',
+            }} />
 
-            {/* Holder info */}
-            <div style={{ padding: '24px' }}>
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'flex-start',
-                  flexWrap: 'wrap',
-                  gap: '12px',
-                }}
-              >
-                <div>
-                  <p
-                    style={{
-                      color: '#444',
-                      fontSize: '9px',
-                      letterSpacing: '3px',
-                      margin: '0 0 5px',
-                    }}
-                  >
-                    TICKET HOLDER
-                  </p>
-                  <p
-                    style={{
-                      color: isCheckedIn ? '#555' : '#fff',
-                      fontSize: '20px',
-                      fontWeight: 900,
-                      margin: 0,
-                      letterSpacing: '-0.3px',
-                      transition: 'color 0.5s',
-                    }}
-                  >
-                    {ticket?.holder_name}
-                  </p>
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <p
-                    style={{
-                      color: '#444',
-                      fontSize: '9px',
-                      letterSpacing: '3px',
-                      margin: '0 0 5px',
-                    }}
-                  >
-                    TICKET NO.
-                  </p>
-                  <p
-                    style={{
-                      color: '#fff',
-                      fontSize: '20px',
-                      fontWeight: 900,
-                      fontFamily: 'monospace',
-                      margin: 0,
-                    }}
-                  >
-                    #{String(ticket?.ticket_number).padStart(3, '0')}
-                  </p>
-                </div>
-              </div>
+            {/* Event title bottom-left */}
+            <div style={{ position: 'absolute', bottom: '24px', left: '32px', right: '200px' }}>
+              <p style={{ color: accentColor, fontSize: '10px', letterSpacing: '4px', fontWeight: 700, margin: '0 0 6px' }}>
+              </p>
+              <h1 style={{
+                color: isCheckedIn ? '#555' : '#fff',
+                fontSize: '30px', fontWeight: 900,
+                letterSpacing: '2px', margin: '0 0 4px', lineHeight: 1,
+                transition: 'color 0.5s',
+              }}>
+                {event?.title?.toUpperCase() || 'GRAVIX EVENT'}
+              </h1>
+              <p style={{ color: '#888', fontSize: '13px', margin: 0 }}>{eventDate}</p>
+            </div>
 
-              {/* Ticket type badge */}
-              <div style={{ marginTop: '16px' }}>
-                <span
-                  style={{
-                    background: isBackstage
-                      ? 'linear-gradient(135deg, rgba(168,85,247,0.2), rgba(124,58,237,0.1))'
-                      : 'linear-gradient(135deg, rgba(16,185,129,0.2), rgba(5,150,105,0.1))',
-                    border: `1px solid ${
-                      isBackstage
-                        ? 'rgba(168,85,247,0.5)'
-                        : 'rgba(16,185,129,0.5)'
-                    }`,
-                    color: isBackstage
-                      ? '#a855f7'
-                      : '#10b981',
-                    padding: '6px 18px',
-                    borderRadius: '999px',
-                    fontSize: '11px',
-                    fontWeight: 900,
-                    letterSpacing: '3px',
-                  }}
-                >
-                  {isBackstage
-                    ? '🎭 BACKSTAGE'
-                    : '🎵 STANDING'}
-                </span>
-              </div>
+            {/* GRAVIX top-right */}
+            <div style={{ position: 'absolute', top: '20px', right: '24px' }}>
+              <span style={{ color: '#fff', fontWeight: 900, fontSize: '22px', letterSpacing: '8px', opacity: 0.9 }}>
+                GRAVIX
+              </span>
+            </div>
+
+            {/* Ticket type badge bottom-right */}
+            <div style={{
+              position: 'absolute', bottom: '24px', right: '24px',
+              backgroundColor: `${accentColor}20`, border: `1px solid ${accentColor}60`,
+              borderRadius: '999px', padding: '6px 18px',
+              color: accentColor, fontSize: '11px', fontWeight: 900, letterSpacing: '3px',
+            }}>
+              {isCheckedIn ? '⛔ USED' : typeLabel}
             </div>
           </div>
 
-          {/* ── PERFORATED DIVIDER ── */}
-          <div
-            style={{
-              position: 'relative',
-              height: '24px',
-              backgroundColor: 'transparent',
-              display: 'flex',
-              alignItems: 'center',
-            }}
-          >
-            {/* Left circle */}
-            <div
-              style={{
-                position: 'absolute',
-                left: '-16px',
-                width: '32px',
-                height: '32px',
-                backgroundColor: '#050505',
-                borderRadius: '50%',
-                border: `1px solid ${accentColor}20`,
-              }}
-            />
-            {/* Right circle */}
-            <div
-              style={{
-                position: 'absolute',
-                right: '-16px',
-                width: '32px',
-                height: '32px',
-                backgroundColor: '#050505',
-                borderRadius: '50%',
-                border: `1px solid ${accentColor}20`,
-              }}
-            />
-            {/* Dashed line */}
-            <div
-              style={{
-                width: '100%',
-                borderTop: `2px dashed ${accentColor}20`,
-              }}
-            />
+          {/* ── TEAR LINE ── */}
+          <div style={{ display: 'flex', alignItems: 'center', position: 'relative' }}>
+            <div style={{
+              width: '22px', height: '22px', backgroundColor: '#080808',
+              borderRadius: '50%', flexShrink: 0, marginLeft: '-11px',
+            }} />
+            <div style={{ flex: 1, borderTop: `2px dashed ${accentColor}20`, margin: '0 6px' }} />
+            <div style={{
+              width: '22px', height: '22px', backgroundColor: '#080808',
+              borderRadius: '50%', flexShrink: 0, marginRight: '-11px',
+            }} />
           </div>
 
-          {/* ── BOTTOM CARD (EVENT DETAILS + QR) ── */}
-          <div
-            style={{
-              backgroundColor: '#0a0a0a',
-              borderRadius: '0 0 24px 24px',
-              border: `1px solid ${accentColor}30`,
-              borderTop: 'none',
-              padding: '24px',
-            }}
-          >
-            {/* EVENT DETAILS GRID */}
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
-                gap: '10px',
-                marginBottom: '24px',
-              }}
-            >
-              {/* Date */}
-              <div
-                style={{
-                  backgroundColor: '#111',
-                  border: '1px solid #1a1a1a',
-                  borderRadius: '12px',
-                  padding: '12px 14px',
-                }}
-              >
-                <p
-                  style={{
-                    color: '#333',
-                    fontSize: '9px',
-                    letterSpacing: '2px',
-                    fontWeight: 700,
-                    margin: '0 0 6px',
-                  }}
-                >
-                  📅 DATE
-                </p>
-                <p
-                  style={{
-                    color: '#fff',
-                    fontSize: '12px',
-                    fontWeight: 700,
-                    margin: 0,
-                    lineHeight: 1.4,
-                  }}
-                >
-                  {event?.date
-                    ? new Date(
-                        event.date,
-                      ).toLocaleDateString('en-US', {
-                        weekday: 'short',
-                        month: 'short',
-                        day: 'numeric',
-                        timeZone: 'UTC',
-                      })
-                    : 'N/A'}
-                </p>
-              </div>
+          {/* ── BODY: 3 INFO COLS + QR ── */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto' }}>
 
-              {/* Time */}
-              <div
-                style={{
-                  backgroundColor: '#111',
-                  border: '1px solid #1a1a1a',
-                  borderRadius: '12px',
-                  padding: '12px 14px',
-                }}
-              >
-                <p
-                  style={{
-                    color: '#333',
-                    fontSize: '9px',
-                    letterSpacing: '2px',
-                    fontWeight: 700,
-                    margin: '0 0 6px',
-                  }}
-                >
-                  🕐 TIME
-                </p>
-                <p
-                  style={{
-                    color: '#fff',
-                    fontSize: '12px',
-                    fontWeight: 700,
-                    margin: 0,
-                    lineHeight: 1.4,
-                  }}
-                >
-                  {event?.date
-                    ? new Date(
-                        event.date,
-                      ).toLocaleTimeString('en-US', {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })
-                    : 'N/A'}
-                </p>
-              </div>
-
-              {/* Venue */}
-              <div
-                style={{
-                  backgroundColor: '#111',
-                  border: '1px solid #1a1a1a',
-                  borderRadius: '12px',
-                  padding: '12px 14px',
-                }}
-              >
-                <p
-                  style={{
-                    color: '#333',
-                    fontSize: '9px',
-                    letterSpacing: '2px',
-                    fontWeight: 700,
-                    margin: '0 0 6px',
-                  }}
-                >
-                  📍 VENUE
-                </p>
-                <p
-                  style={{
-                    color: '#fff',
-                    fontSize: '12px',
-                    fontWeight: 700,
-                    margin: 0,
-                    lineHeight: 1.4,
-                  }}
-                >
-                  {event?.location || 'N/A'}
-                </p>
-              </div>
-
-              {/* Type */}
-              <div
-                style={{
-                  backgroundColor: '#111',
-                  border: '1px solid #1a1a1a',
-                  borderRadius: '12px',
-                  padding: '12px 14px',
-                }}
-              >
-                <p
-                  style={{
-                    color: '#333',
-                    fontSize: '9px',
-                    letterSpacing: '2px',
-                    fontWeight: 700,
-                    margin: '0 0 6px',
-                  }}
-                >
-                  {isBackstage ? '🎭' : '🎵'} TYPE
-                </p>
-                <p
-                  style={{
-                    color: isBackstage ? '#a855f7' : '#10b981',
-                    fontSize: '12px',
-                    fontWeight: 700,
-                    margin: 0,
-                    lineHeight: 1.4,
-                    textTransform: 'uppercase',
-                  }}
-                >
-                  {ticket?.ticket_type || 'N/A'}
-                </p>
-              </div>
+            {/* COL 1: Ticket Information */}
+            <div style={{ padding: '24px 20px 24px 28px', borderRight: '1px solid #1a1a1a' }}>
+              <SectionTitle>TICKET INFORMATION</SectionTitle>
+              <InfoRow label="TYPE" value={typeLabel} accent={accentColor} />
+              <InfoRow label="PRICE" value={priceDisplay} accent="#10b981" />
+              <InfoRow
+                label="STATUS"
+                value={isCheckedIn ? 'USED ⛔' : 'CONFIRMED ✓'}
+                accent={isCheckedIn ? '#ef4444' : '#10b981'}
+              />
+              <InfoRow label="TICKET #" value={`#${String(ticket?.ticket_number).padStart(3, '0')}`} />
             </div>
 
-            {/* QR SECTION */}
-            <div style={{ textAlign: 'center' }}>
+            {/* COL 2: Event + Venue */}
+            <div style={{ padding: '24px 20px', borderRight: '1px solid #1a1a1a' }}>
+              <SectionTitle>EVENT INFORMATION</SectionTitle>
+              <InfoRow label="EVENT" value={event?.title || 'GRAVIX EVENT'} />
+              <InfoRow
+                label="DATE"
+                value={event?.date
+                  ? new Date(event.date).toLocaleDateString('en-US', {
+                      weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC',
+                    })
+                  : 'TBA'}
+              />
+              <div style={{ marginBottom: '14px' }} />
+              <SectionTitle>VENUE INFORMATION</SectionTitle>
+              <InfoRow
+                label="LOCATION"
+                value={event?.location || 'TBA'}
+                link={event?.location_url}
+              />
+            </div>
+
+            {/* COL 3: Ownership */}
+            <div style={{ padding: '24px 20px', borderRight: '1px solid #1a1a1a' }}>
+              <SectionTitle>OWNERSHIP DETAILS</SectionTitle>
+              <InfoRow label="HOLDER NAME" value={ticket?.holder_name || '-'} />
+              {ticket?.holder_phone && (
+                <InfoRow label="PHONE NUMBER" value={ticket.holder_phone} />
+              )}
+              {ticket?.holder_instagram && (
+                <div style={{ marginBottom: '10px' }}>
+                  <p style={{ color: '#555', fontSize: '9px', letterSpacing: '2px', fontWeight: 700, margin: '0 0 3px' }}>
+                    SOCIAL MEDIA
+                  </p>
+                  <a
+                    href={ticket.holder_instagram}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{ color: '#e1306c', fontSize: '12px', fontWeight: 600, textDecoration: 'none' }}
+                  >
+                    Instagram Profile ↗
+                  </a>
+                </div>
+              )}
+            </div>
+
+            {/* COL 4: QR Code */}
+            <div style={{
+              padding: '24px 28px 24px 20px', minWidth: '200px',
+              display: 'flex', flexDirection: 'column',
+              alignItems: 'center', justifyContent: 'space-between',
+            }}>
+              {/* Type badge above QR */}
+              <div style={{
+                backgroundColor: `${accentColor}15`,
+                border: `1px solid ${accentColor}40`,
+                borderRadius: '8px', padding: '5px 16px', marginBottom: '12px',
+                color: accentColor, fontSize: '11px', fontWeight: 900, letterSpacing: '3px',
+                textAlign: 'center', width: '100%', boxSizing: 'border-box' as const,
+              }}>
+                {isCheckedIn ? '⛔ USED' : typeLabel}
+              </div>
+
+              {/* QR */}
               {isCheckedIn ? (
-                <>
-                  {/* QR with X */}
-                  <div
-                    style={{
-                      position: 'relative',
-                      display: 'inline-block',
-                      marginBottom: '20px',
-                    }}
-                  >
-                    <div
-                      style={{
-                        opacity: 0.08,
-                        filter: 'grayscale(100%)',
-                      }}
-                    >
-                      <QRCode
-                        value={`https://gravixegypt.online/ticket/${ticket.qr_code}`}
-                        size={160}
-                        bgColor="transparent"
-                        fgColor="#ffffff"
-                      />
-                    </div>
-                    {/* X overlay */}
-                    <div
-                      style={{
-                        position: 'absolute',
-                        inset: 0,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      <div
-                        style={{
-                          fontSize: '72px',
-                          color: '#ef4444',
-                          lineHeight: 1,
-                          opacity: 0.9,
-                        }}
-                      >
-                        ✕
-                      </div>
-                    </div>
-                  </div>
-
-                  <div
-                    style={{
-                      backgroundColor: 'rgba(239,68,68,0.08)',
-                      border:
-                        '1px solid rgba(239,68,68,0.3)',
-                      borderRadius: '14px',
-                      padding: '18px 20px',
-                    }}
-                  >
-                    <p
-                      style={{
-                        color: '#ef4444',
-                        fontSize: '15px',
-                        fontWeight: 900,
-                        letterSpacing: '2px',
-                        margin: '0 0 6px',
-                      }}
-                    >
-                      ALREADY CHECKED IN
-                    </p>
-                    <p
-                      style={{
-                        color: '#555',
-                        fontSize: '12px',
-                        margin: 0,
-                      }}
-                    >
-                      Entered at{' '}
-                      <span
-                        style={{
-                          color: '#888',
-                          fontWeight: 700,
-                          fontFamily: 'monospace',
-                        }}
-                      >
-                        {ticket.checked_in_at
-                          ? new Date(
-                              ticket.checked_in_at,
-                            ).toLocaleTimeString(
-                              'en-US',
-                              {
-                                hour: '2-digit',
-                                minute: '2-digit',
-                              },
-                            )
-                          : 'N/A'}
-                      </span>
-                    </p>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <p
-                    style={{
-                      color: '#333',
-                      fontSize: '9px',
-                      letterSpacing: '3px',
-                      margin: '0 0 16px',
-                    }}
-                  >
-                    SCAN AT ENTRANCE
-                  </p>
-
-                  {/* QR with glow */}
-                  <div
-                    style={{
-                      display: 'inline-block',
-                      backgroundColor: '#fff',
-                      borderRadius: '20px',
-                      padding: '16px',
-                      boxShadow: isBackstage
-                        ? '0 0 40px rgba(168,85,247,0.2), 0 0 80px rgba(168,85,247,0.1)'
-                        : '0 0 40px rgba(16,185,129,0.2), 0 0 80px rgba(16,185,129,0.1)',
-                      marginBottom: '20px',
-                    }}
-                  >
+                <div style={{ position: 'relative', display: 'inline-block' }}>
+                  <div style={{ opacity: 0.08, filter: 'grayscale(100%)' }}>
                     <QRCode
                       value={`https://gravixegypt.online/ticket/${ticket.qr_code}`}
-                      size={180}
-                      bgColor="#ffffff"
-                      fgColor="#000000"
+                      size={130} bgColor="transparent" fgColor="#ffffff"
                     />
                   </div>
-
-                  {/* Valid badge */}
-                  <div
-                    style={{
-                      background: isBackstage
-                        ? 'linear-gradient(135deg, rgba(168,85,247,0.15), rgba(124,58,237,0.05))'
-                        : 'linear-gradient(135deg, rgba(16,185,129,0.15), rgba(5,150,105,0.05))',
-                      border: `1px solid ${
-                        isBackstage
-                          ? 'rgba(168,85,247,0.4)'
-                          : 'rgba(16,185,129,0.4)'
-                      }`,
-                      borderRadius: '12px',
-                      padding: '14px 20px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '8px',
-                    }}
-                  >
-                    <span
-                      style={{
-                        width: '8px',
-                        height: '8px',
-                        backgroundColor: accentColor,
-                        borderRadius: '50%',
-                        display: 'inline-block',
-                        animation: 'pulse 2s infinite',
-                      }}
-                    />
-                    <span
-                      style={{
-                        color: accentColor,
-                        fontSize: '13px',
-                        fontWeight: 900,
-                        letterSpacing: '3px',
-                      }}
-                    >
-                      VALID TICKET
-                    </span>
+                  <div style={{
+                    position: 'absolute', inset: 0,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <span style={{ fontSize: '60px', color: '#ef4444', lineHeight: 1, opacity: 0.9 }}>✕</span>
                   </div>
-                </>
+                </div>
+              ) : (
+                <div style={{
+                  backgroundColor: '#fff', borderRadius: '12px', padding: '12px',
+                  border: `3px solid ${accentColor}`,
+                  boxShadow: `0 0 24px ${accentColor}30`,
+                }}>
+                  <QRCode
+                    value={`https://gravixegypt.online/ticket/${ticket.qr_code}`}
+                    size={130} fgColor="#000" bgColor="#fff" level="H"
+                  />
+                </div>
               )}
 
-              {/* Footer */}
-              <p
-                style={{
-                  color: '#1c1c1c',
-                  fontSize: '9px',
-                  textAlign: 'center',
-                  marginTop: '20px',
-                  letterSpacing: '3px',
-                }}
-              >
-                GRAVIX © 2025 — DO NOT SHARE
-              </p>
+              {/* Status badge below QR */}
+              {isCheckedIn ? (
+                <div style={{
+                  marginTop: '12px',
+                  color: '#ef4444', fontSize: '10px', fontWeight: 900,
+                  letterSpacing: '2px', textAlign: 'center',
+                  border: '1px solid rgba(239,68,68,0.3)',
+                  borderRadius: '999px', padding: '4px 14px',
+                }}>
+                  ALREADY USED
+                  {ticket.checked_in_at && (
+                    <span style={{ display: 'block', fontSize: '9px', opacity: 0.6, marginTop: '2px' }}>
+                      {new Date(ticket.checked_in_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  )}
+                </div>
+              ) : (
+                <div style={{
+                  marginTop: '12px',
+                  display: 'flex', alignItems: 'center', gap: '6px',
+                  color: '#10b981', fontSize: '10px', fontWeight: 900,
+                  letterSpacing: '2px', textAlign: 'center',
+                  border: '1px solid rgba(16,185,129,0.3)',
+                  borderRadius: '999px', padding: '4px 14px',
+                }}>
+                  <span style={{
+                    width: '6px', height: '6px', backgroundColor: '#10b981',
+                    borderRadius: '50%', display: 'inline-block', animation: 'pulse 2s infinite',
+                  }} />
+                  VALID ✓
+                </div>
+              )}
             </div>
+          </div>
+
+          {/* ── FOOTER ── */}
+          <div style={{
+            borderTop: '1px solid #1a1a1a', padding: '14px 28px',
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            backgroundColor: '#0a0a0a',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <span style={{ color: '#dc2626', fontWeight: 900, fontSize: '16px', letterSpacing: '6px' }}>
+                GRAVIX
+              </span>
+              <span style={{ color: '#1c1c1c', fontSize: '12px' }}>|</span>
+              <span style={{ color: '#333', fontSize: '10px', letterSpacing: '2px' }}>
+                ELECTRONIC TICKET
+              </span>
+            </div>
+            <p style={{
+              color: '#222', fontSize: '9px', fontFamily: 'monospace',
+              letterSpacing: '2px', margin: 0, wordBreak: 'break-all' as const,
+              maxWidth: '340px', textAlign: 'center' as const,
+            }}>
+              {ticket.qr_code}
+            </p>
+            <span style={{ color: '#222', fontSize: '10px', letterSpacing: '2px' }}>
+              gravixegypt.online
+            </span>
           </div>
         </div>
 
-        {/* زر تحميل PDF */}
+        {/* ── PDF Download Button ── */}
         <button
           onClick={handleDownloadPDF}
           disabled={downloading}
           style={{
-            marginTop: '16px',
-            width: '100%',
-            borderRadius: '999px',
-            background:
-              'linear-gradient(135deg, #dc2626, #b91c1c)',
-            color: '#fff',
-            padding: '10px 16px',
-            fontSize: '11px',
-            fontWeight: 700,
-            letterSpacing: '3px',
-            border: 'none',
-            cursor: downloading ? 'default' : 'pointer',
+            marginTop: '16px', width: '100%', borderRadius: '999px',
+            background: 'linear-gradient(135deg, #dc2626, #b91c1c)',
+            color: '#fff', padding: '12px 16px',
+            fontSize: '11px', fontWeight: 700, letterSpacing: '3px',
+            border: 'none', cursor: downloading ? 'default' : 'pointer',
+            fontFamily: 'Inter, sans-serif',
           }}
         >
           {downloading ? 'GENERATING PDF...' : 'DOWNLOAD TICKET PDF'}
         </button>
+
+        {/* Legal note */}
+        <p style={{
+          color: '#1c1c1c', fontSize: '11px', textAlign: 'center',
+          marginTop: '16px', lineHeight: 1.7,
+        }}>
+          This ticket is non-transferable and valid for one person only.
+          A valid ID matching the holder name must be presented at entry.
+          This ticket can be scanned only once.
+        </p>
       </div>
     </main>
   )
@@ -853,19 +477,12 @@ export default function TicketPage({
 
 const S: Record<string, React.CSSProperties> = {
   page: {
-    minHeight: '100vh',
-    backgroundColor: '#050505',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '40px 20px',
-    fontFamily: 'Inter, sans-serif',
+    minHeight: '100vh', backgroundColor: '#050505',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    padding: '40px 20px', fontFamily: 'Inter, sans-serif',
   },
   ticket: {
-    backgroundColor: '#0a0a0a',
-    border: '1px solid #1a1a1a',
-    borderRadius: '24px',
-    width: '100%',
-    maxWidth: '420px',
+    backgroundColor: '#0a0a0a', border: '1px solid #1a1a1a',
+    borderRadius: '24px', width: '100%', maxWidth: '900px',
   },
 }

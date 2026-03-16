@@ -97,6 +97,20 @@ function getWaveInfo(opts: {
   return { price, label, key, soldOut }
 }
 
+const isValidInstagramUrl = (url: string) => {
+  if (!url) return false
+  try {
+    const u = new URL(url)
+    const host = u.hostname.toLowerCase()
+    return (
+      (host === 'instagram.com' || host === 'www.instagram.com') &&
+      u.pathname.length > 1
+    )
+  } catch {
+    return false
+  }
+}
+
 export default function ReservePage({
   params,
 }: {
@@ -107,7 +121,6 @@ export default function ReservePage({
 
   const [event, setEvent] = useState<EventType | null>(null)
 
-  // main guest details
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
   const [email, setEmail] = useState('')
@@ -116,6 +129,9 @@ export default function ReservePage({
   const [standingCount, setStandingCount] = useState(0)
   const [backstageCount, setBackstageCount] = useState(0)
   const [people, setPeople] = useState<PersonMini[]>([])
+
+  const [standingOpen, setStandingOpen] = useState(false)
+  const [backstageOpen, setBackstageOpen] = useState(false)
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -158,84 +174,56 @@ export default function ReservePage({
     [event],
   )
 
-  const allStandingUnavailable =
-    standing.price == null || standing.soldOut
-  const allBackstageUnavailable =
-    backstage.price == null || backstage.soldOut
+  const allStandingUnavailable = standing.price == null || standing.soldOut
+  const allBackstageUnavailable = backstage.price == null || backstage.soldOut
 
   const totalPeople = standingCount + backstageCount
 
-  // main guest ticket type
   let mainTicketType: TicketType | null = null
   if (standingCount > 0) mainTicketType = 'standing'
   else if (backstageCount > 0) mainTicketType = 'backstage'
 
-  // توزيع الجيست الإضافيين بناءً على الأرقام الجديدة
-  const syncPeople = (
-    newStandingCount: number,
-    newBackstageCount: number,
-  ) => {
+  const syncPeople = (newStandingCount: number, newBackstageCount: number) => {
     const newTotal = newStandingCount + newBackstageCount
     const safeTotal = Math.max(1, Math.min(10, newTotal || 0))
     const extrasNeeded = Math.max(0, safeTotal - 1)
-
     const extraStanding =
       newStandingCount > 0 ? Math.max(0, newStandingCount - 1) : 0
     const extraBackstage = newBackstageCount
-
     const arr: PersonMini[] = []
 
     for (let i = 0; i < extrasNeeded; i++) {
       const old = people[i]
-
       let ticket_type: TicketType
-      if (i < extraStanding) {
-        ticket_type = 'standing'
-      } else if (i < extraStanding + extraBackstage) {
-        ticket_type = 'backstage'
-      } else {
-        ticket_type = 'standing'
-      }
-
+      if (i < extraStanding) ticket_type = 'standing'
+      else if (i < extraStanding + extraBackstage) ticket_type = 'backstage'
+      else ticket_type = 'standing'
       arr.push(
         old
           ? { ...old, ticket_type }
           : { name: '', phone: '', instagram: '', ticket_type },
       )
     }
-
     setPeople(arr)
   }
 
   const handleNumChange = (type: TicketType, n: number) => {
     const safe = Math.max(0, Math.min(10, n || 0))
-
     if (type === 'standing') {
-      const newStanding = safe
-      const newBackstage = backstageCount
-      setStandingCount(newStanding)
-      syncPeople(newStanding, newBackstage)
+      setStandingCount(safe)
+      syncPeople(safe, backstageCount)
     } else {
-      const newStanding = standingCount
-      const newBackstage = safe
-      setBackstageCount(newBackstage)
-      syncPeople(newStanding, newBackstage)
+      setBackstageCount(safe)
+      syncPeople(standingCount, safe)
     }
   }
 
   const updatePerson = (i: number, field: keyof PersonMini, value: string) => {
-    setPeople(prev =>
-      prev.map((p, idx) =>
-        idx === i ? { ...p, [field]: value } : p,
-      ),
-    )
+    setPeople(prev => prev.map((p, idx) => idx === i ? { ...p, [field]: value } : p))
   }
 
-  const getSubtotal = () => {
-    const s = (standing.price ?? 0) * standingCount
-    const b = (backstage.price ?? 0) * backstageCount
-    return s + b
-  }
+  const getSubtotal = () =>
+    (standing.price ?? 0) * standingCount + (backstage.price ?? 0) * backstageCount
   const getTax = () => Math.round(getSubtotal() * 0.14)
   const getTotal = () => getSubtotal() + getTax()
 
@@ -248,26 +236,13 @@ export default function ReservePage({
     setError('')
     setSuccessMsg('')
 
-    if (!event) {
-      setError('Event not found.')
-      return
-    }
-
-    if (event.is_finished) {
-      setError('This event has ended.')
-      return
-    }
-
+    if (!event) { setError('Event not found.'); return }
+    if (event.is_finished) { setError('This event has ended.'); return }
     if (standingCount === 0 && backstageCount === 0) {
       setError('Select at least one ticket (Standing or Backstage).')
       return
     }
-
-    if (!mainTicketType) {
-      setError('Please select ticket type first.')
-      return
-    }
-
+    if (!mainTicketType) { setError('Please select ticket type first.'); return }
     if (
       (standingCount > 0 && allStandingUnavailable) ||
       (backstageCount > 0 && allBackstageUnavailable)
@@ -276,17 +251,26 @@ export default function ReservePage({
       return
     }
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-    if (!user) {
-      router.push('/login')
-      return
-    }
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { router.push('/login'); return }
 
     if (!name || !phone || !email || !instagram) {
       setError('Please fill main guest details.')
       return
+    }
+    if (!isValidInstagramUrl(instagram)) {
+      setError('Please enter a valid Instagram URL for main guest.')
+      return
+    }
+    for (const p of people) {
+      if (!p.name || !p.phone || !p.instagram) {
+        setError('Please fill all details for each guest.')
+        return
+      }
+      if (!isValidInstagramUrl(p.instagram)) {
+        setError('Please enter a valid Instagram URL for all guests.')
+        return
+      }
     }
 
     setLoading(true)
@@ -294,40 +278,24 @@ export default function ReservePage({
     const subtotal = getSubtotal()
     const tax = getTax()
     const total = getTotal()
-
-    const mainPerson: PersonMini = {
-      name,
-      phone,
-      instagram,
-      ticket_type: mainTicketType,
-    }
-
+    const mainPerson: PersonMini = { name, phone, instagram, ticket_type: mainTicketType }
     const peopleDetails: PersonMini[] = [mainPerson, ...people]
 
     const { error: insertError } = await supabase.from('reservations').insert({
       event_id: id,
       user_id: user.id,
-
-      name,
-      phone,
-      email,
-      instagram,
-
+      name, phone, email, instagram,
       num_people: totalPeople,
       people_details: peopleDetails,
-
       standing_count: standingCount,
       standing_price_per_person: standing.price ?? 0,
       standing_wave_label: standing.key,
-
       backstage_count: backstageCount,
       backstage_price_per_person: backstage.price ?? 0,
       backstage_wave_label: backstage.key,
-
       subtotal_price: subtotal,
       tax_amount: tax,
       total_price: total,
-
       status: 'pending',
     })
 
@@ -342,7 +310,6 @@ export default function ReservePage({
     setSuccessMsg(
       'Reservation created successfully. Please check your profile on the website to follow booking steps, complete payment, and get your entry code.',
     )
-
     setStandingCount(0)
     setBackstageCount(0)
     setPeople([])
@@ -374,6 +341,89 @@ export default function ReservePage({
     marginBottom: '8px',
   }
 
+  // ✅ Custom Dropdown Component
+  const TicketDropdown = ({
+    value,
+    onChange,
+    disabled,
+    isOpen,
+    setIsOpen,
+  }: {
+    value: number
+    onChange: (n: number) => void
+    disabled?: boolean
+    isOpen: boolean
+    setIsOpen: (v: boolean) => void
+  }) => (
+    <div style={{ position: 'relative' }}>
+      <button
+        type="button"
+        disabled={disabled}
+        onClick={() => !disabled && setIsOpen(!isOpen)}
+        style={{
+          width: '100%',
+          backgroundColor: '#0d0d0d',
+          border: '1px solid #1a1a1a',
+          borderRadius: '10px',
+          padding: '14px 16px',
+          color: disabled ? '#333' : '#fff',
+          fontSize: '14px',
+          fontFamily: 'Inter, sans-serif',
+          cursor: disabled ? 'not-allowed' : 'pointer',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          boxSizing: 'border-box',
+        }}
+      >
+        <span>{value} ticket{value !== 1 ? 's' : ''}</span>
+        <span style={{ color: '#555', fontSize: 10 }}>{isOpen ? '▲' : '▼'}</span>
+      </button>
+
+      {isOpen && !disabled && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 'calc(100% + 4px)',
+            left: 0,
+            right: 0,
+            backgroundColor: '#111',
+            border: '1px solid #222',
+            borderRadius: '10px',
+            overflow: 'hidden',
+            zIndex: 50,
+          }}
+        >
+          {Array.from({ length: 11 }, (_, i) => (
+            <div
+              key={i}
+              onClick={() => { onChange(i); setIsOpen(false) }}
+              style={{
+                padding: '12px 16px',
+                color: value === i ? '#fff' : '#888',
+                backgroundColor: value === i ? '#dc2626' : 'transparent',
+                fontSize: '14px',
+                fontFamily: 'Inter, sans-serif',
+                cursor: 'pointer',
+                borderBottom: i < 10 ? '1px solid #1a1a1a' : 'none',
+              }}
+              onMouseEnter={e =>
+                (e.currentTarget.style.backgroundColor =
+                  value === i ? '#dc2626' : '#1a1a1a')
+              }
+              onMouseLeave={e =>
+                (e.currentTarget.style.backgroundColor =
+                  value === i ? '#dc2626' : 'transparent')
+              }
+            >
+              {i}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+
   return (
     <main
       style={{
@@ -387,25 +437,11 @@ export default function ReservePage({
         {/* HEADER */}
         <div style={{ textAlign: 'center', marginBottom: '48px' }}>
           <Link href="/" style={{ textDecoration: 'none' }}>
-            <span
-              style={{
-                color: '#dc2626',
-                fontWeight: 900,
-                fontSize: '32px',
-                letterSpacing: '8px',
-              }}
-            >
+            <span style={{ color: '#dc2626', fontWeight: 900, fontSize: '32px', letterSpacing: '8px' }}>
               GRAVIX
             </span>
           </Link>
-          <p
-            style={{
-              color: '#333',
-              fontSize: '11px',
-              letterSpacing: '4px',
-              marginTop: '8px',
-            }}
-          >
+          <p style={{ color: '#333', fontSize: '11px', letterSpacing: '4px', marginTop: '8px' }}>
             BOOK YOUR SPOT
           </p>
         </div>
@@ -427,46 +463,27 @@ export default function ReservePage({
             }}
           >
             <div>
-              <p
-                style={{
-                  color: '#fff',
-                  fontSize: '16px',
-                  fontWeight: 900,
-                  margin: '0 0 4px',
-                }}
-              >
+              <p style={{ color: '#fff', fontSize: '16px', fontWeight: 900, margin: '0 0 4px' }}>
                 {event.title}
               </p>
-              <p
-                style={{
-                  color: '#444',
-                  fontSize: '12px',
-                  margin: 0,
-                }}
-              >
+              <p style={{ color: '#444', fontSize: '12px', margin: 0 }}>
                 📅{' '}
                 {new Date(event.date).toLocaleDateString('en-US', {
-                  weekday: 'short',
-                  month: 'short',
-                  day: 'numeric',
-                  timeZone: 'UTC',
+                  weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC',
                 })}{' '}
                 · 📍 {event.location}
               </p>
             </div>
-
             <div style={{ textAlign: 'right', fontSize: 12, color: '#ccc' }}>
               <div>
                 Standing:{' '}
                 {standing.price != null && !standing.soldOut
-                  ? `${standing.price} EGP`
-                  : 'SOLD OUT'}
+                  ? `${standing.price} EGP` : 'SOLD OUT'}
               </div>
               <div>
                 Backstage:{' '}
                 {backstage.price != null && !backstage.soldOut
-                  ? `${backstage.price} EGP`
-                  : 'SOLD OUT'}
+                  ? `${backstage.price} EGP` : 'SOLD OUT'}
               </div>
             </div>
           </div>
@@ -484,18 +501,8 @@ export default function ReservePage({
             }}
           >
             <p style={{ fontSize: '32px', margin: '0 0 8px' }}>❌</p>
-            <p
-              style={{
-                color: '#ef4444',
-                fontSize: '13px',
-                letterSpacing: '2px',
-                fontWeight: 700,
-                margin: 0,
-              }}
-            >
-              {event.is_finished
-                ? 'THIS EVENT HAS ENDED'
-                : 'ALL STANDING & BACKSTAGE ARE SOLD OUT'}
+            <p style={{ color: '#ef4444', fontSize: '13px', letterSpacing: '2px', fontWeight: 700, margin: 0 }}>
+              {event.is_finished ? 'THIS EVENT HAS ENDED' : 'ALL STANDING & BACKSTAGE ARE SOLD OUT'}
             </p>
           </div>
         )}
@@ -511,71 +518,41 @@ export default function ReservePage({
               marginBottom: '16px',
             }}
           >
-            <p
-              style={{
-                color: '#555',
-                fontSize: '10px',
-                letterSpacing: '3px',
-                fontWeight: 700,
-                margin: '0 0 16px',
-              }}
-            >
+            <p style={{ color: '#555', fontSize: '10px', letterSpacing: '3px', fontWeight: 700, margin: '0 0 16px' }}>
               STEP 1 · SELECT TICKETS
             </p>
 
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
-                gap: '12px',
-              }}
-            >
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
               <div>
                 <label style={labelStyle}>STANDING TICKETS</label>
-                <input
-                  type="number"
-                  min={0}
-                  max={10}
-                  disabled={allStandingUnavailable}
-                  style={inputStyle}
+                <TicketDropdown
                   value={standingCount}
-                  onChange={e =>
-                    handleNumChange('standing', Number(e.target.value))
-                  }
+                  disabled={allStandingUnavailable}
+                  isOpen={standingOpen}
+                  setIsOpen={(v) => { setStandingOpen(v); if (v) setBackstageOpen(false) }}
+                  onChange={n => handleNumChange('standing', n)}
                 />
               </div>
               <div>
                 <label style={labelStyle}>BACKSTAGE TICKETS</label>
-                <input
-                  type="number"
-                  min={0}
-                  max={10}
-                  disabled={allBackstageUnavailable}
-                  style={inputStyle}
+                <TicketDropdown
                   value={backstageCount}
-                  onChange={e =>
-                    handleNumChange('backstage', Number(e.target.value))
-                  }
+                  disabled={allBackstageUnavailable}
+                  isOpen={backstageOpen}
+                  setIsOpen={(v) => { setBackstageOpen(v); if (v) setStandingOpen(false) }}
+                  onChange={n => handleNumChange('backstage', n)}
                 />
               </div>
             </div>
 
-            <p
-              style={{
-                color: '#555',
-                fontSize: '11px',
-                marginTop: 10,
-              }}
-            >
-              Choose how many Standing and Backstage tickets you want. Guest
-              details will appear in the next step.
+            <p style={{ color: '#555', fontSize: '11px', marginTop: 10 }}>
+              Choose how many Standing and Backstage tickets you want. Guest details will appear in the next step.
             </p>
           </div>
 
-          {/* STEP 2: GUEST DETAILS (only if tickets selected) */}
+          {/* STEP 2: GUEST DETAILS */}
           {totalPeople > 0 && (
             <>
-              {/* MAIN GUEST */}
               <div
                 style={{
                   backgroundColor: '#0d0d0d',
@@ -585,103 +562,36 @@ export default function ReservePage({
                   marginBottom: '16px',
                 }}
               >
-                <p
-                  style={{
-                    color: '#555',
-                    fontSize: '10px',
-                    letterSpacing: '3px',
-                    fontWeight: 700,
-                    margin: '0 0 8px',
-                  }}
-                >
+                <p style={{ color: '#555', fontSize: '10px', letterSpacing: '3px', fontWeight: 700, margin: '0 0 8px' }}>
                   STEP 2 · MAIN GUEST DETAILS
                 </p>
-                <p
-                  style={{
-                    color: '#888',
-                    fontSize: '11px',
-                    margin: '0 0 16px',
-                  }}
-                >
+                <p style={{ color: '#888', fontSize: '11px', margin: '0 0 16px' }}>
                   Ticket type:{' '}
                   <span style={{ color: '#f97316', fontWeight: 700 }}>
                     {mainTicketType
-                      ? mainTicketType === 'standing'
-                        ? 'STANDING'
-                        : 'BACKSTAGE'
+                      ? mainTicketType === 'standing' ? 'STANDING' : 'BACKSTAGE'
                       : 'Select tickets first'}
                   </span>
                 </p>
 
                 <div style={{ marginBottom: '16px' }}>
                   <label style={labelStyle}>FULL NAME</label>
-                  <input
-                    style={inputStyle}
-                    placeholder="Your full name"
-                    value={name}
-                    onChange={e => setName(e.target.value)}
-                  />
+                  <input style={inputStyle} placeholder="Your full name" value={name} onChange={e => setName(e.target.value)} />
                 </div>
-
                 <div style={{ marginBottom: '16px' }}>
                   <label style={labelStyle}>PHONE NUMBER</label>
-                  <input
-                    style={inputStyle}
-                    placeholder="01XXXXXXXXX"
-                    type="tel"
-                    value={phone}
-                    onChange={e => setPhone(e.target.value)}
-                  />
+                  <input style={inputStyle} placeholder="01XXXXXXXXX" type="tel" value={phone} onChange={e => setPhone(e.target.value)} />
                 </div>
-
                 <div style={{ marginBottom: '16px' }}>
                   <label style={labelStyle}>EMAIL</label>
-                  <input
-                    style={inputStyle}
-                    placeholder="your@email.com"
-                    type="email"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                  />
+                  <input style={inputStyle} placeholder="your@email.com" type="email" value={email} onChange={e => setEmail(e.target.value)} />
                 </div>
-
                 <div style={{ marginBottom: '4px' }}>
-                  <label style={labelStyle}>INSTAGRAM</label>
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      backgroundColor: '#0d0d0d',
-                      border: '1px solid #1a1a1a',
-                      borderRadius: '10px',
-                      overflow: 'hidden',
-                    }}
-                  >
-                    <span
-                      style={{
-                        color: '#444',
-                        padding: '14px 0 14px 16px',
-                        fontSize: '14px',
-                      }}
-                    >
-                      @
-                    </span>
-                    <input
-                      style={{
-                        ...inputStyle,
-                        border: 'none',
-                        borderRadius: 0,
-                        paddingLeft: '6px',
-                      }}
-                      placeholder="username"
-                      value={instagram}
-                      onChange={e => setInstagram(e.target.value)}
-                    />
-                  </div>
+                  <label style={labelStyle}>INSTAGRAM URL</label>
+                  <input style={inputStyle} type="url" placeholder="https://instagram.com/username" value={instagram} onChange={e => setInstagram(e.target.value)} />
                 </div>
               </div>
 
-              {/* EXTRA GUESTS */}
               {people.map((p, i) => (
                 <div
                   key={i}
@@ -693,84 +603,27 @@ export default function ReservePage({
                     marginBottom: '16px',
                   }}
                 >
-                  <p
-                    style={{
-                      color: '#555',
-                      fontSize: '10px',
-                      letterSpacing: '3px',
-                      fontWeight: 700,
-                      margin: '0 0 8px',
-                    }}
-                  >
-                    GUEST {i + 2} DETAILS (
-                    {p.ticket_type === 'standing' ? 'STANDING' : 'BACKSTAGE'})
+                  <p style={{ color: '#555', fontSize: '10px', letterSpacing: '3px', fontWeight: 700, margin: '0 0 8px' }}>
+                    GUEST {i + 2} DETAILS ({p.ticket_type === 'standing' ? 'STANDING' : 'BACKSTAGE'})
                   </p>
-
                   <div style={{ marginBottom: '16px' }}>
                     <label style={labelStyle}>FULL NAME</label>
-                    <input
-                      style={inputStyle}
-                      placeholder="Full name"
-                      value={p.name}
-                      onChange={e =>
-                        updatePerson(i, 'name', e.target.value)
-                      }
-                    />
+                    <input style={inputStyle} placeholder="Full name" value={p.name} onChange={e => updatePerson(i, 'name', e.target.value)} />
                   </div>
                   <div style={{ marginBottom: '16px' }}>
                     <label style={labelStyle}>PHONE NUMBER</label>
-                    <input
-                      style={inputStyle}
-                      placeholder="01XXXXXXXXX"
-                      type="tel"
-                      value={p.phone}
-                      onChange={e =>
-                        updatePerson(i, 'phone', e.target.value)
-                      }
-                    />
+                    <input style={inputStyle} placeholder="01XXXXXXXXX" type="tel" value={p.phone} onChange={e => updatePerson(i, 'phone', e.target.value)} />
                   </div>
                   <div>
-                    <label style={labelStyle}>INSTAGRAM</label>
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        backgroundColor: '#0d0d0d',
-                        border: '1px solid #1a1a1a',
-                        borderRadius: '10px',
-                        overflow: 'hidden',
-                      }}
-                    >
-                      <span
-                        style={{
-                          color: '#444',
-                          padding: '14px 0 14px 16px',
-                          fontSize: '14px',
-                        }}
-                      >
-                        @
-                      </span>
-                      <input
-                        style={{
-                          ...inputStyle,
-                          border: 'none',
-                          borderRadius: 0,
-                          paddingLeft: '6px',
-                        }}
-                        placeholder="username"
-                        value={p.instagram}
-                        onChange={e =>
-                          updatePerson(i, 'instagram', e.target.value)
-                        }
-                      />
-                    </div>
+                    <label style={labelStyle}>INSTAGRAM URL</label>
+                    <input style={inputStyle} type="url" placeholder="https://instagram.com/username" value={p.instagram} onChange={e => updatePerson(i, 'instagram', e.target.value)} />
                   </div>
                 </div>
               ))}
             </>
           )}
 
-          {/* TOTAL & SUBMIT */}
+          {/* TOTAL */}
           {!allSoldOut && event && (
             <div
               style={{
@@ -781,58 +634,21 @@ export default function ReservePage({
                 marginBottom: '20px',
               }}
             >
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  marginBottom: 6,
-                }}
-              >
-                <span style={{ color: '#666', fontSize: 12 }}>
-                  Standing ({standingCount}x)
-                </span>
-                <span style={{ color: '#ccc', fontSize: 13 }}>
-                  {(standing.price ?? 0) * standingCount} EGP
-                </span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                <span style={{ color: '#666', fontSize: 12 }}>Standing ({standingCount}x)</span>
+                <span style={{ color: '#ccc', fontSize: 13 }}>{(standing.price ?? 0) * standingCount} EGP</span>
               </div>
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  marginBottom: 6,
-                }}
-              >
-                <span style={{ color: '#666', fontSize: 12 }}>
-                  Backstage ({backstageCount}x)
-                </span>
-                <span style={{ color: '#ccc', fontSize: 13 }}>
-                  {(backstage.price ?? 0) * backstageCount} EGP
-                </span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                <span style={{ color: '#666', fontSize: 12 }}>Backstage ({backstageCount}x)</span>
+                <span style={{ color: '#ccc', fontSize: 13 }}>{(backstage.price ?? 0) * backstageCount} EGP</span>
               </div>
-
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  marginTop: 8,
-                }}
-              >
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
                 <span style={{ color: '#888', fontSize: 12 }}>SUBTOTAL</span>
-                <span style={{ color: '#eee', fontSize: 14 }}>
-                  {getSubtotal()} EGP
-                </span>
+                <span style={{ color: '#eee', fontSize: 14 }}>{getSubtotal()} EGP</span>
               </div>
-              <div
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  marginTop: 4,
-                }}
-              >
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
                 <span style={{ color: '#888', fontSize: 12 }}>TAX (14%)</span>
-                <span style={{ color: '#eee', fontSize: 14 }}>
-                  {getTax()} EGP
-                </span>
+                <span style={{ color: '#eee', fontSize: 14 }}>{getTax()} EGP</span>
               </div>
               <div
                 style={{
@@ -844,25 +660,8 @@ export default function ReservePage({
                   alignItems: 'center',
                 }}
               >
-                <span
-                  style={{
-                    color: '#fff',
-                    fontSize: 13,
-                    letterSpacing: 2,
-                    fontWeight: 700,
-                  }}
-                >
-                  TOTAL
-                </span>
-                <span
-                  style={{
-                    color: '#dc2626',
-                    fontSize: 22,
-                    fontWeight: 900,
-                  }}
-                >
-                  {getTotal()} EGP
-                </span>
+                <span style={{ color: '#fff', fontSize: 13, letterSpacing: 2, fontWeight: 700 }}>TOTAL</span>
+                <span style={{ color: '#dc2626', fontSize: 22, fontWeight: 900 }}>{getTotal()} EGP</span>
               </div>
             </div>
           )}
@@ -901,28 +700,15 @@ export default function ReservePage({
 
           <button
             type="submit"
-            disabled={
-              loading ||
-              allSoldOut ||
-              getSubtotal() <= 0 ||
-              totalPeople === 0
-            }
+            disabled={loading || allSoldOut || getSubtotal() <= 0 || totalPeople === 0}
             style={{
               width: '100%',
               backgroundColor:
-                loading ||
-                allSoldOut ||
-                getSubtotal() <= 0 ||
-                totalPeople === 0
-                  ? '#1a1a1a'
-                  : '#dc2626',
+                loading || allSoldOut || getSubtotal() <= 0 || totalPeople === 0
+                  ? '#1a1a1a' : '#dc2626',
               color:
-                loading ||
-                allSoldOut ||
-                getSubtotal() <= 0 ||
-                totalPeople === 0
-                  ? '#333'
-                  : '#fff',
+                loading || allSoldOut || getSubtotal() <= 0 || totalPeople === 0
+                  ? '#333' : '#fff',
               border: 'none',
               padding: '18px',
               borderRadius: '12px',
@@ -930,12 +716,8 @@ export default function ReservePage({
               fontSize: '15px',
               letterSpacing: '3px',
               cursor:
-                loading ||
-                allSoldOut ||
-                getSubtotal() <= 0 ||
-                totalPeople === 0
-                  ? 'not-allowed'
-                  : 'pointer',
+                loading || allSoldOut || getSubtotal() <= 0 || totalPeople === 0
+                  ? 'not-allowed' : 'pointer',
               fontFamily: 'Inter, sans-serif',
             }}
           >
@@ -946,17 +728,8 @@ export default function ReservePage({
               : 'SUBMIT BOOKING →'}
           </button>
 
-          <p
-            style={{
-              color: '#333',
-              fontSize: '12px',
-              textAlign: 'center',
-              marginTop: '16px',
-              lineHeight: 1.6,
-            }}
-          >
-            After submitting, go to your profile on the website to follow the
-            booking steps, complete payment, and get your entry code.
+          <p style={{ color: '#333', fontSize: '12px', textAlign: 'center', marginTop: '16px', lineHeight: 1.6 }}>
+            After submitting, go to your profile on the website to follow the booking steps, complete payment, and get your entry QR code.
           </p>
         </form>
       </div>
