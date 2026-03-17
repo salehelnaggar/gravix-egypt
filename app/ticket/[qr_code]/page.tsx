@@ -25,7 +25,7 @@ export default function TicketPage({
     const run = async () => {
       const { data, error } = await supabase
         .from('tickets')
-        .select('*, events(title, date, location, location_url, image_url)')
+        .select('*, events(title, date, location, location_url, image_url, slug)')
         .eq('qr_code', qr_code)
         .single()
       if (error || !data) { setNotFound(true); setLoading(false); return }
@@ -71,7 +71,7 @@ export default function TicketPage({
       const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
       const pageW = pdf.internal.pageSize.getWidth()
       const pageH = pdf.internal.pageSize.getHeight()
-      const margin = 10
+      const margin = 0
       const maxW = pageW - margin * 2
       const maxH = pageH - margin * 2
       let finalW = maxW
@@ -92,7 +92,7 @@ export default function TicketPage({
 
   if (loading) {
     return (
-      <main style={{ minHeight: '100vh', backgroundColor: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Arial, sans-serif' }}>
+      <main style={S.page}>
         <div style={{ textAlign: 'center' }}>
           <div style={{ width: '36px', height: '36px', border: '3px solid #e5e7eb', borderTop: '3px solid #111', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 12px' }} />
           <p style={{ color: '#999', fontSize: '12px', margin: 0 }}>Loading ticket...</p>
@@ -104,8 +104,8 @@ export default function TicketPage({
 
   if (notFound) {
     return (
-      <main style={{ minHeight: '100vh', backgroundColor: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Arial, sans-serif' }}>
-        <div style={{ backgroundColor: '#fff', borderRadius: '8px', padding: '48px 32px', textAlign: 'center', boxShadow: '0 2px 16px rgba(0,0,0,0.08)' }}>
+      <main style={S.page}>
+        <div style={{ backgroundColor: '#fff', borderRadius: '8px', padding: '48px 32px', textAlign: 'center', boxShadow: '0 2px 16px rgba(0,0,0,0.08)', width: '100%', maxWidth: '400px' }}>
           <p style={{ fontSize: '48px', margin: '0 0 12px' }}>🚫</p>
           <p style={{ color: '#dc2626', fontWeight: 700, fontSize: '16px', margin: '0 0 6px' }}>INVALID TICKET</p>
           <p style={{ color: '#999', fontSize: '13px', margin: 0 }}>This ticket does not exist or has been revoked.</p>
@@ -116,222 +116,327 @@ export default function TicketPage({
 
   const isCheckedIn = ticket?.checked_in
   const isBackstage = ticket?.ticket_type === 'backstage'
-  const accentColor = isBackstage ? '#7c3aed' : '#111111'
   const typeLabel = isBackstage ? 'BACKSTAGE' : 'STANDING'
   const ticketPrice = isBackstage ? reservation?.backstage_price_per_person : reservation?.standing_price_per_person
-  const priceDisplay = ticketPrice ? `${ticketPrice} EGP` : 'PAID'
+  const priceDisplay = ticketPrice ? `${ticketPrice} EGP` : 'Paid'
+
   const eventDate = event?.date
-    ? new Date(event.date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC' })
+    ? new Date(event.date).toLocaleDateString('en-US', {
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'UTC',
+      })
     : 'TBA'
 
+  // رابط الايفنت
+  const eventPageUrl = event?.slug
+    ? `https://gravixegypt.online/events/${event.slug}`
+    : event?.location_url || '#'
+
   return (
-    <main style={{ minHeight: '100vh', backgroundColor: '#f0f0f0', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', padding: '32px 16px 48px', fontFamily: 'Arial, sans-serif' }}>
+    <main style={{
+      minHeight: '100vh',
+      backgroundColor: '#e5e7eb',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'flex-start',
+      padding: '0',
+      fontFamily: '"Segoe UI", Arial, sans-serif',
+    }}>
       <style>{`
-        @keyframes spin { to { transform: rotate(360deg) } }
-        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+        @keyframes spin  { to { transform: rotate(360deg) } }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+        * { box-sizing: border-box; }
       `}</style>
 
-      <div style={{ width: '100%', maxWidth: '600px' }}>
+      {/* ═══ TICKET WRAPPER ═══ */}
+      <div
+        ref={ticketRef}
+        style={{
+          width: '100%',
+          maxWidth: '680px',
+          backgroundColor: '#ffffff',
+          boxShadow: '0 6px 32px rgba(0,0,0,0.14)',
+          margin: '0 auto',
+        }}
+      >
 
-        {/* ═══ TICKET CARD ═══ */}
-        <div
-          ref={ticketRef}
-          style={{
-            backgroundColor: '#ffffff',
-            borderRadius: '4px',
-            overflow: 'hidden',
-            boxShadow: '0 4px 24px rgba(0,0,0,0.12)',
-            border: '1px solid #e5e7eb',
-          }}
-        >
-          {/* ── Event Banner Image ── */}
-          {event?.image_url && (
-            <div style={{ width: '100%', lineHeight: 0, position: 'relative' }}>
-              <img
-                src={event.image_url}
-                alt={event?.title}
-                style={{
-                  width: '100%',
-                  height: 'auto',
-                  maxHeight: '220px',
-                  objectFit: 'cover',
-                  display: 'block',
-                  filter: isCheckedIn ? 'grayscale(60%)' : 'none',
-                  opacity: isCheckedIn ? 0.7 : 1,
-                }}
-              />
-              {isCheckedIn && (
-                <div style={{
-                  position: 'absolute', inset: 0,
-                  backgroundColor: 'rgba(0,0,0,0.35)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  <span style={{ color: '#ef4444', fontSize: '32px', fontWeight: 900, letterSpacing: '4px', border: '3px solid #ef4444', padding: '4px 20px', borderRadius: '4px', backgroundColor: 'rgba(0,0,0,0.5)' }}>
-                    USED
-                  </span>
-                </div>
-              )}
+        {/* ── 1. EVENT BANNER IMAGE ── */}
+        <div style={{ width: '100%', lineHeight: 0, position: 'relative', backgroundColor: '#111', overflow: 'hidden' }}>
+          {event?.image_url ? (
+            <img
+              src={event.image_url}
+              alt={event?.title || 'Event'}
+              style={{
+                width: '100%',
+                maxHeight: '260px',
+                objectFit: 'cover',
+                display: 'block',
+                filter: isCheckedIn ? 'grayscale(70%) brightness(0.6)' : 'none',
+              }}
+              crossOrigin="anonymous"
+            />
+          ) : (
+            <div style={{ width: '100%', height: '180px', backgroundColor: '#111', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ color: '#dc2626', fontWeight: 900, fontSize: '28px', letterSpacing: '8px' }}>GRAVIX</span>
             </div>
           )}
-
-          {/* ── Event Title ── */}
-          <div style={{ padding: '18px 20px 14px', borderBottom: '1px solid #e5e7eb', textAlign: 'center', backgroundColor: '#fff' }}>
-            <h1 style={{ color: '#111', fontSize: '22px', fontWeight: 700, margin: '0 0 6px', letterSpacing: '0.5px' }}>
-              {event?.title?.toUpperCase() || 'GRAVIX EVENT'}
-            </h1>
-            <a
-              href={event?.location_url || '#'}
-              target="_blank"
-              rel="noreferrer"
-              style={{ color: '#2563eb', fontSize: '12px', textDecoration: 'none' }}
-            >
-              Open Updated Event Details Page
-            </a>
-          </div>
-
-          {/* ── Notice ── */}
-          <div style={{ backgroundColor: '#f9fafb', borderBottom: '1px solid #e5e7eb', padding: '10px 20px', textAlign: 'center' }}>
-            <p style={{ color: '#6b7280', fontSize: '10px', fontWeight: 600, letterSpacing: '0.5px', margin: 0, lineHeight: 1.5 }}>
-              THIS FILE ACTS AS YOUR OFFICIAL SINGLE TICKET AND CAN BE SCANNED ONLY ONCE
-              <br />SHOW THE QR CODE BELOW TO GAIN ACCESS
-            </p>
-          </div>
-
-          {/* ── Main Body: Info + QR ── */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: '0', padding: '0' }}>
-
-            {/* LEFT: Info */}
-            <div style={{ padding: '20px 16px 20px 20px', borderRight: '1px solid #e5e7eb' }}>
-
-              {/* Ticket Information */}
-              <div style={{ marginBottom: '16px' }}>
-                <p style={{ color: '#111', fontSize: '12px', fontWeight: 700, margin: '0 0 6px', borderBottom: '1px solid #e5e7eb', paddingBottom: '4px' }}>
-                  Ticket Information
-                </p>
-                <InfoLine label="Name" value={`${typeLabel} - ${ticket?.holder_name || 'Guest'}`} />
-                <InfoLine label="Price" value={priceDisplay} />
-                <InfoLine label="Status" value={isCheckedIn ? 'Used ⛔' : 'Paid ✓'} valueColor={isCheckedIn ? '#dc2626' : '#16a34a'} />
-              </div>
-
-              {/* Event Information */}
-              <div style={{ marginBottom: '16px' }}>
-                <p style={{ color: '#111', fontSize: '12px', fontWeight: 700, margin: '0 0 6px', borderBottom: '1px solid #e5e7eb', paddingBottom: '4px' }}>
-                  Event Information
-                </p>
-                <InfoLine label="Event" value={event?.title || 'GRAVIX EVENT'} />
-                <InfoLine label="Date and Time" value={eventDate} isLink linkHref={event?.location_url} linkText="Open Updated Event Details Page" />
-              </div>
-
-              {/* Venue Information */}
-              <div style={{ marginBottom: '16px' }}>
-                <p style={{ color: '#111', fontSize: '12px', fontWeight: 700, margin: '0 0 6px', borderBottom: '1px solid #e5e7eb', paddingBottom: '4px' }}>
-                  Venue Information
-                </p>
-                <InfoLine label="Name" value={event?.location || 'TBA'} />
-                {event?.location_url && (
-                  <div style={{ display: 'flex', gap: '4px', marginBottom: '3px' }}>
-                    <span style={{ color: '#6b7280', fontSize: '11px', minWidth: '80px' }}>Venue Location:</span>
-                    <a href={event.location_url} target="_blank" rel="noreferrer" style={{ color: '#2563eb', fontSize: '11px', textDecoration: 'none' }}>Get Directions</a>
-                  </div>
-                )}
-              </div>
-
-              {/* Ownership Details */}
-              <div>
-                <p style={{ color: '#111', fontSize: '12px', fontWeight: 700, margin: '0 0 6px', borderBottom: '1px solid #e5e7eb', paddingBottom: '4px' }}>
-                  Ownership Details
-                </p>
-                <InfoLine label="Name" value={ticket?.holder_name || '-'} />
-                {ticket?.holder_instagram && <InfoLine label="Social Media" value="Open Link" isLink linkHref={ticket.holder_instagram} linkText="Open Link" />}
-                {ticket?.holder_phone && <InfoLine label="Phone Number" value={ticket.holder_phone} />}
-              </div>
-            </div>
-
-            {/* RIGHT: QR + Type */}
-            <div style={{ padding: '20px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', gap: '12px', minWidth: '160px' }}>
-
-              {/* Type Badge */}
-              <div style={{
-                backgroundColor: isBackstage ? '#7c3aed' : '#111',
-                color: '#fff', fontSize: '11px', fontWeight: 700,
-                letterSpacing: '1.5px', padding: '5px 14px',
-                borderRadius: '2px', textAlign: 'center', width: '100%',
-                boxSizing: 'border-box' as const,
+          {isCheckedIn && (
+            <div style={{
+              position: 'absolute', inset: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <span style={{
+                color: '#ef4444', fontSize: '36px', fontWeight: 900,
+                border: '4px solid #ef4444', padding: '6px 24px',
+                backgroundColor: 'rgba(0,0,0,0.6)', letterSpacing: '6px',
+                borderRadius: '4px',
               }}>
-                {typeLabel} {isBackstage ? '' : `- #${String(ticket?.ticket_number).padStart(3, '0')}`}
-              </div>
+                USED
+              </span>
+            </div>
+          )}
+        </div>
 
-              {/* QR Code */}
-              {isCheckedIn ? (
-                <div style={{ position: 'relative', display: 'inline-block', padding: '8px', border: '1px solid #e5e7eb', borderRadius: '4px' }}>
-                  <div style={{ opacity: 0.15 }}>
-                    <QRCode value={`https://gravixegypt.online/ticket/${ticket.qr_code}`} size={110} bgColor="#ffffff" fgColor="#000000" />
-                  </div>
-                  <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <span style={{ fontSize: '44px', color: '#dc2626', lineHeight: 1 }}>✕</span>
-                  </div>
-                </div>
-              ) : (
-                <div style={{ padding: '10px', border: '2px solid #111', borderRadius: '4px', backgroundColor: '#fff' }}>
-                  <QRCode value={`https://gravixegypt.online/ticket/${ticket.qr_code}`} size={110} fgColor="#000" bgColor="#fff" level="H" />
+        {/* ── 2. EVENT TITLE + LINK ── */}
+        <div style={{
+          padding: '16px 24px 14px',
+          borderBottom: '1px solid #e5e7eb',
+          textAlign: 'center',
+          backgroundColor: '#fff',
+        }}>
+          <h1 style={{
+            color: '#111',
+            fontSize: 'clamp(18px, 4vw, 24px)',
+            fontWeight: 700,
+            margin: '0 0 8px',
+            letterSpacing: '0.5px',
+            lineHeight: 1.2,
+          }}>
+            {event?.title?.toUpperCase() || 'GRAVIX EVENT'}
+          </h1>
+          <a
+            href={eventPageUrl}
+            target="_blank"
+            rel="noreferrer"
+            style={{ color: '#2563eb', fontSize: '12px', textDecoration: 'none', fontWeight: 500 }}
+          >
+            Open Updated Event Details Page
+          </a>
+        </div>
+
+        {/* ── 3. NOTICE BAR ── */}
+        <div style={{
+          backgroundColor: '#f9fafb',
+          borderBottom: '1px solid #e5e7eb',
+          padding: '10px 20px',
+          textAlign: 'center',
+        }}>
+          <p style={{
+            color: '#6b7280',
+            fontSize: 'clamp(9px, 2vw, 11px)',
+            fontWeight: 600,
+            letterSpacing: '0.3px',
+            margin: 0,
+            lineHeight: 1.6,
+          }}>
+            THIS FILE ACTS AS YOUR OFFICIAL SINGLE TICKET AND CAN BE SCANNED ONLY ONCE
+            <br />SHOW THE QR CODE BELOW TO GAIN ACCESS
+          </p>
+        </div>
+
+        {/* ── 4. BODY: INFO (left) + QR (right) ── */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 180px',
+          borderBottom: '1px solid #e5e7eb',
+        }}>
+
+          {/* LEFT: Info Sections */}
+          <div style={{ padding: '18px 16px 18px 20px', borderRight: '1px solid #e5e7eb' }}>
+
+            {/* Ticket Information */}
+            <Section title="Ticket Information">
+              <InfoLine label="Name" value={`${typeLabel} - ${ticket?.holder_name || 'Guest'}`} />
+              <InfoLine label="Price" value={priceDisplay} />
+              <InfoLine label="Status" value={isCheckedIn ? 'Used ⛔' : 'Paid ✓'} valueColor={isCheckedIn ? '#dc2626' : '#16a34a'} />
+            </Section>
+
+            {/* Event Information */}
+            <Section title="Event Information">
+              <InfoLine label="Event" value={event?.title || 'GRAVIX EVENT'} />
+              <div style={{ display: 'flex', gap: '4px', marginBottom: '3px', flexWrap: 'wrap' }}>
+                <span style={{ color: '#6b7280', fontSize: '11px', minWidth: '110px', flexShrink: 0 }}>Date and Time:</span>
+                <a href={eventPageUrl} target="_blank" rel="noreferrer" style={{ color: '#2563eb', fontSize: '11px', textDecoration: 'none' }}>
+                  Open Updated Event Details Page
+                </a>
+              </div>
+              <InfoLine label="Date" value={eventDate} />
+            </Section>
+
+            {/* Venue Information */}
+            <Section title="Venue Information">
+              <InfoLine label="Name" value={event?.location || 'TBA'} />
+              {event?.location_url && (
+                <div style={{ display: 'flex', gap: '4px', marginBottom: '3px' }}>
+                  <span style={{ color: '#6b7280', fontSize: '11px', minWidth: '110px', flexShrink: 0 }}>Venue Location:</span>
+                  <a href={event.location_url} target="_blank" rel="noreferrer" style={{ color: '#2563eb', fontSize: '11px', textDecoration: 'none' }}>Get Directions</a>
                 </div>
               )}
+            </Section>
 
-              {/* Price / Status */}
-              <div style={{ textAlign: 'center' }}>
-                <p style={{ color: isCheckedIn ? '#dc2626' : '#16a34a', fontSize: '12px', fontWeight: 700, margin: 0 }}>
-                  {isCheckedIn ? 'Already Used' : priceDisplay}
-                </p>
-                {!isCheckedIn && (
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', marginTop: '4px' }}>
-                    <span style={{ width: '6px', height: '6px', backgroundColor: '#16a34a', borderRadius: '50%', display: 'inline-block', animation: 'pulse 2s infinite' }} />
-                    <span style={{ color: '#16a34a', fontSize: '10px', fontWeight: 600 }}>VALID</span>
-                  </div>
-                )}
-                {isCheckedIn && ticket?.checked_in_at && (
-                  <p style={{ color: '#9ca3af', fontSize: '9px', margin: '4px 0 0' }}>
-                    {new Date(ticket.checked_in_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
-                  </p>
-                )}
-              </div>
-
-              {/* Ticket # */}
-              <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: '10px', width: '100%', textAlign: 'center' }}>
-                <p style={{ color: '#9ca3af', fontSize: '9px', margin: 0, letterSpacing: '1px', wordBreak: 'break-all' as const }}>
-                  {ticket?.qr_code?.slice(0, 20)}...
-                </p>
-              </div>
-            </div>
+            {/* Ownership Details */}
+            <Section title="Ownership Details">
+              <InfoLine label="Name" value={ticket?.holder_name || '-'} />
+              {ticket?.holder_phone && <InfoLine label="Phone Number" value={ticket.holder_phone} />}
+              {ticket?.holder_instagram && (
+                <div style={{ display: 'flex', gap: '4px', marginBottom: '3px' }}>
+                  <span style={{ color: '#6b7280', fontSize: '11px', minWidth: '110px', flexShrink: 0 }}>Social Media:</span>
+                  <a href={ticket.holder_instagram} target="_blank" rel="noreferrer" style={{ color: '#2563eb', fontSize: '11px', textDecoration: 'none' }}>Open Link</a>
+                </div>
+              )}
+            </Section>
           </div>
 
-          {/* ── Footer / Terms ── */}
-          <div style={{ borderTop: '1px solid #e5e7eb', padding: '14px 20px', backgroundColor: '#f9fafb', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: '16px' }}>
-            <div style={{ flex: 1 }}>
-              <p style={{ color: '#6b7280', fontSize: '9.5px', margin: 0, lineHeight: 1.7 }}>
-                1. This ticket is non-transferable and should only be used by the intended recipient.<br />
-                2. The ticket is valid for a single scan and admits only one person.<br />
-                3. An official document matching the name on the ticket must be presented for entry.
+          {/* RIGHT: QR Section */}
+          <div style={{
+            padding: '18px 12px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'flex-start',
+            gap: '10px',
+          }}>
+
+            {/* Type Badge */}
+            <div style={{
+              backgroundColor: isBackstage ? '#7c3aed' : '#1a1a1a',
+              color: '#fff',
+              fontSize: '10px',
+              fontWeight: 700,
+              letterSpacing: '1px',
+              padding: '5px 10px',
+              width: '100%',
+              textAlign: 'center',
+              borderRadius: '2px',
+            }}>
+              {typeLabel}{ticket?.ticket_number ? ` - WAVE ${String(ticket.ticket_number).padStart(1, '0')}` : ''}
+            </div>
+
+            {/* QR Code */}
+            <div style={{
+              padding: '10px',
+              border: isCheckedIn ? '2px solid #dc2626' : '2px solid #1a1a1a',
+              borderRadius: '4px',
+              backgroundColor: '#fff',
+              position: 'relative',
+            }}>
+              {isCheckedIn ? (
+                <>
+                  <div style={{ opacity: 0.1 }}>
+                    <QRCode value={`https://gravixegypt.online/ticket/${ticket.qr_code}`} size={120} fgColor="#000" bgColor="#fff" />
+                  </div>
+                  <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <span style={{ fontSize: '52px', color: '#dc2626', lineHeight: 1 }}>✕</span>
+                  </div>
+                </>
+              ) : (
+                <QRCode
+                  value={`https://gravixegypt.online/ticket/${ticket.qr_code}`}
+                  size={120}
+                  fgColor="#000"
+                  bgColor="#fff"
+                  level="H"
+                />
+              )}
+            </div>
+
+            {/* Price / Status */}
+            <p style={{
+              color: isCheckedIn ? '#dc2626' : '#111',
+              fontSize: '12px',
+              fontWeight: 700,
+              margin: 0,
+              textAlign: 'center',
+            }}>
+              {isCheckedIn ? 'Already Used' : priceDisplay}
+            </p>
+
+            {!isCheckedIn && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                <span style={{ width: '7px', height: '7px', backgroundColor: '#16a34a', borderRadius: '50%', display: 'inline-block', animation: 'pulse 2s infinite' }} />
+                <span style={{ color: '#16a34a', fontSize: '10px', fontWeight: 700, letterSpacing: '1px' }}>VALID</span>
+              </div>
+            )}
+
+            {isCheckedIn && ticket?.checked_in_at && (
+              <p style={{ color: '#9ca3af', fontSize: '9px', margin: 0, textAlign: 'center' }}>
+                Scanned at {new Date(ticket.checked_in_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
               </p>
-            </div>
-            <div style={{ flexShrink: 0, textAlign: 'right' }}>
-              <p style={{ color: '#dc2626', fontWeight: 900, fontSize: '18px', letterSpacing: '4px', margin: 0, lineHeight: 1 }}>GRAVIX</p>
-              <p style={{ color: '#9ca3af', fontSize: '8px', letterSpacing: '1px', margin: '2px 0 0', textAlign: 'right' }}>gravixegypt.online</p>
-            </div>
+            )}
+
+            {/* QR code string (short) */}
+            <p style={{
+              color: '#d1d5db',
+              fontSize: '7.5px',
+              fontFamily: 'monospace',
+              margin: 0,
+              textAlign: 'center',
+              wordBreak: 'break-all',
+              lineHeight: 1.4,
+              paddingTop: '6px',
+              borderTop: '1px solid #e5e7eb',
+              width: '100%',
+            }}>
+              {ticket?.qr_code}
+            </p>
           </div>
         </div>
 
-        {/* ── Download Button ── */}
+        {/* ── 5. FOOTER: Terms + Branding ── */}
+        <div style={{
+          padding: '14px 20px',
+          backgroundColor: '#f9fafb',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-end',
+          gap: '16px',
+          flexWrap: 'wrap',
+        }}>
+          <div style={{ flex: 1, minWidth: '200px' }}>
+            <p style={{ color: '#6b7280', fontSize: '9.5px', margin: 0, lineHeight: 1.8 }}>
+              1. This ticket is non-transferable and should only be used by the intended recipient.<br />
+              2. The ticket is valid for a single scan and admits only one person.<br />
+              3. An official document matching the name on the ticket must be presented for entry.
+            </p>
+          </div>
+          <div style={{ textAlign: 'right', flexShrink: 0 }}>
+            <p style={{ color: '#dc2626', fontWeight: 900, fontSize: '20px', letterSpacing: '5px', margin: 0, lineHeight: 1 }}>GRAVIX</p>
+            <p style={{ color: '#9ca3af', fontSize: '8px', letterSpacing: '1.5px', margin: '3px 0 0', textAlign: 'right' }}>gravixegypt.online</p>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Download Button (outside ticket, not in PDF) ── */}
+      <div style={{ width: '100%', maxWidth: '680px', padding: '16px 0 40px' }}>
         <button
           onClick={handleDownloadPDF}
           disabled={downloading}
           style={{
-            marginTop: '16px', width: '100%', borderRadius: '6px',
+            width: '100%',
+            borderRadius: '6px',
             background: downloading ? '#6b7280' : '#111',
-            color: '#fff', padding: '14px 16px',
-            fontSize: '12px', fontWeight: 700, letterSpacing: '2px',
-            border: 'none', cursor: downloading ? 'not-allowed' : 'pointer',
-            fontFamily: 'Arial, sans-serif',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+            color: '#fff',
+            padding: '14px 16px',
+            fontSize: '12px',
+            fontWeight: 700,
+            letterSpacing: '2px',
+            border: 'none',
+            cursor: downloading ? 'not-allowed' : 'pointer',
+            fontFamily: '"Segoe UI", Arial, sans-serif',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
             transition: 'background 0.2s',
           }}
         >
@@ -349,35 +454,48 @@ export default function TicketPage({
   )
 }
 
-// ── Helper Component ──
-function InfoLine({ label, value, valueColor, isLink, linkHref, linkText }: {
+// ── Helper Components ──
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div style={{ marginBottom: '14px' }}>
+      <p style={{
+        color: '#111',
+        fontSize: '12px',
+        fontWeight: 700,
+        margin: '0 0 5px',
+        borderBottom: '1px solid #e5e7eb',
+        paddingBottom: '4px',
+      }}>
+        {title}
+      </p>
+      {children}
+    </div>
+  )
+}
+
+function InfoLine({
+  label, value, valueColor,
+}: {
   label: string
   value: string
   valueColor?: string
-  isLink?: boolean
-  linkHref?: string
-  linkText?: string
 }) {
   return (
-    <div style={{ display: 'flex', gap: '4px', marginBottom: '3px', flexWrap: 'wrap' as const }}>
-      <span style={{ color: '#6b7280', fontSize: '11px', minWidth: '80px', flexShrink: 0 }}>{label}:</span>
-      {isLink && linkHref ? (
-        <a href={linkHref} target="_blank" rel="noreferrer" style={{ color: '#2563eb', fontSize: '11px', textDecoration: 'none' }}>{linkText || value}</a>
-      ) : (
-        <span style={{ color: valueColor || '#111', fontSize: '11px', fontWeight: 500 }}>{value}</span>
-      )}
+    <div style={{ display: 'flex', gap: '4px', marginBottom: '3px', flexWrap: 'wrap' }}>
+      <span style={{ color: '#6b7280', fontSize: '11px', minWidth: '110px', flexShrink: 0 }}>{label}:</span>
+      <span style={{ color: valueColor || '#111', fontSize: '11px', fontWeight: 500 }}>{value}</span>
     </div>
   )
 }
 
 const S: Record<string, React.CSSProperties> = {
   page: {
-    minHeight: '100vh', backgroundColor: '#f0f0f0',
-    display: 'flex', alignItems: 'center', justifyContent: 'center',
-    padding: '40px 20px', fontFamily: 'Arial, sans-serif',
-  },
-  ticket: {
-    backgroundColor: '#fff', border: '1px solid #e5e7eb',
-    borderRadius: '4px', width: '100%', maxWidth: '600px',
+    minHeight: '100vh',
+    backgroundColor: '#e5e7eb',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '24px 0',
+    fontFamily: '"Segoe UI", Arial, sans-serif',
   },
 }
