@@ -168,7 +168,7 @@ export default function TicketPage({
               alt={event?.title || 'Event'}
               style={{
                 width: '100%',
-                maxHeight: '260px',
+                maxHeight: '160px',
                 objectFit: 'cover',
                 display: 'block',
                 filter: isCheckedIn ? 'grayscale(70%) brightness(0.6)' : 'none',
