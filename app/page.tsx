@@ -621,28 +621,7 @@ export default function HomePage() {
                         >
                           VIEW PROFILE
                         </Link>
-                        {dj.whatsapp_number && (
-                          <a
-                            href={`https://wa.me/${dj.whatsapp_number}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            style={{
-                              display: 'block',
-                              textAlign: 'center',
-                              backgroundColor: 'transparent',
-                              border: '1px solid rgba(16,185,129,0.4)',
-                              color: '#10b981',
-                              padding: '10px',
-                              borderRadius: '10px',
-                              fontWeight: 700,
-                              textDecoration: 'none',
-                              fontSize: '13px',
-                              letterSpacing: '1px',
-                            }}
-                          >
-                            CONTACT NOW
-                          </a>
-                        )}
+                      
                       </div>
                     </div>
                   </div>

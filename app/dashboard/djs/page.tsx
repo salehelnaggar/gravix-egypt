@@ -16,10 +16,10 @@ type DJ = {
   soundcloud_url?: string | null
   youtube_url?: string | null
   username?: string | null
+  booking_email?: string | null
   sort_order?: number
   created_at?: string
 }
-
 
 type Mode = 'list' | 'add' | 'edit'
 
@@ -35,7 +35,7 @@ export default function ManageDJsPage() {
   const [form, setForm] = useState({
     name: '', bio: '', image_url: '', whatsapp_number: '',
     instagram_url: '', spotify_url: '', soundcloud_url: '',
-    youtube_url: '', username: '',
+    youtube_url: '', username: '', booking_email: '',
   })
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string>('')
@@ -59,7 +59,6 @@ export default function ManageDJsPage() {
     setLoading(false)
   }
 
-  // ─── REORDER ─────────────────────────────────────────────
   const moveUp = async (index: number) => {
     if (index === 0) return
     const newDjs = [...djs]
@@ -85,12 +84,11 @@ export default function ManageDJsPage() {
     setReordering(false)
   }
 
-  // ─── FORM OPEN ────────────────────────────────────────────
   const openAdd = () => {
     setForm({
       name: '', bio: '', image_url: '', whatsapp_number: '',
       instagram_url: '', spotify_url: '', soundcloud_url: '',
-      youtube_url: '', username: '',
+      youtube_url: '', username: '', booking_email: '',
     })
     setImageFile(null)
     setImagePreview('')
@@ -109,6 +107,7 @@ export default function ManageDJsPage() {
       soundcloud_url: dj.soundcloud_url || '',
       youtube_url: dj.youtube_url || '',
       username: dj.username || '',
+      booking_email: dj.booking_email || '',
     })
     setImageFile(null)
     setImagePreview(dj.image_url || '')
@@ -148,6 +147,7 @@ export default function ManageDJsPage() {
       soundcloud_url: form.soundcloud_url.trim() || null,
       youtube_url: form.youtube_url.trim() || null,
       username: form.username.trim() || null,
+      booking_email: form.booking_email.trim() || null,
     }
 
     if (mode === 'add') {
@@ -192,6 +192,14 @@ export default function ManageDJsPage() {
     fontWeight: 700,
     marginBottom: '8px',
     display: 'block',
+  }
+
+  const optionalBadge: React.CSSProperties = {
+    color: '#333',
+    fontSize: '9px',
+    letterSpacing: '1px',
+    fontWeight: 600,
+    marginLeft: '6px',
   }
 
   // ─── FORM VIEW ───────────────────────────────────────────
@@ -248,7 +256,7 @@ export default function ManageDJsPage() {
               />
             </div>
 
-            {/* ✅ Username */}
+            {/* Username */}
             <div>
               <label style={labelStyle}>USERNAME (للرابط)</label>
               <input
@@ -281,22 +289,54 @@ export default function ManageDJsPage() {
               />
             </div>
 
-            {/* WhatsApp */}
-            <div>
-              <label style={labelStyle}>WHATSAPP NUMBER</label>
-              <input
-                type="text"
-                placeholder="e.g. 201012345678"
-                value={form.whatsapp_number}
-                onChange={e => setForm(f => ({ ...f, whatsapp_number: e.target.value }))}
-                style={inputStyle}
-                onFocus={e => (e.currentTarget.style.borderColor = '#dc2626')}
-                onBlur={e => (e.currentTarget.style.borderColor = '#1a1a1a')}
-              />
-              <p style={{ color: '#333', fontSize: '11px', marginTop: '6px' }}>بدون + أو مسافات — مثال: 201093379437</p>
+            {/* BOOKING SECTION */}
+            <div style={{ borderTop: '1px solid #1a1a1a', paddingTop: '20px' }}>
+              <p style={{ color: '#333', fontSize: '10px', letterSpacing: '3px', fontWeight: 700, margin: '0 0 20px' }}>
+                ● BOOKING CONTACTS — OPTIONAL
+              </p>
+
+              {/* WhatsApp */}
+              <div style={{ marginBottom: '20px' }}>
+                <label style={labelStyle}>
+                  💬 WHATSAPP NUMBER
+                  <span style={optionalBadge}>— OPTIONAL</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. 201012345678"
+                  value={form.whatsapp_number}
+                  onChange={e => setForm(f => ({ ...f, whatsapp_number: e.target.value }))}
+                  style={inputStyle}
+                  onFocus={e => (e.currentTarget.style.borderColor = '#10b981')}
+                  onBlur={e => (e.currentTarget.style.borderColor = '#1a1a1a')}
+                />
+                <p style={{ color: '#333', fontSize: '11px', marginTop: '6px' }}>
+                  بدون + أو مسافات — مثال: 201093379437 · هيظهر زرار "BOOK VIA WHATSAPP" في البروفايل
+                </p>
+              </div>
+
+              {/* Booking Email */}
+              <div>
+                <label style={labelStyle}>
+                  📧 BOOKING EMAIL
+                  <span style={optionalBadge}>— OPTIONAL</span>
+                </label>
+                <input
+                  type="email"
+                  placeholder="e.g. bookings@djname.com"
+                  value={form.booking_email}
+                  onChange={e => setForm(f => ({ ...f, booking_email: e.target.value }))}
+                  style={inputStyle}
+                  onFocus={e => (e.currentTarget.style.borderColor = '#60a5fa')}
+                  onBlur={e => (e.currentTarget.style.borderColor = '#1a1a1a')}
+                />
+                <p style={{ color: '#333', fontSize: '11px', marginTop: '6px' }}>
+                  هيظهر زرار "BOOK VIA EMAIL" في بروفايل الـ DJ
+                </p>
+              </div>
             </div>
 
-            {/* OPTIONAL LINKS */}
+            {/* SOCIAL & MUSIC LINKS */}
             <div style={{ borderTop: '1px solid #1a1a1a', paddingTop: '8px' }}>
               <p style={{ color: '#333', fontSize: '10px', letterSpacing: '3px', fontWeight: 700, margin: '0 0 20px' }}>
                 ● SOCIAL & MUSIC LINKS — OPTIONAL
@@ -344,7 +384,7 @@ export default function ManageDJsPage() {
                 />
               </div>
 
-              {/* ✅ YouTube */}
+              {/* YouTube */}
               <div>
                 <label style={labelStyle}>▶️ YOUTUBE URL</label>
                 <input
@@ -463,46 +503,30 @@ export default function ManageDJsPage() {
               key={dj.id}
               style={{ backgroundColor: '#0d0d0d', border: '1px solid #1a1a1a', borderRadius: '16px', padding: '20px 24px', display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}
             >
-              {/* ✅ Sort Buttons */}
+              {/* Sort Buttons */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flexShrink: 0 }}>
                 <button
                   onClick={() => moveUp(index)}
                   disabled={index === 0 || reordering}
                   style={{
-                    background: 'none',
-                    border: '1px solid #222',
-                    borderRadius: '6px',
+                    background: 'none', border: '1px solid #222', borderRadius: '6px',
                     color: index === 0 ? '#222' : '#555',
-                    width: '28px',
-                    height: '28px',
+                    width: '28px', height: '28px',
                     cursor: index === 0 ? 'not-allowed' : 'pointer',
-                    fontSize: '12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
+                    fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}
-                >
-                  ▲
-                </button>
+                >▲</button>
                 <button
                   onClick={() => moveDown(index)}
                   disabled={index === djs.length - 1 || reordering}
                   style={{
-                    background: 'none',
-                    border: '1px solid #222',
-                    borderRadius: '6px',
+                    background: 'none', border: '1px solid #222', borderRadius: '6px',
                     color: index === djs.length - 1 ? '#222' : '#555',
-                    width: '28px',
-                    height: '28px',
+                    width: '28px', height: '28px',
                     cursor: index === djs.length - 1 ? 'not-allowed' : 'pointer',
-                    fontSize: '12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
+                    fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}
-                >
-                  ▼
-                </button>
+                >▼</button>
               </div>
 
               {/* Avatar */}
@@ -516,9 +540,7 @@ export default function ManageDJsPage() {
               <div style={{ flex: 1, minWidth: '180px' }}>
                 <h3 style={{ color: '#fff', fontSize: '16px', fontWeight: 900, margin: '0 0 2px', letterSpacing: '-0.5px' }}>{dj.name}</h3>
                 {dj.username && (
-                  <p style={{ color: '#dc2626', fontSize: '11px', margin: '0 0 4px', letterSpacing: '0.5px' }}>
-                    @{dj.username}
-                  </p>
+                  <p style={{ color: '#dc2626', fontSize: '11px', margin: '0 0 4px', letterSpacing: '0.5px' }}>@{dj.username}</p>
                 )}
                 {dj.bio && (
                   <p style={{ color: '#444', fontSize: '12px', margin: '0 0 6px', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', maxWidth: '400px' }}>
@@ -527,6 +549,7 @@ export default function ManageDJsPage() {
                 )}
                 <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                   {dj.whatsapp_number && <span style={{ color: '#10b981', fontSize: '11px' }}>💬 WhatsApp</span>}
+                  {dj.booking_email && <span style={{ color: '#60a5fa', fontSize: '11px' }}>📧 Booking Email</span>}
                   {dj.instagram_url && <span style={{ color: '#dc2626', fontSize: '11px' }}>📸 Instagram</span>}
                   {dj.spotify_url && <span style={{ color: '#1db954', fontSize: '11px' }}>🎵 Spotify</span>}
                   {dj.soundcloud_url && <span style={{ color: '#ff5500', fontSize: '11px' }}>☁️ SoundCloud</span>}
