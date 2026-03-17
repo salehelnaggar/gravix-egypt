@@ -197,6 +197,25 @@ export default function TicketPage({
           )}
         </div>
 
+       {/* ── 2. EVENT TITLE ── */}
+<div style={{
+  padding: '16px 24px 14px',
+  borderBottom: '1px solid #e5e7eb',
+  textAlign: 'center',
+  backgroundColor: '#fff',
+}}>
+  <h1 style={{
+    color: '#111',
+    fontSize: 'clamp(18px, 4vw, 24px)',
+    fontWeight: 700,
+    margin: 0,
+    letterSpacing: '0.5px',
+    lineHeight: 1.2,
+  }}>
+    {event?.title?.toUpperCase() || 'GRAVIX EVENT'}
+  </h1>
+</div>
+
 
         {/* ── 3. NOTICE BAR ── */}
         <div style={{
