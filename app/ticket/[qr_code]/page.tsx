@@ -44,12 +44,10 @@ export default function TicketPage({
     run()
     const channel = supabase
       .channel(`ticket-${qr_code}`)
-      .on(
-        'postgres_changes',
+      .on('postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'tickets', filter: `qr_code=eq.${qr_code}` },
         (payload) => setTicket((prev: any) => ({ ...prev, ...payload.new }))
-      )
-      .subscribe()
+      ).subscribe()
     return () => { supabase.removeChannel(channel) }
   }, [qr_code])
 
@@ -128,6 +126,7 @@ export default function TicketPage({
       })
     : 'TBA'
 
+  // رابط الايفنت
   const eventPageUrl = event?.slug
     ? `https://gravixegypt.online/events/${event.slug}`
     : event?.location_url || '#'
@@ -140,7 +139,7 @@ export default function TicketPage({
       flexDirection: 'column',
       alignItems: 'center',
       justifyContent: 'flex-start',
-      padding: 0,
+      padding: '0',
       fontFamily: '"Segoe UI", Arial, sans-serif',
     }}>
       <style>{`
@@ -149,20 +148,19 @@ export default function TicketPage({
         * { box-sizing: border-box; }
       `}</style>
 
-      {/* TICKET WRAPPER */}
+      {/* ═══ TICKET WRAPPER ═══ */}
       <div
         ref={ticketRef}
         style={{
           width: '100%',
-          maxWidth: '100%',
+          maxWidth: '680px',
           backgroundColor: '#ffffff',
           boxShadow: '0 6px 32px rgba(0,0,0,0.14)',
           margin: '0 auto',
-          minHeight: '100vh',
         }}
       >
 
-        {/* 1. EVENT BANNER IMAGE */}
+        {/* ── 1. EVENT BANNER IMAGE ── */}
         <div style={{ width: '100%', lineHeight: 0, position: 'relative', backgroundColor: '#111', overflow: 'hidden' }}>
           {event?.image_url ? (
             <img
@@ -188,13 +186,9 @@ export default function TicketPage({
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
               <span style={{
-                color: '#ef4444',
-                fontSize: '36px',
-                fontWeight: 900,
-                border: '4px solid #ef4444',
-                padding: '6px 24px',
-                backgroundColor: 'rgba(0,0,0,0.6)',
-                letterSpacing: '6px',
+                color: '#ef4444', fontSize: '36px', fontWeight: 900,
+                border: '4px solid #ef4444', padding: '6px 24px',
+                backgroundColor: 'rgba(0,0,0,0.6)', letterSpacing: '6px',
                 borderRadius: '4px',
               }}>
                 USED
@@ -203,29 +197,30 @@ export default function TicketPage({
           )}
         </div>
 
-        {/* 2. EVENT TITLE */}
-        <div style={{
-          padding: '16px 24px 14px',
-          borderBottom: '1px solid #e5e7eb',
-          textAlign: 'center',
-          backgroundColor: '#fff',
-        }}>
-          <h1 style={{
-            color: '#111',
-            fontSize: 'clamp(18px, 4vw, 24px)',
-            fontWeight: 700,
-            margin: 0,
-            letterSpacing: '0.5px',
-            lineHeight: 1.2,
-          }}>
-            {event?.title?.toUpperCase() || 'GRAVIX EVENT'}
-          </h1>
-        </div>
+       {/* ── 2. EVENT TITLE ── */}
+<div style={{
+  padding: '16px 24px 14px',
+  borderBottom: '1px solid #e5e7eb',
+  textAlign: 'center',
+  backgroundColor: '#fff',
+}}>
+  <h1 style={{
+    color: '#111',
+    fontSize: 'clamp(18px, 4vw, 24px)',
+    fontWeight: 700,
+    margin: 0,
+    letterSpacing: '0.5px',
+    lineHeight: 1.2,
+  }}>
+    {event?.title?.toUpperCase() || 'GRAVIX EVENT'}
+  </h1>
+</div>
 
-        {/* 3. NOTICE BAR */}
+
+        {/* ── 3. NOTICE BAR ── */}
         <div style={{
           backgroundColor: '#f9fafb',
-borderBottom: '1px solid #e5e7eb',
+          borderBottom: '1px solid #e5e7eb',
           padding: '10px 20px',
           textAlign: 'center',
         }}>
@@ -242,25 +237,30 @@ borderBottom: '1px solid #e5e7eb',
           </p>
         </div>
 
-        {/* 4. BODY: INFO + QR */}
+        {/* ── 4. BODY: INFO (left) + QR (right) ── */}
         <div style={{
           display: 'grid',
           gridTemplateColumns: '1fr 180px',
           borderBottom: '1px solid #e5e7eb',
         }}>
+
           {/* LEFT: Info Sections */}
           <div style={{ padding: '18px 16px 18px 20px', borderRight: '1px solid #e5e7eb' }}>
+
+            {/* Ticket Information */}
             <Section title="Ticket Information">
               <InfoLine label="Name" value={`${typeLabel} - ${ticket?.holder_name || 'Guest'}`} />
               <InfoLine label="Price" value={priceDisplay} />
               <InfoLine label="Status" value={isCheckedIn ? 'Used ⛔' : 'Paid ✓'} valueColor={isCheckedIn ? '#dc2626' : '#16a34a'} />
             </Section>
+{/* Event Information */}
+<Section title="Event Information">
+  <InfoLine label="Event" value={event?.title || 'GRAVIX EVENT'} />
+  <InfoLine label="Date" value={eventDate} />
+</Section>
 
-            <Section title="Event Information">
-              <InfoLine label="Event" value={event?.title || 'GRAVIX EVENT'} />
-              <InfoLine label="Date" value={eventDate} />
-            </Section>
 
+            {/* Venue Information */}
             <Section title="Venue Information">
               <InfoLine label="Name" value={event?.location || 'TBA'} />
               {event?.location_url && (
@@ -271,6 +271,7 @@ borderBottom: '1px solid #e5e7eb',
               )}
             </Section>
 
+            {/* Ownership Details */}
             <Section title="Ownership Details">
               <InfoLine label="Name" value={ticket?.holder_name || '-'} />
               {ticket?.holder_phone && <InfoLine label="Phone Number" value={ticket.holder_phone} />}
@@ -283,7 +284,7 @@ borderBottom: '1px solid #e5e7eb',
             </Section>
           </div>
 
-          {/* RIGHT: QR + status */}
+          {/* RIGHT: QR Section */}
           <div style={{
             padding: '18px 12px',
             display: 'flex',
@@ -292,6 +293,8 @@ borderBottom: '1px solid #e5e7eb',
             justifyContent: 'flex-start',
             gap: '10px',
           }}>
+
+            {/* Type Badge */}
             <div style={{
               backgroundColor: isBackstage ? '#7c3aed' : '#1a1a1a',
               color: '#fff',
@@ -306,6 +309,7 @@ borderBottom: '1px solid #e5e7eb',
               {typeLabel}{ticket?.ticket_number ? ` - WAVE ${String(ticket.ticket_number).padStart(1, '0')}` : ''}
             </div>
 
+            {/* QR Code */}
             <div style={{
               padding: '10px',
               border: isCheckedIn ? '2px solid #dc2626' : '2px solid #1a1a1a',
@@ -333,6 +337,7 @@ borderBottom: '1px solid #e5e7eb',
               )}
             </div>
 
+            {/* Price / Status */}
             <p style={{
               color: isCheckedIn ? '#dc2626' : '#111',
               fontSize: '12px',
@@ -356,6 +361,7 @@ borderBottom: '1px solid #e5e7eb',
               </p>
             )}
 
+            {/* QR code string (short) */}
             <p style={{
               color: '#d1d5db',
               fontSize: '7.5px',
@@ -373,7 +379,7 @@ borderBottom: '1px solid #e5e7eb',
           </div>
         </div>
 
-        {/* 5. FOOTER */}
+        {/* ── 5. FOOTER: Terms + Branding ── */}
         <div style={{
           padding: '14px 20px',
           backgroundColor: '#f9fafb',
@@ -397,8 +403,8 @@ borderBottom: '1px solid #e5e7eb',
         </div>
       </div>
 
-      {/* Download Button */}
-      <div style={{ width: '100%', padding: '16px 24px 40px' }}>
+      {/* ── Download Button (outside ticket, not in PDF) ── */}
+      <div style={{ width: '100%', maxWidth: '680px', padding: '16px 0 40px' }}>
         <button
           onClick={handleDownloadPDF}
           disabled={downloading}
@@ -435,7 +441,7 @@ borderBottom: '1px solid #e5e7eb',
   )
 }
 
-// Helpers
+// ── Helper Components ──
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div style={{ marginBottom: '14px' }}>
