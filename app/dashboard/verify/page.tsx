@@ -278,7 +278,7 @@ export default function VerifyPage() {
                 border: '1px solid #1f1f1f',
                 padding: isMobile ? '12px 14px' : '10px 12px',
                 color: '#fff',
-                fontSize: isMobile ? '16px' : '13px', // 16px يمنع zoom على iOS
+                fontSize: isMobile ? '16px' : '13px',
                 outline: 'none',
                 marginBottom: '8px',
                 boxSizing: 'border-box',
@@ -390,18 +390,46 @@ export default function VerifyPage() {
                 fontSize: '12px',
                 color: '#ddd',
               }}>
+                {/* HOLDER card مع زرار OPEN INSTAGRAM */}
                 <div style={{
                   borderRadius: '12px', border: '1px solid #151515',
                   padding: '10px', backgroundColor: '#050505',
                 }}>
                   <div style={{ color: '#666', fontSize: '10px', letterSpacing: '2px', marginBottom: '4px' }}>HOLDER</div>
-                  <div style={{ fontWeight: 600 }}>{result.holder_name || result.reservations?.name || '—'}</div>
+                  <div style={{ fontWeight: 600 }}>
+                    {result.holder_name || result.reservations?.name || '—'}
+                  </div>
                   <div style={{ color: '#777', fontSize: '11px', marginTop: '2px' }}>
                     PHONE: {result.holder_phone || result.reservations?.phone || '—'}
                   </div>
-                  <div style={{ color: '#777', fontSize: '11px', marginTop: '2px' }}>
-                    INSTAGRAM: {result.holder_instagram || '—'}
-                  </div>
+
+                  {result.holder_instagram ? (
+                    <a
+                      href={result.holder_instagram}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{
+                        display: 'inline-block',
+                        marginTop: '6px',
+                        padding: '5px 12px',
+                        borderRadius: '8px',
+                        border: '1px solid rgba(220,38,38,0.4)',
+                        backgroundColor: 'rgba(220,38,38,0.08)',
+                        color: '#fca5a5',
+                        fontSize: '11px',
+                        fontWeight: 700,
+                        letterSpacing: '1px',
+                        textDecoration: 'none',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      OPEN INSTAGRAM
+                    </a>
+                  ) : (
+                    <div style={{ color: '#777', fontSize: '11px', marginTop: '2px' }}>
+                      INSTAGRAM: —
+                    </div>
+                  )}
                 </div>
 
                 <div style={{
@@ -499,7 +527,7 @@ export default function VerifyPage() {
             style={{
               padding: '10px 24px',
               borderRadius: '999px',
-              border: '1px solid #444',
+border: '1px solid #444',
               backgroundColor: 'transparent',
               color: '#e5e5e5',
               fontSize: isMobile ? '13px' : '11px',
