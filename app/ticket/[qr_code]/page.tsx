@@ -253,6 +253,11 @@ export default function TicketPage({
               <InfoLine label="Price" value={priceDisplay} />
               <InfoLine label="Status" value={isCheckedIn ? 'Used ⛔' : 'Paid ✓'} valueColor={isCheckedIn ? '#dc2626' : '#16a34a'} />
             </Section>
+{/* Event Information */}
+<Section title="Event Information">
+  <InfoLine label="Event" value={event?.title || 'GRAVIX EVENT'} />
+  <InfoLine label="Date" value={eventDate} />
+</Section>
 
 
             {/* Venue Information */}
