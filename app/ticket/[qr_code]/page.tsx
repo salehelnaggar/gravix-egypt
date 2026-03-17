@@ -3,8 +3,6 @@
 import { useEffect, useState, use, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import QRCode from 'react-qr-code'
-import jsPDF from 'jspdf'
-import html2canvas from 'html2canvas'
 
 export default function TicketPage({
   params,
@@ -20,8 +18,6 @@ export default function TicketPage({
   const [notFound, setNotFound] = useState(false)
   const [downloading, setDownloading] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
-  // ← الجديد: لما بيكون true الصورة بتتخفي قبل الـ PDF capture
-  const [pdfMode, setPdfMode] = useState(false)
 
   const ticketRef = useRef<HTMLDivElement | null>(null)
 
@@ -76,38 +72,12 @@ export default function TicketPage({
     return () => { supabase.removeChannel(channel) }
   }, [qr_code])
 
-  const handleDownloadPDF = async () => {
-    if (!ticketRef.current) return
-    try {
-      setDownloading(true)
-      // إخفاء الصورة قبل الـ capture
-      setPdfMode(true)
-      await new Promise(r => setTimeout(r, 120))
-
-      const canvas = await html2canvas(ticketRef.current, {
-        scale: 2,
-        backgroundColor: '#050505',
-        useCORS: true,
-      })
-      const imgData = canvas.toDataURL('image/png')
-      const pdf = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' })
-      const pageWidth = pdf.internal.pageSize.getWidth()
-      const pageHeight = pdf.internal.pageSize.getHeight()
-      const imgWidth = pageWidth - 80
-      const imgHeight = (canvas.height * imgWidth) / canvas.width
-      const x = 40
-      const y = (pageHeight - imgHeight) / 2
-      pdf.setFillColor(5, 5, 5)
-      pdf.rect(0, 0, pageWidth, pageHeight, 'F')
-      pdf.addImage(imgData, 'PNG', x, y, imgWidth, imgHeight)
-      pdf.save(`GRAVIX-${ticket?.qr_code || 'ticket'}.pdf`)
-    } catch (e) {
-      console.error('PDF error', e)
-    } finally {
-      // إرجاع الصورة بعد الـ capture
-      setPdfMode(false)
+  const handleDownloadPDF = () => {
+    setDownloading(true)
+    setTimeout(() => {
+      window.print()
       setDownloading(false)
-    }
+    }, 150)
   }
 
   if (loading) {
@@ -198,9 +168,29 @@ export default function TicketPage({
       <style>{`
         @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
         @keyframes fadeIn { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+
+        @media print {
+          * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+          body > * { visibility: hidden !important; }
+          #ticket-print-area, #ticket-print-area * { visibility: visible !important; }
+          #ticket-print-area {
+            position: fixed !important;
+            inset: 0 !important;
+            width: 100vw !important;
+            padding: 24px !important;
+            margin: 0 !important;
+            background: #080808 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            z-index: 9999 !important;
+          }
+          .no-print { display: none !important; }
+        }
       `}</style>
 
-      <div style={{ width: '100%', maxWidth: isMobile ? '100%' : '900px', animation: 'fadeIn 0.4s ease' }}>
+      {/* المنطقة اللي بتتطبع */}
+      <div id="ticket-print-area" style={{ width: '100%', maxWidth: isMobile ? '100%' : '900px', animation: 'fadeIn 0.4s ease' }}>
 
         {/* ══ TICKET CARD ══ */}
         <div
@@ -214,10 +204,9 @@ export default function TicketPage({
             transition: 'opacity 0.5s',
           }}
         >
-          {/* ══ FULL EVENT IMAGE — مش مقصوصة ══ */}
-          {event?.image_url && !pdfMode && (
+          {/* ══ EVENT IMAGE ══ */}
+          {event?.image_url && (
             <div style={{ position: 'relative', width: '100%', lineHeight: 0 }}>
-              {/* Top gradient bar */}
               <div style={{
                 position: 'absolute', top: 0, left: 0, right: 0, height: '4px', zIndex: 2,
                 background: isCheckedIn
@@ -226,46 +215,38 @@ export default function TicketPage({
                   ? 'linear-gradient(90deg, #a855f7, #7c3aed)'
                   : 'linear-gradient(90deg, #10b981, #059669)',
               }} />
-              {/* Left accent bar */}
               <div style={{
                 position: 'absolute', left: 0, top: 0, bottom: 0, width: '5px',
                 backgroundColor: accentColor, zIndex: 2,
               }} />
-              {/* GRAVIX badge top-right */}
               <div style={{
                 position: 'absolute', top: '16px', right: '16px', zIndex: 3,
-                backgroundColor: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(6px)',
-                borderRadius: '8px', padding: '4px 12px',
+                backgroundColor: 'rgba(0,0,0,0.6)',
+                borderRadius: '8px', padding: '4px 14px',
               }}>
                 <span style={{ color: '#fff', fontWeight: 900, fontSize: isMobile ? '14px' : '18px', letterSpacing: '5px' }}>
                   GRAVIX
                 </span>
               </div>
-              {/* Type badge top-left */}
               <div style={{
                 position: 'absolute', top: '16px', left: '20px', zIndex: 3,
-                backgroundColor: `${accentColor}22`, backdropFilter: 'blur(6px)',
-                border: `1px solid ${accentColor}60`, borderRadius: '999px',
+                backgroundColor: `${accentColor}25`,
+                border: `1px solid ${accentColor}70`, borderRadius: '999px',
                 padding: '4px 14px',
                 color: accentColor, fontSize: '10px', fontWeight: 900, letterSpacing: '2.5px',
               }}>
                 {isCheckedIn ? '⛔ USED' : typeLabel}
               </div>
-              {/* الصورة كاملة بدون قص */}
               <img
                 src={event.image_url}
                 alt={event?.title}
                 style={{
-                  width: '100%',
-                  height: 'auto',
-                  display: 'block',
-                  objectFit: 'contain',
+                  width: '100%', height: 'auto', display: 'block', objectFit: 'contain',
                   opacity: isCheckedIn ? 0.25 : 1,
                   filter: isCheckedIn ? 'grayscale(100%)' : 'none',
                   transition: 'all 0.6s ease',
                 }}
               />
-              {/* Bottom fade إلى لون الكارت */}
               <div style={{
                 position: 'absolute', bottom: 0, left: 0, right: 0, height: '80px',
                 background: 'linear-gradient(to bottom, transparent, #0d0d0d)',
@@ -274,45 +255,20 @@ export default function TicketPage({
             </div>
           )}
 
-          {/* ── Event title + date bar (دايمًا ظاهر سواء في الـ PDF أو لا) ── */}
+          {/* ── Title Bar ── */}
           <div style={{
             padding: isMobile ? '16px 16px 12px' : '20px 28px 14px',
             borderBottom: '1px solid #1a1a1a',
             background: 'linear-gradient(135deg, #111 0%, #0d0d0d 100%)',
-            position: 'relative',
           }}>
-            {/* Left accent bar للـ pdf mode */}
-            {pdfMode && (
-              <div style={{
-                position: 'absolute', left: 0, top: 0, bottom: 0, width: '5px',
-                backgroundColor: accentColor,
-              }} />
-            )}
-            {/* Top bar للـ pdf mode */}
-            {pdfMode && (
-              <div style={{
-                position: 'absolute', top: 0, left: 0, right: 0, height: '4px',
-                background: isCheckedIn
-                  ? 'linear-gradient(90deg, #ef4444, #dc2626)'
-                  : isBackstage
-                  ? 'linear-gradient(90deg, #a855f7, #7c3aed)'
-                  : 'linear-gradient(90deg, #10b981, #059669)',
-              }} />
-            )}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px' }}>
               <div style={{ flex: 1 }}>
-                {pdfMode && (
-                  <p style={{ color: accentColor, fontSize: '10px', letterSpacing: '3px', fontWeight: 700, margin: '0 0 6px' }}>
-                    GRAVIX · ELECTRONIC TICKET
-                  </p>
-                )}
                 <h1 style={{
                   color: isCheckedIn ? '#555' : '#fff',
                   fontSize: isMobile ? '20px' : '26px',
                   fontWeight: 900,
                   letterSpacing: isMobile ? '1px' : '2px',
-                  margin: '0 0 4px',
-                  lineHeight: 1.1,
+                  margin: '0 0 4px', lineHeight: 1.1,
                   transition: 'color 0.5s',
                 }}>
                   {event?.title?.toUpperCase() || 'GRAVIX EVENT'}
@@ -347,7 +303,7 @@ export default function TicketPage({
           {/* ── BODY ── */}
           {isMobile ? (
             <div style={{ padding: '20px 16px' }}>
-              {/* QR centered */}
+              {/* QR */}
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '24px' }}>
                 {isCheckedIn ? (
                   <div style={{ position: 'relative', display: 'inline-block', marginBottom: '12px' }}>
@@ -392,8 +348,8 @@ export default function TicketPage({
                 )}
               </div>
 
-              {/* Info 2-col grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0', borderTop: `1px solid #1a1a1a` }}>
+              {/* Info Grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', borderTop: `1px solid #1a1a1a` }}>
                 <div style={{ padding: '16px 12px 16px 0', borderRight: '1px solid #1a1a1a' }}>
                   <SectionTitle>TICKET INFO</SectionTitle>
                   <InfoRow label="TYPE" value={typeLabel} accent={accentColor} />
@@ -455,7 +411,6 @@ export default function TicketPage({
                   </div>
                 )}
               </div>
-              {/* QR Column */}
               <div style={{ padding: '24px 28px 24px 20px', minWidth: '200px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div style={{
                   backgroundColor: `${accentColor}15`, border: `1px solid ${accentColor}40`,
@@ -527,6 +482,7 @@ export default function TicketPage({
 
         {/* ── PDF Button ── */}
         <button
+          className="no-print"
           onClick={handleDownloadPDF}
           disabled={downloading}
           style={{
@@ -539,10 +495,10 @@ export default function TicketPage({
             opacity: downloading ? 0.7 : 1,
           }}
         >
-          {downloading ? 'GENERATING PDF...' : 'DOWNLOAD TICKET PDF'}
+          {downloading ? 'OPENING PRINT...' : 'DOWNLOAD TICKET PDF'}
         </button>
 
-        <p style={{ color: '#1c1c1c', fontSize: '11px', textAlign: 'center', marginTop: '16px', lineHeight: 1.7 }}>
+        <p className="no-print" style={{ color: '#1c1c1c', fontSize: '11px', textAlign: 'center', marginTop: '16px', lineHeight: 1.7 }}>
           This ticket is non-transferable and valid for one person only.
           A valid ID matching the holder name must be presented at entry.
           This ticket can be scanned only once.
