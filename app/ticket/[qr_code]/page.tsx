@@ -197,32 +197,6 @@ export default function TicketPage({
           )}
         </div>
 
-        {/* ── 2. EVENT TITLE + LINK ── */}
-        <div style={{
-          padding: '16px 24px 14px',
-          borderBottom: '1px solid #e5e7eb',
-          textAlign: 'center',
-          backgroundColor: '#fff',
-        }}>
-          <h1 style={{
-            color: '#111',
-            fontSize: 'clamp(18px, 4vw, 24px)',
-            fontWeight: 700,
-            margin: '0 0 8px',
-            letterSpacing: '0.5px',
-            lineHeight: 1.2,
-          }}>
-            {event?.title?.toUpperCase() || 'GRAVIX EVENT'}
-          </h1>
-          <a
-            href={eventPageUrl}
-            target="_blank"
-            rel="noreferrer"
-            style={{ color: '#2563eb', fontSize: '12px', textDecoration: 'none', fontWeight: 500 }}
-          >
-            Open Updated Event Details Page
-          </a>
-        </div>
 
         {/* ── 3. NOTICE BAR ── */}
         <div style={{
@@ -261,17 +235,6 @@ export default function TicketPage({
               <InfoLine label="Status" value={isCheckedIn ? 'Used ⛔' : 'Paid ✓'} valueColor={isCheckedIn ? '#dc2626' : '#16a34a'} />
             </Section>
 
-            {/* Event Information */}
-            <Section title="Event Information">
-              <InfoLine label="Event" value={event?.title || 'GRAVIX EVENT'} />
-              <div style={{ display: 'flex', gap: '4px', marginBottom: '3px', flexWrap: 'wrap' }}>
-                <span style={{ color: '#6b7280', fontSize: '11px', minWidth: '110px', flexShrink: 0 }}>Date and Time:</span>
-                <a href={eventPageUrl} target="_blank" rel="noreferrer" style={{ color: '#2563eb', fontSize: '11px', textDecoration: 'none' }}>
-                  Open Updated Event Details Page
-                </a>
-              </div>
-              <InfoLine label="Date" value={eventDate} />
-            </Section>
 
             {/* Venue Information */}
             <Section title="Venue Information">
