@@ -293,200 +293,229 @@ export default function HomePage() {
         </Link>
       </section>
 
-      {/* EXCLUSIVE PARTNERS */}
-      {partners.length > 0 && (
-        <section
-          id="partners"
+{/* EXCLUSIVE PARTNERS – SCROLL LIKE DJs */}
+{partners.length > 0 && (
+  <section
+    id="partners"
+    style={{
+      borderTop: '1px solid #111',
+      backgroundColor: '#050505',
+      padding: '56px 16px',
+    }}
+  >
+    <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
+      {/* Header */}
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: isMobile ? 'column' : 'row',
+          gap: isMobile ? '12px' : 0,
+          justifyContent: 'space-between',
+          alignItems: isMobile ? 'flex-start' : 'flex-end',
+          marginBottom: '32px',
+        }}
+      >
+        <div>
+          <p
+            style={{
+              color: '#dc2626',
+              fontSize: '11px',
+              letterSpacing: '4px',
+              fontWeight: 700,
+              margin: '0 0 8px',
+            }}
+          >
+            ● PARTNERS
+          </p>
+          <h2
+            style={{
+              fontSize: isMobile ? '26px' : '36px',
+              fontWeight: 900,
+              color: '#fff',
+              margin: 0,
+              letterSpacing: '-1px',
+            }}
+          >
+            BRANDS
+          </h2>
+        </div>
+      </div>
+
+      {/* Horizontal scroll row – نفس فكرة DJs */}
+      <div
+        style={{
+          overflowX: 'auto',
+          paddingBottom: '8px',
+          WebkitOverflowScrolling: 'touch',
+        }}
+      >
+        <div
           style={{
-            borderTop: '1px solid #111',
-            backgroundColor: '#050505',
-            padding: '56px 16px',
+            display: 'flex',
+            gap: '16px',
+            paddingBottom: '4px',
           }}
         >
-          <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
-            {/* Header */}
-            <div style={{ textAlign: 'center', marginBottom: '48px' }}>
-              <p
-                style={{
-                  color: '#dc2626',
-                  fontSize: 10,
-                  letterSpacing: '3px',
-                  fontWeight: 700,
-                  margin: '0 0 10px',
-                }}
-              >
-                ● EXCLUSIVE PARTNERS
-              </p>
-              <h2
-                style={{
-                  fontSize: isMobile ? 22 : 30,
-                  fontWeight: 900,
-                  color: '#fff',
-                  margin: '0 0 10px',
-                  letterSpacing: '-0.5px',
-                }}
-              >
-                BRANDS LOCKED IN WITH GRAVIX
-              </h2>
-              <p style={{ color: '#555', fontSize: 13, margin: 0, lineHeight: 1.6 }}>
-                Official partners powering upcoming GRAVIX nights and experiences.
-              </p>
-            </div>
-
-            {/* Partners Grid */}
+          {partners.map(partner => (
             <div
+              key={partner.id}
               style={{
+                flex: '0 0 260px',          // زي كارت الـ DJ
+                backgroundColor: '#0d0d0d',
+                border: '1px solid #1a1a1a',
+                borderRadius: '20px',
+                padding: '20px',
                 display: 'flex',
-                flexWrap: 'wrap',
-                gap: '24px',
-                justifyContent: 'center',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '14px',
+                transition: 'all 0.3s',
+              }}
+              onMouseEnter={e => {
+                const el = e.currentTarget as HTMLDivElement
+                el.style.borderColor = '#dc2626'
+                el.style.transform = 'translateY(-6px)'
+                el.style.boxShadow = '0 24px 48px rgba(220,38,38,0.2)'
+              }}
+              onMouseLeave={e => {
+                const el = e.currentTarget as HTMLDivElement
+                el.style.borderColor = '#1a1a1a'
+                el.style.transform = 'translateY(0)'
+                el.style.boxShadow = 'none'
               }}
             >
-              {partners.map(partner => (
-                <div
-                  key={partner.id}
+              {/* Logo دائرة زي أڤاتار الــ DJ */}
+              <div
+                style={{
+                  width: 96,
+                  height: 96,
+                  borderRadius: '50%',
+                  backgroundColor: '#080808',
+                  border: '2px solid #222',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  overflow: 'hidden',
+                  flexShrink: 0,
+                }}
+              >
+                {partner.logo_url ? (
+                  <img
+                    src={partner.logo_url}
+                    alt={partner.name}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'contain',
+                      objectPosition: 'center',
+                      display: 'block',
+                    }}
+                  />
+                ) : (
+                  <span
+                    style={{
+                      color: '#333',
+                      fontSize: 11,
+                      letterSpacing: '2px',
+                    }}
+                  >
+                    LOGO
+                  </span>
+                )}
+              </div>
+
+              {/* الاسم + Badge */}
+              <div style={{ textAlign: 'center', width: '100%' }}>
+                <p
                   style={{
-                    width: isMobile ? '100%' : '200px',
-                    maxWidth: isMobile ? '340px' : '200px',
-                    backgroundColor: '#0d0d0d',
-                    border: '1px solid #1a1a1a',
-                    borderRadius: '20px',
-                    padding: '28px 20px 20px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    gap: '16px',
-                    transition: 'border-color 0.25s, transform 0.25s, box-shadow 0.25s',
-                    cursor: 'default',
-                  }}
-                  onMouseEnter={e => {
-                    const el = e.currentTarget as HTMLDivElement
-                    el.style.borderColor = '#dc2626'
-                    el.style.transform = 'translateY(-6px)'
-                    el.style.boxShadow = '0 20px 50px rgba(220,38,38,0.2)'
-                  }}
-                  onMouseLeave={e => {
-                    const el = e.currentTarget as HTMLDivElement
-                    el.style.borderColor = '#1a1a1a'
-                    el.style.transform = 'translateY(0)'
-                    el.style.boxShadow = 'none'
+                    color: '#fff',
+                    fontSize: 16,
+                    fontWeight: 800,
+                    margin: '0 0 6px',
+                    letterSpacing: '-0.3px',
                   }}
                 >
-                  {/* Circle Logo */}
-                  <div
+                  {partner.name}
+                </p>
+                <span
+                  style={{
+                    fontSize: 9,
+                    color: '#f97316',
+                    backgroundColor: 'rgba(249,115,22,0.08)',
+                    border: '1px solid rgba(249,115,22,0.35)',
+                    padding: '2px 10px',
+                    borderRadius: 999,
+                    letterSpacing: '1.5px',
+                    fontWeight: 700,
+                  }}
+                >
+                  EXCLUSIVE PARTNER
+                </span>
+              </div>
+
+              {/* Buttons زي بتوع الـ DJs */}
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '8px',
+                  width: '100%',
+                }}
+              >
+                {partner.website && (
+                  <a
+                    href={partner.website}
+                    target="_blank"
+                    rel="noreferrer"
                     style={{
-                      width: 96,
-                      height: 96,
-                      borderRadius: '50%',
-                      backgroundColor: '#080808',
-                      border: '2px solid #222',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      overflow: 'hidden',
-                      flexShrink: 0,
+                      display: 'block',
+                      textAlign: 'center',
+                      fontSize: 11,
+                      padding: '8px 12px',
+                      borderRadius: 10,
+                      border: '1px solid rgba(248,250,252,0.12)',
+                      background:
+                        'linear-gradient(135deg, rgba(248,250,252,0.08), rgba(15,23,42,0.9))',
+                      color: '#f9fafb',
+                      textDecoration: 'none',
+                      letterSpacing: '1.2px',
+                      fontWeight: 700,
                     }}
                   >
-                    {partner.logo_url ? (
-                      <img
-                        src={partner.logo_url}
-                        alt={partner.name}
-                        style={{
-                          width: '100%',
-                          height: '100%',
-                          objectFit: 'contain',
-                          objectPosition: 'center',
-                          display: 'block',
-                        }}
-                      />
-                    ) : (
-                      <span style={{ color: '#333', fontSize: 11, letterSpacing: '2px' }}>
-                        LOGO
-                      </span>
-                    )}
-                  </div>
+                    OFFICIAL WEBSITE
+                  </a>
+                )}
 
-                  {/* Name + Badge */}
-                  <div style={{ textAlign: 'center' }}>
-                    <p style={{ color: '#fff', fontSize: 15, fontWeight: 800, margin: '0 0 6px', letterSpacing: '-0.3px' }}>
-                      {partner.name}
-                    </p>
-                    <span
-                      style={{
-                        fontSize: 9,
-                        color: '#f97316',
-                        backgroundColor: 'rgba(249,115,22,0.08)',
-                        border: '1px solid rgba(249,115,22,0.35)',
-                        padding: '2px 10px',
-                        borderRadius: 999,
-                        letterSpacing: '1.5px',
-                        fontWeight: 700,
-                      }}
-                    >
-                      EXCLUSIVE PARTNER
-                    </span>
-                  </div>
-
-                  {/* Buttons */}
-                  <div
+                {partner.instagram_url && (
+                  <a
+                    href={partner.instagram_url}
+                    target="_blank"
+                    rel="noreferrer"
                     style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '8px',
-                      width: '100%',
+                      display: 'block',
+                      textAlign: 'center',
+                      fontSize: 11,
+                      padding: '8px 12px',
+                      borderRadius: 10,
+                      border: '1px solid rgba(220,38,38,0.4)',
+                      backgroundColor: 'rgba(220,38,38,0.08)',
+                      color: '#fecaca',
+                      textDecoration: 'none',
+                      letterSpacing: '1.2px',
+                      fontWeight: 700,
                     }}
                   >
-                    {partner.website && (
-                      <a
-                        href={partner.website}
-                        target="_blank"
-                        rel="noreferrer"
-                        style={{
-                          display: 'block',
-                          textAlign: 'center',
-                          fontSize: 11,
-                          padding: '8px 12px',
-                          borderRadius: 10,
-                          border: '1px solid rgba(248,250,252,0.12)',
-                          background: 'linear-gradient(135deg, rgba(248,250,252,0.08), rgba(15,23,42,0.9))',
-                          color: '#f9fafb',
-                          textDecoration: 'none',
-                          letterSpacing: '1.2px',
-                          fontWeight: 700,
-                        }}
-                      >
-                        OFFICIAL WEBSITE
-                      </a>
-                    )}
-                    {partner.instagram_url && (
-                      <a
-                        href={partner.instagram_url}
-                        target="_blank"
-                        rel="noreferrer"
-                        style={{
-                          display: 'block',
-                          textAlign: 'center',
-                          fontSize: 11,
-                          padding: '8px 12px',
-                          borderRadius: 10,
-                          border: '1px solid rgba(220,38,38,0.4)',
-                          backgroundColor: 'rgba(220,38,38,0.08)',
-                          color: '#fecaca',
-                          textDecoration: 'none',
-                          letterSpacing: '1.2px',
-                          fontWeight: 700,
-                        }}
-                      >
-                        INSTAGRAM
-                      </a>
-                    )}
-                  </div>
-                </div>
-              ))}
+                    INSTAGRAM
+                  </a>
+                )}
+              </div>
             </div>
-          </div>
-        </section>
-      )}
+          ))}
+        </div>
+      </div>
+    </div>
+  </section>
+)}
 
       {/* DJs SECTION – SCROLL */}
       <section
