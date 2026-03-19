@@ -19,19 +19,28 @@ type DJ = {
   booking_email?: string | null
 }
 
+// كشف موبايل من الـ userAgent
+function isMobileUA() {
+  if (typeof navigator === 'undefined') return false
+  const ua = navigator.userAgent || navigator.vendor || (window as any).opera
+  return /android|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(ua)
+}
+
 export default function DJProfilePage() {
   const { username } = useParams()
   const [dj, setDj] = useState<DJ | null>(null)
   const [loading, setLoading] = useState(true)
-  const [isMobile, setIsMobile] = useState(false)
+  const [isMobileLayout, setIsMobileLayout] = useState(false) // للشكل بس
+  const [isMobileDevice, setIsMobileDevice] = useState(false) // للّوجيك
   const [emailHref, setEmailHref] = useState<string | undefined>(undefined)
 
   useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth <= 640)
+    const checkLayout = () => setIsMobileLayout(window.innerWidth <= 640)
     if (typeof window !== 'undefined') {
-      check()
-      window.addEventListener('resize', check)
-      return () => window.removeEventListener('resize', check)
+      checkLayout()
+      window.addEventListener('resize', checkLayout)
+      setIsMobileDevice(isMobileUA())
+      return () => window.removeEventListener('resize', checkLayout)
     }
   }, [])
 
@@ -64,7 +73,7 @@ export default function DJProfilePage() {
     fetchDJ()
   }, [username])
 
-  // جهّز mailto بعد ما الـ DJ يتحمّل وعلى الـ client
+  // حضّر لينك الإيميل حسب نوع الجهاز
   useEffect(() => {
     if (!dj?.booking_email) {
       setEmailHref(undefined)
@@ -72,12 +81,22 @@ export default function DJProfilePage() {
     }
 
     const subject = `Booking Details DJ ${dj.name} - Gravix Egypt`
-    const mailto = `mailto:${encodeURIComponent(
-      dj.booking_email
-    )}?subject=${encodeURIComponent(subject)}`
+    const encodedSubject = encodeURIComponent(subject)
 
-    setEmailHref(mailto)
-  }, [dj])
+    if (isMobileDevice) {
+      // موبايل → mailto
+      const mailto = `mailto:${encodeURIComponent(
+        dj.booking_email
+      )}?subject=${encodedSubject}`
+      setEmailHref(mailto)
+    } else {
+      // ديسكتوب → Gmail compose URL
+      const gmail = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
+        dj.booking_email
+      )}&su=${encodedSubject}`
+      setEmailHref(gmail)
+    }
+  }, [dj, isMobileDevice])
 
   if (loading) {
     return (
@@ -207,7 +226,7 @@ export default function DJProfilePage() {
           style={{
             position: 'relative',
             zIndex: 10,
-            padding: isMobile ? '0 16px 56px' : '0 48px 80px',
+            padding: isMobileLayout ? '0 16px 56px' : '0 48px 80px',
             width: '100%',
             maxWidth: '900px',
           }}
@@ -225,7 +244,7 @@ export default function DJProfilePage() {
           </p>
           <h1
             style={{
-              fontSize: isMobile ? '40px' : '72px',
+              fontSize: isMobileLayout ? '40px' : '72px',
               fontWeight: 900,
               color: '#fff',
               margin: '0 0 20px',
@@ -265,6 +284,8 @@ export default function DJProfilePage() {
             {emailHref && (
               <a
                 href={emailHref}
+                target={isMobileDevice ? undefined : '_blank'}
+                rel={isMobileDevice ? undefined : 'noreferrer'}
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
@@ -387,7 +408,7 @@ export default function DJProfilePage() {
       {dj.image_url && (
         <section
           style={{
-            padding: isMobile ? '32px 16px 0' : '40px 48px 0',
+            padding: isMobileLayout ? '32px 16px 0' : '40px 48px 0',
             maxWidth: '900px',
             margin: '0 auto',
           }}
@@ -402,7 +423,7 @@ export default function DJProfilePage() {
           >
             <div
               style={{
-                width: isMobile ? '160px' : '200px',
+                width: isMobileLayout ? '160px' : '200px',
                 borderRadius: '18px',
                 overflow: 'hidden',
                 border: '1px solid #1a1a1a',
@@ -438,7 +459,7 @@ export default function DJProfilePage() {
       {dj.bio && (
         <section
           style={{
-            padding: isMobile ? '40px 16px' : '56px 48px',
+            padding: isMobileLayout ? '40px 16px' : '56px 48px',
             maxWidth: '900px',
             margin: '0 auto',
             borderBottom: '1px solid #111',
@@ -458,7 +479,7 @@ export default function DJProfilePage() {
           <p
             style={{
               color: '#888',
-              fontSize: isMobile ? '15px' : '17px',
+              fontSize: isMobileLayout ? '15px' : '17px',
               lineHeight: 1.9,
               margin: 0,
               fontWeight: 400,
@@ -473,7 +494,7 @@ export default function DJProfilePage() {
       {/* CONNECT */}
       <section
         style={{
-          padding: isMobile ? '40px 16px' : '56px 48px',
+          padding: isMobileLayout ? '40px 16px' : '56px 48px',
           maxWidth: '900px',
           margin: '0 auto',
         }}
@@ -492,7 +513,7 @@ export default function DJProfilePage() {
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: isMobile
+            gridTemplateColumns: isMobileLayout
               ? '1fr'
               : 'repeat(auto-fill, minmax(200px, 1fr))',
             gap: '16px',
@@ -553,7 +574,12 @@ export default function DJProfilePage() {
           )}
 
           {emailHref && (
-            <a href={emailHref} style={{ textDecoration: 'none' }}>
+            <a
+              href={emailHref}
+              target={isMobileDevice ? undefined : '_blank'}
+              rel={isMobileDevice ? undefined : 'noreferrer'}
+              style={{ textDecoration: 'none' }}
+            >
               <div
                 style={{
                   backgroundColor: '#0d0d0d',
