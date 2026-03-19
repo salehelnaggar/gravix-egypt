@@ -553,10 +553,7 @@ export default function DJProfilePage() {
           )}
 
           {emailHref && (
-            <a
-              href={emailHref}
-              style={{ textDecoration: 'none' }}
-            >
+            <a href={emailHref} style={{ textDecoration: 'none' }}>
               <div
                 style={{
                   backgroundColor: '#0d0d0d',
