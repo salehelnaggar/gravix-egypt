@@ -24,6 +24,7 @@ export default function DJProfilePage() {
   const [dj, setDj] = useState<DJ | null>(null)
   const [loading, setLoading] = useState(true)
   const [isMobile, setIsMobile] = useState(false)
+  const [emailHref, setEmailHref] = useState<string | undefined>(undefined)
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth <= 640)
@@ -62,6 +63,21 @@ export default function DJProfilePage() {
 
     fetchDJ()
   }, [username])
+
+  // جهّز mailto بعد ما الـ DJ يتحمّل وعلى الـ client
+  useEffect(() => {
+    if (!dj?.booking_email) {
+      setEmailHref(undefined)
+      return
+    }
+
+    const subject = `Booking Details DJ ${dj.name} - Gravix Egypt`
+    const mailto = `mailto:${encodeURIComponent(
+      dj.booking_email
+    )}?subject=${encodeURIComponent(subject)}`
+
+    setEmailHref(mailto)
+  }, [dj])
 
   if (loading) {
     return (
@@ -114,15 +130,6 @@ export default function DJProfilePage() {
       </main>
     )
   }
-
-  // Gmail compose URL بدل mailto
-  const gmailHref = dj.booking_email
-    ? `https://mail.google.com/mail/?view=cm&fs=1&tf=1&to=${encodeURIComponent(
-        dj.booking_email
-      )}&su=${encodeURIComponent(
-        `Booking Details DJ ${dj.name} - Gravix Egypt`
-      )}`
-    : undefined
 
   return (
     <main
@@ -255,11 +262,9 @@ export default function DJProfilePage() {
               </a>
             )}
 
-            {gmailHref && (
+            {emailHref && (
               <a
-                href={gmailHref}
-                target="_blank"
-                rel="noreferrer"
+                href={emailHref}
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
@@ -547,11 +552,9 @@ export default function DJProfilePage() {
             </a>
           )}
 
-          {gmailHref && (
+          {emailHref && (
             <a
-              href={gmailHref}
-              target="_blank"
-              rel="noreferrer"
+              href={emailHref}
               style={{ textDecoration: 'none' }}
             >
               <div
